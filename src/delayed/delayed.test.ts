@@ -1,0 +1,431 @@
+import { sleep } from "@chocbite/ts-lib-common";
+import { ok, ResultOk, type Result } from "@chocbite/ts-lib-result";
+import { assertType, describe, expect, it } from "vitest";
+import {
+  state as st,
+  StateDelayedREA,
+  StateDelayedREAWA,
+  StateDelayedREAWS,
+  StateDelayedROA,
+  StateDelayedROAWA,
+  StateDelayedROAWS,
+  StateREA,
+  StateREAWA,
+  StateREAWS,
+  StateROA,
+  StateROAWA,
+  StateROAWS,
+} from "..";
+import {
+  test_state_sub,
+  test_state_then,
+  test_state_write,
+  test_state_write_sync,
+  type TestStateAll,
+  type TestStateWrite,
+  type TestStateWriteSync,
+} from "../tests_shared";
+
+describe("Initialize delayed states", function () {
+  //##################################################################################################################################################
+  //      _____   ____
+  //     |  __ \ / __ \   /\
+  //     | |__) | |  | | /  \
+  //     |  _  /| |  | |/ /\ \
+  //     | | \ \| |__| / ____ \
+  //     |_|  \_\\____/_/    \_\
+  describe("ROA", { timeout: 100 }, function () {
+    it("ok", async function () {
+      const init = st.d.roa.ok(() => sleep(1, 1));
+      assertType<StateROA<number>>(init);
+      assertType<StateDelayedROA<number>>(init);
+    });
+    it("result ok", async function () {
+      const init = st.d.roa.result(() => sleep(1, ok(1)));
+      assertType<StateROA<number>>(init);
+      assertType<StateDelayedROA<number>>(init);
+    });
+    it("cleanup successfull", async function () {
+      const init = st.d.roa.ok(() => sleep(1, 1));
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const then = init.then;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const set = init.set;
+      const write = init.write;
+      const write_sync = init.write_sync;
+      await init;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(init.then).not.eq(then, "then");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(init.set).not.eq(set, "set");
+      expect(init.write).not.eq(write, "write");
+      expect(init.write_sync).not.eq(write_sync, "write_sync");
+    });
+    //# Standard Tests
+    const maker: TestStateAll = () => {
+      const state = st.d.roa.ok(() => sleep(1, 1));
+      const set = (val: ResultOk<number>) => state.set(val);
+      return { o: true, s: false, w: false, ws: false, state, set };
+    };
+    it("Subscribing And Unsubscribing", async function () {
+      await test_state_sub(maker, 5);
+    });
+    describe("Then", async function () {
+      await test_state_then(maker, 5);
+    });
+    const maker_delay: TestStateAll = () => {
+      const state = st.d.roa.ok(() => sleep(10, 1));
+      const set = (val: ResultOk<number>) => state.set(val);
+      return { o: true, s: false, w: false, ws: false, state, set };
+    };
+    it("Subscribing And Unsubscribing With Actual Delay", async function () {
+      await test_state_sub(maker_delay, 20);
+    });
+    describe("Then With Actual Delay", async function () {
+      await test_state_then(maker_delay, 20);
+    });
+  });
+  //##################################################################################################################################################
+  //      _____  ______
+  //     |  __ \|  ____|   /\
+  //     | |__) | |__     /  \
+  //     |  _  /|  __|   / /\ \
+  //     | | \ \| |____ / ____ \
+  //     |_|  \_\______/_/    \_\
+  describe("REA", { timeout: 200 }, function () {
+    it("ok", async function () {
+      const init = st.d.rea.ok(() => sleep(1, 1));
+      assertType<StateREA<number>>(init);
+      assertType<StateDelayedREA<number>>(init);
+    });
+    it("err", async function () {
+      const init = st.d.rea.err<number>(() => sleep(1, "1"));
+      assertType<StateREA<number>>(init);
+      assertType<StateDelayedREA<number>>(init);
+    });
+    it("result ok", async function () {
+      const init = st.d.rea.result(() => sleep(1, ok(1)));
+      assertType<StateREA<number>>(init);
+      assertType<StateDelayedREA<number>>(init);
+    });
+    it("cleanup successfull", async function () {
+      const init = st.d.rea.ok(() => sleep(1, 1));
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const then = init.then;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const set = init.set;
+      const write = init.write;
+      const write_sync = init.write_sync;
+      await init;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(init.then).not.eq(then, "then");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(init.set).not.eq(set, "set");
+      expect(init.write).not.eq(write, "write");
+      expect(init.write_sync).not.eq(write_sync, "write_sync");
+    });
+    //# Standard Tests
+    const maker: TestStateAll = () => {
+      const state = st.d.rea.ok(() => sleep(1, 1));
+      const set = (val: Result<number, string>) => state.set(val);
+      return { o: false, s: false, w: false, ws: false, state, set };
+    };
+    it("Subscribing And Unsubscribing", async function () {
+      await test_state_sub(maker, 5);
+    });
+    describe("Then", async function () {
+      await test_state_then(maker, 5);
+    });
+    const maker_delay: TestStateAll = () => {
+      const state = st.d.rea.ok(() => sleep(10, 1));
+      const set = (val: Result<number, string>) => state.set(val);
+      return { o: false, s: false, w: false, ws: false, state, set };
+    };
+    it("Subscribing And Unsubscribing With Actual Delay", async function () {
+      await test_state_sub(maker_delay, 20);
+    });
+    describe("Then With Actual Delay", async function () {
+      await test_state_then(maker_delay, 20);
+    });
+  });
+  //##################################################################################################################################################
+  //      _____   ____           __          _______
+  //     |  __ \ / __ \   /\     \ \        / / ____|
+  //     | |__) | |  | | /  \     \ \  /\  / / (___
+  //     |  _  /| |  | |/ /\ \     \ \/  \/ / \___ \
+  //     | | \ \| |__| / ____ \     \  /\  /  ____) |
+  //     |_|  \_\\____/_/    \_\     \/  \/  |_____/
+  describe("ROAWS", { timeout: 100 }, function () {
+    it("ok", async function () {
+      const init = st.d.roa_ws.ok(() => sleep(1, 1));
+      assertType<StateROAWS<number>>(init);
+      assertType<StateDelayedROAWS<number>>(init);
+    });
+    it("result ok", async function () {
+      const init = st.d.roa_ws.result(() => sleep(1, ok(1)));
+      assertType<StateROAWS<number>>(init);
+      assertType<StateDelayedROAWS<number>>(init);
+    });
+    it("cleanup successfull", async function () {
+      const init = st.d.roa_ws.ok(() => sleep(1, 1));
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const then = init.then;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const set = init.set;
+      const write = init.write;
+      const write_sync = init.write_sync;
+      await init;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(init.then).not.eq(then, "then");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(init.set).not.eq(set, "set");
+      expect(init.write).not.eq(write, "write");
+      expect(init.write_sync).not.eq(write_sync, "write_sync");
+    });
+    //# Standard Tests
+    const maker: TestStateAll = () => {
+      const state = st.d.roa_ws.ok(() => sleep(1, 1));
+      const set = (val: ResultOk<number>) => state.set(val);
+      return { o: true, s: false, w: true, ws: true, state, set };
+    };
+    it("Subscribing And Unsubscribing", async function () {
+      await test_state_sub(maker, 5);
+    });
+    describe("Then", async function () {
+      await test_state_then(maker, 5);
+    });
+    const maker_delay: TestStateAll = () => {
+      const state = st.d.roa_ws.ok(() => sleep(10, 1));
+      const set = (val: ResultOk<number>) => state.set(val);
+      return { o: true, s: false, w: true, ws: true, state, set };
+    };
+    it("Subscribing And Unsubscribing With Actual Delay", async function () {
+      await test_state_sub(maker_delay, 20);
+    });
+    describe("Then With Actual Delay", async function () {
+      await test_state_then(maker_delay, 20);
+    });
+    const maker_write: TestStateWriteSync = () => {
+      const state = st.d.roa_ws.ok(() => sleep(10, 1), true);
+      const set = (val: ResultOk<number>) => state.set(val);
+      return { o: true, s: false, w: true, ws: true, state, set };
+    };
+    it("Write", async function () {
+      await test_state_write(maker_write);
+    });
+    it("WriteSync", async function () {
+      await test_state_write_sync(maker_write);
+    });
+  });
+  //##################################################################################################################################################
+  //      _____  ______           __          _______
+  //     |  __ \|  ____|   /\     \ \        / / ____|
+  //     | |__) | |__     /  \     \ \  /\  / / (___
+  //     |  _  /|  __|   / /\ \     \ \/  \/ / \___ \
+  //     | | \ \| |____ / ____ \     \  /\  /  ____) |
+  //     |_|  \_\______/_/    \_\     \/  \/  |_____/
+  describe("REAWS", { timeout: 100 }, function () {
+    it("ok", async function () {
+      const init = st.d.rea_ws.ok(() => sleep(1, 1));
+      assertType<StateREAWS<number>>(init);
+      assertType<StateDelayedREAWS<number>>(init);
+    });
+    it("err", async function () {
+      const init = st.d.rea_ws.err<number>(() => sleep(1, "1"));
+      assertType<StateREAWS<number>>(init);
+      assertType<StateDelayedREAWS<number>>(init);
+    });
+    it("result ok", async function () {
+      const init = st.d.rea_ws.result(() => sleep(1, ok(1)));
+      assertType<StateREAWS<number>>(init);
+      assertType<StateDelayedREAWS<number>>(init);
+    });
+    it("cleanup successfull", async function () {
+      const init = st.d.rea_ws.ok(() => sleep(1, 1));
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const then = init.then;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const set = init.set;
+      const write = init.write;
+      const write_sync = init.write_sync;
+      await init;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(init.then).not.eq(then, "then");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(init.set).not.eq(set, "set");
+      expect(init.write).not.eq(write, "write");
+      expect(init.write_sync).not.eq(write_sync, "write_sync");
+    });
+    //# Standard Tests
+    const maker: TestStateAll = () => {
+      const state = st.d.rea_ws.ok(() => sleep(1, 1));
+      const set = (val: Result<number, string>) => state.set(val);
+      return { o: false, s: false, w: true, ws: true, state, set };
+    };
+    it("Subscribing And Unsubscribing", async function () {
+      await test_state_sub(maker, 5);
+    });
+    describe("Then", async function () {
+      await test_state_then(maker, 5);
+    });
+    const maker_delay: TestStateAll = () => {
+      const state = st.d.rea_ws.ok(() => sleep(10, 1));
+      const set = (val: Result<number, string>) => state.set(val);
+      return { o: false, s: false, w: true, ws: true, state, set };
+    };
+    it("Subscribing And Unsubscribing With Actual Delay", async function () {
+      await test_state_sub(maker_delay, 20);
+    });
+    describe("Then With Actual Delay", async function () {
+      await test_state_then(maker_delay, 20);
+    });
+    const maker_write: TestStateWriteSync = () => {
+      const state = st.d.rea_ws.ok(() => sleep(10, 1), true);
+      const set = (val: Result<number, string>) => state.set(val);
+      return { o: false, s: false, w: true, ws: true, state, set };
+    };
+    it("Write", async function () {
+      await test_state_write(maker_write);
+    });
+    it("WriteSync", async function () {
+      await test_state_write_sync(maker_write);
+    });
+  });
+  //##################################################################################################################################################
+  //      _____   ____           __          __
+  //     |  __ \ / __ \   /\     \ \        / /\
+  //     | |__) | |  | | /  \     \ \  /\  / /  \
+  //     |  _  /| |  | |/ /\ \     \ \/  \/ / /\ \
+  //     | | \ \| |__| / ____ \     \  /\  / ____ \
+  //     |_|  \_\\____/_/    \_\     \/  \/_/    \_\
+  describe("ROAWA", { timeout: 100 }, function () {
+    it("ok", async function () {
+      const init = st.d.roa_wa.ok(() => sleep(1, 1));
+      assertType<StateROAWA<number>>(init);
+      assertType<StateDelayedROAWA<number>>(init);
+    });
+    it("result ok", async function () {
+      const init = st.d.roa_wa.result(() => sleep(1, ok(1)));
+      assertType<StateROAWA<number>>(init);
+      assertType<StateDelayedROAWA<number>>(init);
+    });
+    it("cleanup successfull", async function () {
+      const init = st.d.roa_wa.ok(() => sleep(1, 1));
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const then = init.then;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const set = init.set;
+      const write = init.write;
+      const write_sync = init.write_sync;
+      await init;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(init.then).not.eq(then, "then");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(init.set).not.eq(set, "set");
+      expect(init.write).not.eq(write, "write");
+      expect(init.write_sync).not.eq(write_sync, "write_sync");
+    });
+    //# Standard Tests
+    const maker: TestStateAll = () => {
+      const state = st.d.roa_wa.ok(() => sleep(1, 1));
+      const set = (val: ResultOk<number>) => state.set(val);
+      return { o: true, s: false, w: true, ws: false, state, set };
+    };
+    it("Subscribing And Unsubscribing", async function () {
+      await test_state_sub(maker, 5);
+    });
+    describe("Then", async function () {
+      await test_state_then(maker, 5);
+    });
+    const maker_delay: TestStateAll = () => {
+      const state = st.d.roa_wa.ok(() => sleep(10, 1));
+      const set = (val: ResultOk<number>) => state.set(val);
+      return { o: true, s: false, w: true, ws: false, state, set };
+    };
+    it("Subscribing And Unsubscribing With Actual Delay", async function () {
+      await test_state_sub(maker_delay, 20);
+    });
+    describe("Then With Actual Delay", async function () {
+      await test_state_then(maker_delay, 20);
+    });
+    const maker_write: TestStateWrite = () => {
+      const state = st.d.roa_wa.ok(() => sleep(10, 1), true);
+      const set = (val: ResultOk<number>) => state.set(val);
+      return { o: true, s: false, w: true, ws: false, state, set };
+    };
+    it("Write", async function () {
+      await test_state_write(maker_write);
+    });
+  });
+  //##################################################################################################################################################
+  //      _____  ______           __          __
+  //     |  __ \|  ____|   /\     \ \        / /\
+  //     | |__) | |__     /  \     \ \  /\  / /  \
+  //     |  _  /|  __|   / /\ \     \ \/  \/ / /\ \
+  //     | | \ \| |____ / ____ \     \  /\  / ____ \
+  //     |_|  \_\______/_/    \_\     \/  \/_/    \_\
+  describe("REAWA", { timeout: 200 }, function () {
+    it("ok", async function () {
+      const init = st.d.rea_wa.ok(() => sleep(1, 1));
+      assertType<StateREAWA<number>>(init);
+      assertType<StateDelayedREAWA<number>>(init);
+    });
+    it("err", async function () {
+      const init = st.d.rea_wa.err<number>(() => sleep(1, "1"));
+      assertType<StateREAWA<number>>(init);
+      assertType<StateDelayedREAWA<number>>(init);
+    });
+    it("result ok", async function () {
+      const init = st.d.rea_wa.result(() => sleep(1, ok(1)));
+      assertType<StateREAWA<number>>(init);
+      assertType<StateDelayedREAWA<number>>(init);
+    });
+    it("cleanup successfull", async function () {
+      const init = st.d.rea_wa.ok(() => sleep(1, 1));
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const then = init.then;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const set = init.set;
+      const write = init.write;
+      const write_sync = init.write_sync;
+      await init;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(init.then).not.eq(then, "then");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(init.set).not.eq(set, "set");
+      expect(init.write).not.eq(write, "write");
+      expect(init.write_sync).not.eq(write_sync, "write_sync");
+    });
+    //# Standard Tests
+    const maker: TestStateAll = () => {
+      const state = st.d.rea_wa.ok(() => sleep(1, 1));
+      const set = (val: Result<number, string>) => state.set(val);
+      return { o: false, s: false, w: true, ws: false, state, set };
+    };
+    it("Subscribing And Unsubscribing", async function () {
+      await test_state_sub(maker, 5);
+    });
+    describe("Then", async function () {
+      await test_state_then(maker, 5);
+    });
+    const maker_delay: TestStateAll = () => {
+      const state = st.d.rea_wa.ok(() => sleep(10, 1));
+      const set = (val: Result<number, string>) => state.set(val);
+      return { o: false, s: false, w: true, ws: false, state, set };
+    };
+    it("Subscribing And Unsubscribing With Actual Delay", async function () {
+      await test_state_sub(maker_delay, 20);
+    });
+    describe("Then With Actual Delay", async function () {
+      await test_state_then(maker_delay, 20);
+    });
+    const maker_write: TestStateWrite = () => {
+      const state = st.d.rea_wa.ok(() => sleep(10, 1), true);
+      const set = (val: Result<number, string>) => state.set(val);
+      return { o: false, s: false, w: true, ws: false, state, set };
+    };
+    it("Write", async function () {
+      await test_state_write(maker_write);
+    });
+  });
+});
