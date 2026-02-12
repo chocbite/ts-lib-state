@@ -55,6 +55,7 @@ export const state = {
   err_ws: STATE_SYNC.res_ws.err,
   from_ws: STATE_SYNC.res_ws.ok,
 };
+export default state;
 
 export {
   type StateArrayRead,
