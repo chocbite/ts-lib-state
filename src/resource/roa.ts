@@ -30,7 +30,10 @@ import {
  * @template RT - The type of the state’s value when read.
  * @template REL - The type of related states, defaults to an empty object.*/
 export interface StateResourceOwnerROA<RT, WT, REL extends Option<RELATED>> {
+  /**Updates the resource and fulfills all promises for value
+   * @param update if true, also updates the buffer and notifies subscribers, otherwise only fulfills the promises for single gets*/
   update_single(value: ResultOk<RT>, update?: boolean): void;
+  /**Updates the resource subscribers and buffer with the given value*/
   update_resource(value: ResultOk<RT>): void;
   get buffer(): ResultOk<RT> | undefined;
   get state(): State<RT, WT, REL>;

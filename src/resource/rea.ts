@@ -37,8 +37,12 @@ import {
  * @template RT - The type of the state’s value when read.
  * @template REL - The type of related states, defaults to an empty object.*/
 export interface StateResourceOwnerREA<RT, WT, REL extends Option<RELATED>> {
+  /**Updates the resource and fulfills all promises for value
+   * @param update if true, also updates the buffer and notifies subscribers, otherwise only fulfills the promises for single gets*/
   update_single(value: Result<RT, string>, update?: boolean): void;
+  /**Updates the resource subscribers and buffer with the given value*/
   update_resource(value: Result<RT, string>): void;
+  /**Gets the current buffer value*/
   get buffer(): Result<RT, string> | undefined;
   get state(): State<RT, WT, REL>;
   get read_only(): StateREA<RT, REL, WT>;
@@ -308,7 +312,10 @@ const rea = {
  * @template WT - The type which can be written to the state.
  * @template REL - The type of related states, defaults to an empty object.*/
 export interface StateResourceOwnerREAWA<RT, WT, REL extends Option<RELATED>> {
+  /**Updates the resource and fulfills all promises for value
+   * @param update if true, also updates the buffer and notifies subscribers, otherwise only fulfills the promises for single gets*/
   update_single(value: Result<RT, string>, update?: boolean): void;
+  /**Updates the resource subscribers and buffer with the given value*/
   update_resource(value: Result<RT, string>): void;
   get buffer(): Result<RT, string> | undefined;
   get state(): State<RT, WT, REL>;
