@@ -39,6 +39,8 @@ export interface StateNumberRelated extends StateRelated {
   max?: number;
   unit?: string;
   decimals?: number;
+  step?: number;
+  start?: number;
 }
 
 export class StateNumberHelper
