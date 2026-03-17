@@ -27,7 +27,7 @@ States are named using short letter codes that describe their capabilities:
 | `O` | Read always returns `Ok` (no error) |
 | `E` | Read may return an error |
 | `S` | Synchronous read |
-| `A` | Asynchronous read |
+| `A` | Async on initial load; synchronous once resolved |
 | `WS` | Synchronous write |
 | `WA` | Asynchronous write |
 
@@ -91,26 +91,33 @@ await lazyMut.write(200);
 
 ### Delayed states (`st.d`)
 
-Values are resolved asynchronously. Use `await` or `.then()` to read.
+The initial value is fetched asynchronously (e.g. from a server). Once the promise resolves the state behaves like a sync state: `get()`, `ok()`, and `then()` all return synchronously, and `rsync` becomes `true`.
 
 ```ts
-// Always-ok async state
+// Always-ok delayed state – first access triggers the async init
 const data = st.d.roa.ok(() => fetch('/api/value').then(r => r.json()));
+
+// Await the first resolution
 const result = await data; // { ok: true, value: ... }
 
-// May error
+// From here on, reads are synchronous
+data.get();  // { ok: true, value: ... }
+data.ok();   // the value directly
+
+// May error on first load
 const fallible = st.d.rea.ok(() => fetchMayFail());
 const res = await fallible; // { ok: true, value: ... } or { ok: false, err: '...' }
 
-// Writable with synchronous write
+// Writable with synchronous write (value available sync after first await)
 const syncWrite = st.d.roa_ws.ok(() => loadFromServer(), true);
-syncWrite.write_sync(42);
+await syncWrite; // wait for initial load
+syncWrite.write_sync(42); // synchronous write thereafter
 
 // Writable with asynchronous write
 const asyncWrite = st.d.roa_wa.ok(() => loadFromServer(), true);
 await asyncWrite.write(42);
 
-// Subscribe – callback fires once the value is resolved and on every update
+// Subscribe – callback fires once the value is resolved and on every subsequent update
 const unsub = data.sub((value) => {
   console.log('data ready:', value.value);
 });
