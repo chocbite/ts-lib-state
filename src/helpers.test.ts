@@ -1,6 +1,6 @@
 import { err } from "@chocbite/ts-lib-result";
 import { describe, expect, it } from "vitest";
-import { state as st } from "..";
+import { state as st } from ".";
 
 //##################################################################################################################################################
 //      _   _ _    _ __  __ ____  ______ _____
@@ -19,9 +19,9 @@ describe("State Number Min Max", async () => {
     expect((await state_inst).unwrap).to.equal(5);
     expect((await state_inst.limit(11)).unwrap).to.equal(10);
     expect((await state_inst.limit(-11)).unwrap).to.equal(0);
-    state_inst.write(11);
+    await state_inst.write(11);
     expect((await state_inst).unwrap).to.equal(10);
-    state_inst.write(-11);
+    await state_inst.write(-11);
     expect((await state_inst).unwrap).to.equal(0);
   });
   it("Checking checker min max", async () => {
@@ -79,9 +79,9 @@ describe("State Number decimals", async () => {
     expect((await state_inst).unwrap).to.equal(5);
     expect((await state_inst.limit(11)).unwrap).to.equal(11.1);
     expect((await state_inst.limit(-11)).unwrap).to.equal(-11.1);
-    state_inst.write(11);
+    await state_inst.write(11);
     expect((await state_inst).unwrap).to.equal(11.1);
-    state_inst.write(-11);
+    await state_inst.write(-11);
     expect((await state_inst).unwrap).to.equal(-11.1);
   });
   it("Checking limiter decimals step start", async () => {
@@ -100,9 +100,9 @@ describe("State Number decimals", async () => {
     expect((await state_inst).unwrap).to.equal(5);
     expect((await state_inst.limit(11)).unwrap).to.equal(10.999);
     expect((await state_inst.limit(-11)).unwrap).to.equal(-11);
-    state_inst.write(11);
+    await state_inst.write(11);
     expect((await state_inst).unwrap).to.equal(10.999);
-    state_inst.write(-11);
+    await state_inst.write(-11);
     expect((await state_inst).unwrap).to.equal(-11);
   });
 });
@@ -116,9 +116,9 @@ describe("State Number step start", async () => {
     expect((await state_inst).unwrap).to.equal(5);
     expect((await state_inst.limit(11)).unwrap).to.equal(11.05);
     expect((await state_inst.limit(-11)).unwrap).to.equal(-11.05);
-    state_inst.write(11);
+    await state_inst.write(11);
     expect((await state_inst).unwrap).to.equal(11.05);
-    state_inst.write(-11);
+    await state_inst.write(-11);
     expect((await state_inst).unwrap).to.equal(-11.05);
   });
   it("Checking limiter step start", async () => {
@@ -136,11 +136,11 @@ describe("State Number step start", async () => {
     );
     expect((await state_inst).unwrap).to.equal(5);
     expect((await state_inst.limit(11)).unwrap).to.equal(10.94);
-    expect((await state_inst.limit(-11)).unwrap).to.equal(-11.03);
-    state_inst.write(11);
+    expect((await state_inst.limit(-11)).unwrap.toFixed(2)).to.equal("-11.03");
+    await state_inst.write(11);
     expect((await state_inst).unwrap).to.equal(10.94);
-    state_inst.write(-11);
-    expect((await state_inst).unwrap).to.equal(-11.03);
+    await state_inst.write(-11);
+    expect((await state_inst).unwrap.toFixed(2)).to.equal("-11.03");
   });
 });
 //##################################################################################################################################################
@@ -161,7 +161,7 @@ describe("State String Max Len", async () => {
     expect((await state_inst.limit("12345678901")).unwrap).to.equal(
       "1234567890",
     );
-    state_inst.write("12345678901");
+    await state_inst.write("12345678901");
     expect((await state_inst).unwrap).to.equal("1234567890");
   });
   it("Checking checker max len", async () => {
