@@ -35,6 +35,69 @@ Examples: `ROS` = Read-Only Sync Ok, `REAWS` = Read Error Async with Sync-Write.
 
 ---
 
+## Type narrowing
+
+When you accept a `State<RT>` as a parameter the concrete type behind the union is unknown. Four boolean discriminant properties let TypeScript narrow the union at both compile time and runtime, unlocking the methods that match each capability.
+
+| Property | When `true` | Methods unlocked |
+|----------|-------------|------------------|
+| `rsync` | Read is synchronous | `get()` is guaranteed present |
+| `rok` | Read never errors | `ok()` is guaranteed present; result is `ResultOk<RT>` |
+| `writable` | State accepts writes | `write()` is guaranteed present |
+| `wsync` | Write is synchronous | `write_sync()` is guaranteed present |
+
+### Reading
+
+```ts
+function readValue<RT>(state: State<RT>) {
+  if (state.rsync) {
+    // TypeScript now knows get() is available
+    const result = state.get();
+    if (state.rok) {
+      // TypeScript now knows ok() is available and result is ResultOk<RT>
+      return state.ok(); // RT directly
+    }
+    return result; // Result<RT, string>
+  }
+  // Async path – always works via then / await
+  return state.then(v => v);
+}
+```
+
+### Writing
+
+```ts
+async function writeValue<RT>(state: State<RT>, value: RT) {
+  if (!state.writable) return; // read-only state, skip
+
+  if (state.wsync) {
+    state.write_sync(value); // synchronous write
+  } else {
+    await state.write(value); // async write
+  }
+}
+```
+
+### Combined narrowing
+
+All four properties can be combined freely. After each `if` check TypeScript eliminates all union members that do not satisfy the constraint, so subsequent method calls are fully type-safe without any casts.
+
+```ts
+function handleState<RT>(state: State<RT>, value: RT) {
+  // Sync readable + always-ok
+  if (state.rsync && state.rok) {
+    console.log(state.ok()); // RT — no Result wrapper needed
+  }
+
+  // Writable + sync write
+  if (state.writable && state.wsync) {
+    state.write_sync(value);
+  }
+}
+```
+
+---
+
 ## Sync / Lazy / Delayed states
 
 ### Sync states (`st.s`)
