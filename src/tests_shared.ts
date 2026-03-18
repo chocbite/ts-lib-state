@@ -3,17 +3,13 @@ import { err, ok, ResultOk, type Result } from "@chocbite/ts-lib-result";
 import { expect, it } from "vitest";
 import type {
   StateREA,
-  StateREAWA,
-  StateREAWS,
+  StateREAW,
   StateRES,
-  StateRESWA,
-  StateRESWS,
+  StateRESW,
   StateROA,
-  StateROAWA,
-  StateROAWS,
+  StateROAW,
   StateROS,
-  StateROSWA,
-  StateROSWS,
+  StateROSW,
   StateSub,
 } from "./types";
 
@@ -21,11 +17,10 @@ function err_gen() {
   return "Test Error";
 }
 
-type StateType<O, SY, W, WS, ST, R> = {
+type StateType<O, SY, W, ST, R> = {
   o: O;
   s: SY;
   w: W;
-  ws: WS;
   state: ST;
   set: (val: R) => void;
 };
@@ -35,55 +30,36 @@ type ROK = ResultOk<number>;
 export type TestStateAll = (
   setter?: (w: number) => void,
 ) =>
-  | StateType<true, true, false, false, StateROS<number>, ROK>
-  | StateType<true, true, true, true, StateROSWS<number>, ROK>
-  | StateType<true, true, true, false, StateROSWA<number>, ROK>
-  | StateType<true, false, false, false, StateROA<number>, ROK>
-  | StateType<true, false, true, true, StateROAWS<number>, ROK>
-  | StateType<true, false, true, false, StateROAWA<number>, ROK>
-  | StateType<false, true, false, false, StateRES<number>, RERR>
-  | StateType<false, true, true, true, StateRESWS<number>, RERR>
-  | StateType<false, true, true, false, StateRESWA<number>, RERR>
-  | StateType<false, false, false, false, StateREA<number>, RERR>
-  | StateType<false, false, true, true, StateREAWS<number>, RERR>
-  | StateType<false, false, true, false, StateREAWA<number>, RERR>;
+  | StateType<true, true, false, StateROS<number>, ROK>
+  | StateType<true, true, true, StateROSW<number>, ROK>
+  | StateType<true, false, false, StateROA<number>, ROK>
+  | StateType<true, false, true, StateROAW<number>, ROK>
+  | StateType<false, true, false, StateRES<number>, RERR>
+  | StateType<false, true, true, StateRESW<number>, RERR>
+  | StateType<false, false, false, StateREA<number>, RERR>
+  | StateType<false, false, true, StateREAW<number>, RERR>;
 
 export type TestStateOk = () =>
-  | StateType<true, true, false, false, StateROS<number>, ROK>
-  | StateType<true, true, true, true, StateROSWS<number>, ROK>
-  | StateType<true, true, true, false, StateROSWA<number>, ROK>
-  | StateType<true, false, false, false, StateROA<number>, ROK>
-  | StateType<true, false, true, true, StateROAWS<number>, ROK>
-  | StateType<true, false, true, false, StateROAWA<number>, ROK>;
+  | StateType<true, true, false, StateROS<number>, ROK>
+  | StateType<true, true, true, StateROSW<number>, ROK>
+  | StateType<true, false, false, StateROA<number>, ROK>
+  | StateType<true, false, true, StateROAW<number>, ROK>;
 
 export type TestStateSync = () =>
-  | StateType<true, true, false, false, StateROS<number>, ROK>
-  | StateType<true, true, true, true, StateROSWS<number>, ROK>
-  | StateType<true, true, true, false, StateROSWA<number>, ROK>
-  | StateType<false, true, false, false, StateRES<number>, RERR>
-  | StateType<false, true, true, true, StateRESWS<number>, RERR>
-  | StateType<false, true, true, false, StateRESWA<number>, RERR>;
+  | StateType<true, true, false, StateROS<number>, ROK>
+  | StateType<true, true, true, StateROSW<number>, ROK>
+  | StateType<false, true, false, StateRES<number>, RERR>
+  | StateType<false, true, true, StateRESW<number>, RERR>;
 
 export type TestStateOkSync = () =>
-  | StateType<true, true, false, false, StateROS<number>, ROK>
-  | StateType<true, true, true, true, StateROSWS<number>, ROK>
-  | StateType<true, true, true, false, StateROSWA<number>, ROK>;
+  | StateType<true, true, false, StateROS<number>, ROK>
+  | StateType<true, true, true, StateROSW<number>, ROK>;
 
 export type TestStateWrite = () =>
-  | StateType<true, true, true, true, StateROSWS<number>, ROK>
-  | StateType<true, true, true, false, StateROSWA<number>, ROK>
-  | StateType<true, false, true, true, StateROAWS<number>, ROK>
-  | StateType<true, false, true, false, StateROAWA<number>, ROK>
-  | StateType<false, true, true, true, StateRESWS<number>, RERR>
-  | StateType<false, true, true, false, StateRESWA<number>, RERR>
-  | StateType<false, false, true, true, StateREAWS<number>, RERR>
-  | StateType<false, false, true, false, StateREAWA<number>, RERR>;
-
-export type TestStateWriteSync = () =>
-  | StateType<true, true, true, true, StateROSWS<number>, ROK>
-  | StateType<true, false, true, true, StateROAWS<number>, ROK>
-  | StateType<false, true, true, true, StateRESWS<number>, RERR>
-  | StateType<false, false, true, true, StateREAWS<number>, RERR>;
+  | StateType<true, true, true, StateROSW<number>, ROK>
+  | StateType<true, false, true, StateROAW<number>, ROK>
+  | StateType<false, true, true, StateRESW<number>, RERR>
+  | StateType<false, false, true, StateREAW<number>, RERR>;
 
 //       _____ _    _ ____   _____  _____ _____  _____ ____  ______
 //      / ____| |  | |  _ \ / ____|/ ____|  __ \|_   _|  _ \|  ____|
@@ -324,78 +300,3 @@ export async function test_state_write(
   const awaited = await state;
   expect(awaited).toEqual(ok(15));
 }
-
-//     __          _______  _____ _______ ______    _______     ___   _  _____
-//     \ \        / /  __ \|_   _|__   __|  ____|  / ____\ \   / / \ | |/ ____|
-//      \ \  /\  / /| |__) | | |    | |  | |__    | (___  \ \_/ /|  \| | |
-//       \ \/  \/ / |  _  /  | |    | |  |  __|    \___ \  \   / | . ` | |
-//        \  /\  /  | | \ \ _| |_   | |  | |____   ____) |  | |  | |\  | |____
-//         \/  \/   |_|  \_\_____|  |_|  |______| |_____/   |_|  |_| \_|\_____|
-/**Tests different cases of using writeSync on a state
- * Expects initial value to be number 1
- */
-export async function test_state_write_sync(
-  state_maker: TestStateWriteSync,
-): Promise<void> {
-  const { state } = state_maker();
-  expect(state.write_sync(10)).toEqual(ok(undefined));
-  const awaited = await state;
-  expect(awaited).toEqual(ok(10));
-}
-
-// describe(
-//   "Normal async states with setter set to simple function",
-//   {
-//     timeout: 50,
-//   },
-//   function () {
-//     let tests = gen_sync_states((val, state) => Ok(state.setOk(val)));
-//     for (let i = 0; i < tests.length; i++) {
-//       const test = tests[i];
-//       it(test[0], async function () {
-//         let state = test[1];
-//         expect(state.write(10)).toEqual(Ok(undefined));
-//         let awaited = await state;
-//         expect(awaited).toEqual(Ok(10));
-//       });
-//     }
-//   }
-// );
-
-// describe(
-//   "Normal states with setter set to transforming function",
-//   {
-//     timeout: 50,
-//   },
-//   function () {
-//     let tests = gen_states(async (val, state) => Ok(state.setOk(val * 2)));
-//     for (let i = 0; i < tests.length; i++) {
-//       const test = tests[i];
-//       it(test[0], async function () {
-//         let state = test[1];
-//         expect(state.write(10)).equal(true);
-//         let awaited = await state;
-//         expect(awaited).toEqual(Ok(20));
-//       });
-//     }
-//   }
-// );
-
-// describe(
-//   "Normal states with setter set to function returning error",
-//   {
-//     timeout: 50,
-//   },
-//   function () {
-//     let tests = gen_states(async (_val, state) => Ok(state.setErr(errGen())));
-//     for (let i = 0; i < tests.length; i++) {
-//       const test = tests[i];
-//       it(test[0], async function () {
-//         let state = test[1];
-//         expect(state.write(10)).equal(true);
-//         let awaited = await state;
-//         expect(awaited).toEqual(Err(errGen()));
-//       });
-//     }
-//   }
-// );

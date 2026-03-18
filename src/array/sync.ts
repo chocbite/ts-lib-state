@@ -8,19 +8,19 @@ import {
   type Result,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "../base";
+import { type StateHelper as HELPER } from "../helpers";
 import { STATE_SYNC, type StateSyncROS } from "../sync/sync";
 import type {
-  StateHelper as HELPER,
   StateRelated as RELATED,
   StateArray,
   StateArrayRES,
-  StateArrayRESWS,
+  StateArrayRESW,
   StateArrayROS,
-  StateArrayROSWS,
+  StateArrayROSW,
   StateRES,
-  StateRESWS,
+  StateRESW,
   StateROS,
-  StateROSWS,
+  StateROSW,
   StateSetREXWS,
 } from "../types";
 
@@ -120,17 +120,17 @@ export type StateArraySyncROS<
   Owner<AT, ResultOk<SAR<AT>>, REL> & {
     readonly state: StateArray<AT, REL>;
     readonly read_only: StateArrayROS<AT, REL>;
-    readonly read_write?: StateArrayROSWS<AT, REL>;
+    readonly read_write?: StateArrayROSW<AT, REL>;
   };
 
 export type StateArraySyncROSWS<
   AT,
   REL extends Option<RELATED> = Option<{}>,
-> = StateROSWS<SAR<AT>, SAW<AT>, REL> &
+> = StateROSW<SAR<AT>, SAW<AT>, REL> &
   OwnerWS<AT, ResultOk<SAR<AT>>, REL> & {
     readonly state: StateArray<AT, REL>;
     readonly read_only: StateArrayROS<AT, REL>;
-    readonly read_write: StateArrayROSWS<AT, REL>;
+    readonly read_write: StateArrayROSW<AT, REL>;
   };
 
 export type StateArraySyncRES<
@@ -141,18 +141,18 @@ export type StateArraySyncRES<
     set_err(error: string): void;
     readonly state: StateArray<AT, REL>;
     readonly read_only: StateArrayRES<AT, REL>;
-    readonly read_write?: StateArrayRESWS<AT, REL>;
+    readonly read_write?: StateArrayRESW<AT, REL>;
   };
 
 export type StateArraySyncRESWS<
   AT,
   REL extends Option<RELATED> = Option<{}>,
-> = StateRESWS<SAR<AT>, SAW<AT>, REL> &
+> = StateRESW<SAR<AT>, SAW<AT>, REL> &
   OwnerWS<AT, ResultOk<SAR<AT>>, REL> & {
     set_err(error: string): void;
     readonly state: StateArray<AT, REL>;
     readonly read_only: StateArrayRES<AT, REL>;
-    readonly read_write: StateArrayRESWS<AT, REL>;
+    readonly read_write: StateArrayRESW<AT, REL>;
   };
 
 //##################################################################################################################################################
@@ -251,8 +251,8 @@ class RXS<
   get read_only(): StateArrayROS<AT, REL> {
     return this as StateArrayROS<AT, REL>;
   }
-  get read_write(): StateArrayROSWS<AT, REL> | undefined {
-    return this.#setter ? (this as StateArrayROSWS<AT, REL>) : undefined;
+  get read_write(): StateArrayROSW<AT, REL> | undefined {
+    return this.#setter ? (this as StateArrayROSW<AT, REL>) : undefined;
   }
 
   //#Reader Context
@@ -289,13 +289,17 @@ class RXS<
   write_sync(value: SAW<AT>): Result<void, string> {
     if (this.#setter)
       return this.#setter(value, this as OwnerWS<AT, RRT, REL>, this.get());
-    return err("State not writable");
+    return err("not writable");
   }
-  limit(value: SAW<AT>): Result<SAW<AT>, string> {
-    return this.#helper?.limit ? this.#helper.limit(value) : ok(value);
+  limit(value: SAW<AT>): Promise<Result<SAW<AT>, string>> {
+    return this.#helper?.limit
+      ? this.#helper.limit(value)
+      : Promise.resolve(ok(value));
   }
-  check(value: SAW<AT>): Result<SAW<AT>, string> {
-    return this.#helper?.check ? this.#helper.check(value) : ok(value);
+  check(value: SAW<AT>): Promise<Result<SAW<AT>, string>> {
+    return this.#helper?.check
+      ? this.#helper.check(value)
+      : Promise.resolve(ok(value));
   }
 
   //Array/Owner Context

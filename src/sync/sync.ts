@@ -7,14 +7,14 @@ import {
   type Result,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "../base";
+import { type StateHelper as Helper } from "../helpers";
 import {
-  type StateHelper as Helper,
+  StateRESW,
+  StateROSW,
   type StateRelated as RELATED,
   type State,
   type StateRES,
-  type StateRESWS,
   type StateROS,
-  type StateROSWS,
 } from "../types";
 
 //##################################################################################################################################################
@@ -32,9 +32,9 @@ type SyncSetter<
   WT = RT,
 > = (
   value: WT,
-  state: OwnerWS<RT, RRT, WT, REL>,
+  state: OwnerWrite<RT, RRT, WT, REL>,
   old?: RRT,
-) => Result<void, string>;
+) => Promise<Result<void, string>>;
 
 interface Owner<
   RT,
@@ -47,7 +47,7 @@ interface Owner<
   setter?: SyncSetter<RT, RRT, REL, WT>;
   readonly state: State<RT, WT, REL>;
 }
-export interface OwnerWS<
+export interface OwnerWrite<
   RT,
   RRT extends Result<RT, string>,
   WT,
@@ -63,17 +63,17 @@ export type StateSyncROS<
 > = StateROS<RT, REL, WT> &
   Owner<RT, ResultOk<RT>, WT, REL> & {
     readonly read_only: StateROS<RT, REL, WT>;
-    readonly read_write?: StateROSWS<RT, WT, REL>;
+    readonly read_write?: StateROSW<RT, WT, REL>;
   };
 
-export type StateSyncROSWS<
+export type StateSyncROSW<
   RT,
   WT = RT,
   REL extends Option<RELATED> = Option<{}>,
-> = StateROSWS<RT, WT, REL> &
-  OwnerWS<RT, ResultOk<RT>, WT, REL> & {
+> = StateROSW<RT, WT, REL> &
+  OwnerWrite<RT, ResultOk<RT>, WT, REL> & {
     readonly read_only: StateROS<RT, REL, WT>;
-    readonly read_write: StateROSWS<RT, WT, REL>;
+    readonly read_write: StateROSW<RT, WT, REL>;
   };
 
 export type StateSyncRES<
@@ -84,18 +84,18 @@ export type StateSyncRES<
   Owner<RT, Result<RT, string>, WT, REL> & {
     set_err(error: string): void;
     readonly read_only: StateRES<RT, REL, WT>;
-    readonly read_write?: StateRESWS<RT, WT, REL>;
+    readonly read_write?: StateRESW<RT, WT, REL>;
   };
 
-export type StateSyncRESWS<
+export type StateSyncRESW<
   RT,
   WT = RT,
   REL extends Option<RELATED> = Option<{}>,
-> = StateRESWS<RT, WT, REL> &
-  OwnerWS<RT, Result<RT, string>, WT, REL> & {
+> = StateRESW<RT, WT, REL> &
+  OwnerWrite<RT, Result<RT, string>, WT, REL> & {
     set_err(error: string): void;
     readonly read_only: StateRES<RT, REL, WT>;
-    readonly read_write: StateRESWS<RT, WT, REL>;
+    readonly read_write: StateRESW<RT, WT, REL>;
   };
 
 //##################################################################################################################################################
@@ -124,12 +124,15 @@ class RXS<
     if (setter === true)
       this.#setter = (value, state, old) => {
         if (old && !old.err && (value as unknown as RT) === old.value)
-          return ok(undefined);
-        return this.#helper?.limit
-          ? this.#helper
-              ?.limit(value)
-              .map((e) => state.set_ok(e as unknown as RT))
-          : ok(state.set_ok(value as unknown as RT));
+          return Promise.resolve(ok(undefined));
+        if (this.#helper) {
+          return this.#helper.limit(value).then((e) => {
+            if (e.err) return err(e.error);
+            state.set_ok(e.value as unknown as RT);
+            return ok(undefined);
+          });
+        }
+        return Promise.resolve(ok(state.set_ok(value as unknown as RT)));
       };
     else this.#setter = setter;
     if (helper) this.#helper = helper;
@@ -192,26 +195,22 @@ class RXS<
   get writable(): boolean {
     return this.#setter !== undefined;
   }
-  get wsync(): boolean {
-    return this.writable;
-  }
-  async write(value: WT): Promise<Result<void, string>> {
-    return this.write_sync(value);
-  }
-  write_sync(value: WT): Result<void, string> {
+  write(value: WT): Promise<Result<void, string>> {
     if (this.#setter)
-      return this.#setter(
-        value,
-        this as OwnerWS<RT, RRT, WT, REL>,
-        this.#value,
+      return Promise.resolve(
+        this.#setter(value, this as OwnerWrite<RT, RRT, WT, REL>, this.#value),
       );
-    return err("State not writable");
+    return Promise.resolve(err("not writable"));
   }
-  limit(value: WT): Result<WT, string> {
-    return this.#helper?.limit ? this.#helper.limit(value) : ok(value);
+  limit(value: WT): Promise<Result<WT, string>> {
+    return this.#helper?.limit
+      ? this.#helper.limit(value)
+      : Promise.resolve(ok(value));
   }
-  check(value: WT): Result<WT, string> {
-    return this.#helper?.check ? this.#helper.check(value) : ok(value);
+  check(value: WT): Promise<Result<WT, string>> {
+    return this.#helper?.check
+      ? this.#helper.check(value)
+      : Promise.resolve(ok(value));
   }
 }
 
@@ -267,7 +266,7 @@ const ros_ws = {
       ok(init),
       helper,
       setter,
-    ) as StateSyncROSWS<RT, WT, REL>;
+    ) as StateSyncROSW<RT, WT, REL>;
   },
   /**Creates a sync ok state from an initial result.
    * @param init initial result for state.
@@ -281,7 +280,7 @@ const ros_ws = {
       init,
       helper,
       setter,
-    ) as StateSyncROSWS<RT, WT, REL>;
+    ) as StateSyncROSW<RT, WT, REL>;
   },
 };
 
@@ -339,7 +338,7 @@ const res_ws = {
       ok(init),
       helper,
       setter,
-    ) as StateSyncRESWS<RT, WT, REL>;
+    ) as StateSyncRESW<RT, WT, REL>;
   },
   /**Creates a writable sync state from an initial error.
    * @param init initial error for state.
@@ -354,7 +353,7 @@ const res_ws = {
       err(init),
       helper,
       setter,
-    ) as StateSyncRESWS<RT, WT, REL>;
+    ) as StateSyncRESW<RT, WT, REL>;
   },
   /**Creates a writable sync state from an initial result.
    * @param init initial result for state.
@@ -368,7 +367,7 @@ const res_ws = {
       init,
       helper,
       setter,
-    ) as StateSyncRESWS<RT, WT, REL>;
+    ) as StateSyncRESW<RT, WT, REL>;
   },
 };
 
