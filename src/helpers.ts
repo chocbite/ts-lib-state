@@ -294,15 +294,20 @@ type StateEnumHelperList<K extends PropertyKey> = {
 export interface StateEnumRelated<
   L extends StateEnumHelperList<any>,
 > extends StateRelatedBase {
-  list: L;
-  map<K extends keyof L, R>(func: (key: K, val: EnumHelperEntry) => R): R[];
+  list: State<L>;
+  map<K extends keyof L, R>(
+    func: (key: K, val: EnumHelperEntry) => R,
+  ): Promise<R[]>;
 }
 
 export class StateEnumHelper<
   L extends StateEnumHelperList<any>,
   K extends PropertyKey = keyof L,
   R extends StateRelatedBase = StateEnumRelated<L>,
-> extends StateHelper<K, OptionSome<R>> {
+>
+  extends StateHelper<K, OptionSome<R>>
+  implements StateEnumRelated<L>
+{
   readonly list: State<L>;
 
   constructor(list: State<L>, writable?: State<boolean>) {
