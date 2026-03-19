@@ -298,7 +298,7 @@ export interface StateEnumRelated<
 }
 
 export class StateEnumHelper<
-  L extends StateEnumHelperList<any>,
+  L extends StateEnumHelperList<PropertyKey> = StateEnumHelperList<PropertyKey>,
   K extends PropertyKey = keyof L,
   R extends StateRelatedBase = StateEnumRelated<L>,
 >
@@ -331,7 +331,7 @@ export class StateEnumHelper<
 const enums = {
   /**Creates an enum helper struct, use list method to make a list with correct typing*/
   helper<
-    L extends StateEnumHelperList<any>,
+    L extends StateEnumHelperList<PropertyKey>,
     K extends PropertyKey = keyof L,
     R extends StateRelatedBase = StateEnumRelated<L>,
   >(list: State<L>, writable?: State<boolean>) {
