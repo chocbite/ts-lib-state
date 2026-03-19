@@ -25,13 +25,13 @@ export type StateInferSub<S extends State<any>> = StateSub<StateInferResult<S>>;
 /**Map of values or states related to a state */
 export type StateRelated = {};
 
-export type StateSetREXWA<RT, S, WT = RT> = (
+export type StateSetREXW<RT, S, WT = RT> = (
   value: WT,
   state: S,
   old?: Result<RT, string>,
 ) => Promise<Result<void, string>>;
 
-export type StateSetROXWA<RT, S, WT = RT> = (
+export type StateSetROXW<RT, S, WT = RT> = (
   value: WT,
   state: S,
   old?: ResultOk<RT>,

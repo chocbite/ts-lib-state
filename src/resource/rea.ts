@@ -311,7 +311,7 @@ const rea = {
  * @template RT - The type of the state’s value when read.
  * @template WT - The type which can be written to the state.
  * @template REL - The type of related states, defaults to an empty object.*/
-export interface StateResourceOwnerREAWA<RT, WT, REL extends Option<RELATED>> {
+export interface StateResourceOwnerREAW<RT, WT, REL extends Option<RELATED>> {
   /**Updates the resource and fulfills all promises for value
    * @param update if true, also updates the buffer and notifies subscribers, otherwise only fulfills the promises for single gets*/
   update_single(value: Result<RT, string>, update?: boolean): void;
@@ -323,13 +323,13 @@ export interface StateResourceOwnerREAWA<RT, WT, REL extends Option<RELATED>> {
   get read_write(): StateREAW<RT, WT, REL>;
 }
 
-export abstract class StateResourceREAWA<
+export abstract class StateResourceREAW<
   RT,
   WT = RT,
   REL extends Option<RELATED> = Option<{}>,
 >
   extends StateBase<RT, WT, REL, Result<RT, string>>
-  implements StateResourceOwnerREAWA<RT, WT, REL>
+  implements StateResourceOwnerREAW<RT, WT, REL>
 {
   #valid: number | true = 0;
   #fetching: boolean = false;
@@ -389,23 +389,23 @@ export abstract class StateResourceREAWA<
 
   /**Called if the state is awaited, returns the value once*/
   protected abstract single_get(
-    state: StateResourceOwnerREAWA<RT, WT, REL>,
+    state: StateResourceOwnerREAW<RT, WT, REL>,
   ): void;
 
   /**Called when state is subscribed to to setup connection to remote resource*/
   protected abstract setup_connection(
-    state: StateResourceOwnerREAWA<RT, WT, REL>,
+    state: StateResourceOwnerREAW<RT, WT, REL>,
   ): void;
 
   /**Called when state is no longer subscribed to to cleanup connection to remote resource*/
   protected abstract teardown_connection(
-    state: StateResourceOwnerREAWA<RT, WT, REL>,
+    state: StateResourceOwnerREAW<RT, WT, REL>,
   ): void;
 
   /**Called after write debounce finished with the last written value*/
   protected abstract write_action(
     value: WT,
-    state: StateResourceOwnerREAWA<RT, WT, REL>,
+    state: StateResourceOwnerREAW<RT, WT, REL>,
   ): Promise<Result<void, string>>;
 
   update_single(value: Result<RT, string>, update: boolean = false) {
@@ -499,30 +499,30 @@ export abstract class StateResourceREAWA<
 }
 
 //##################################################################################################################################################
-export interface OwnerWA<
+export interface OwnerWrite<
   RT,
   WT,
   REL extends Option<RELATED>,
-> extends StateResourceOwnerREAWA<RT, WT, REL> {}
+> extends StateResourceOwnerREAW<RT, WT, REL> {}
 
-export type StateResourceFuncREAWA<
+export type StateResourceFuncREAW<
   RT,
   REL extends Option<RELATED> = Option<{}>,
   WT = any,
-> = StateREAW<RT, WT, REL> & OwnerWA<RT, WT, REL>;
+> = StateREAW<RT, WT, REL> & OwnerWrite<RT, WT, REL>;
 /**Alternative state resource which can be initialized with functions
  * @template RT - The type of the state’s value when read.
  * @template WT - The type which can be written to the state.
  * @template REL - The type of related states, defaults to an empty object.*/
 
-class FuncREAWA<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>
-  extends StateResourceREAWA<RT, WT, REL>
-  implements OwnerWA<RT, WT, REL>
+class FuncREAW<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>
+  extends StateResourceREAW<RT, WT, REL>
+  implements OwnerWrite<RT, WT, REL>
 {
   constructor(
-    once: (state: OwnerWA<RT, WT, REL>) => void,
-    setup: (state: OwnerWA<RT, WT, REL>) => void,
-    teardown: (state: OwnerWA<RT, WT, REL>) => void,
+    once: (state: OwnerWrite<RT, WT, REL>) => void,
+    setup: (state: OwnerWrite<RT, WT, REL>) => void,
+    teardown: (state: OwnerWrite<RT, WT, REL>) => void,
     timeout: number,
     debounce: number,
     validity: number | true,
@@ -530,7 +530,7 @@ class FuncREAWA<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>
     write_debounce?: number,
     write_action?: (
       value: WT,
-      state: OwnerWA<RT, WT, REL>,
+      state: OwnerWrite<RT, WT, REL>,
     ) => Promise<Result<void, string>>,
     helper?: Helper<WT, REL>,
   ) {
@@ -555,18 +555,18 @@ class FuncREAWA<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>
   #helper?: Helper<WT, REL>;
 
   /**Called if the state is awaited, returns the value once*/
-  protected single_get(_state: OwnerWA<RT, WT, REL>): void {}
+  protected single_get(_state: OwnerWrite<RT, WT, REL>): void {}
 
   /**Called when state is subscribed to to setup connection to remote resource*/
-  protected setup_connection(_state: OwnerWA<RT, WT, REL>): void {}
+  protected setup_connection(_state: OwnerWrite<RT, WT, REL>): void {}
 
   /**Called when state is no longer subscribed to to cleanup connection to remote resource*/
-  protected teardown_connection(_state: OwnerWA<RT, WT, REL>): void {}
+  protected teardown_connection(_state: OwnerWrite<RT, WT, REL>): void {}
 
   /**Called after write debounce finished with the last written value*/
   protected async write_action(
     _value: WT,
-    _state: OwnerWA<RT, WT, REL>,
+    _state: OwnerWrite<RT, WT, REL>,
   ): Promise<Result<void, string>> {
     return err("not writable");
   }
@@ -603,12 +603,12 @@ const rea_wa = {
    * @param write_debounce debounce delay for write calls, only the last write within the delay is used
    * */
   from<RT, REL extends Option<RELATED> = Option<{}>, WT = RT>(
-    once: (state: OwnerWA<RT, WT, REL>) => void,
-    setup: (state: OwnerWA<RT, WT, REL>) => void,
+    once: (state: OwnerWrite<RT, WT, REL>) => void,
+    setup: (state: OwnerWrite<RT, WT, REL>) => void,
     teardown: () => void,
     write_action?: (
       value: WT,
-      state: OwnerWA<RT, WT, REL>,
+      state: OwnerWrite<RT, WT, REL>,
     ) => Promise<Result<void, string>>,
     times?: {
       timeout?: number;
@@ -619,7 +619,7 @@ const rea_wa = {
     },
     helper?: Helper<WT, REL>,
   ) {
-    return new FuncREAWA<RT, WT, REL>(
+    return new FuncREAW<RT, WT, REL>(
       once,
       setup,
       teardown,
@@ -630,9 +630,9 @@ const rea_wa = {
       times?.write_debounce ?? 0,
       write_action,
       helper,
-    ) as StateResourceFuncREAWA<RT, REL, WT>;
+    ) as StateResourceFuncREAW<RT, REL, WT>;
   },
-  class: StateResourceREAWA,
+  class: StateResourceREAW,
 };
 
 //##################################################################################################################################################

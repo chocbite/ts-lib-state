@@ -90,27 +90,15 @@ export {
   type StateLazyROS,
   type StateLazyROSW as StateLazyROSWS,
 } from "./lazy/lazy";
-export {
-  type StateProxyREA,
-  type StateProxyREAW as StateProxyREAWA,
-} from "./proxy/rea";
-export {
-  type StateProxyRES,
-  type StateProxyRESW as StateProxyRESWA,
-} from "./proxy/res";
-export {
-  type StateProxyROA,
-  type StateProxyROAW as StateProxyROAWA,
-} from "./proxy/roa";
-export {
-  type StateProxyROS,
-  type StateProxyROSW as StateProxyROSWA,
-} from "./proxy/ros";
+export { type StateProxyREA, type StateProxyREAW } from "./proxy/rea";
+export { type StateProxyRES, type StateProxyRESW } from "./proxy/res";
+export { type StateProxyROA, type StateProxyROAW } from "./proxy/roa";
+export { type StateProxyROS, type StateProxyROSW } from "./proxy/ros";
 export {
   type StateResourceFuncREA,
-  type StateResourceFuncREAWA,
+  type StateResourceFuncREAW,
   type StateResourceREA,
-  type StateResourceREAWA,
+  type StateResourceREAW,
 } from "./resource/rea";
 export {
   type StateResourceFuncROA,
@@ -118,9 +106,9 @@ export {
 } from "./resource/roa";
 export {
   type StateSyncRES,
-  type StateSyncRESW as StateSyncRESWS,
+  type StateSyncRESW,
   type StateSyncROS,
-  type StateSyncROSW as StateSyncROSWS,
+  type StateSyncROSW,
 } from "./sync/sync";
 
 //       _____ _______    _______ ______   _________     _______  ______  _____
