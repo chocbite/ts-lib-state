@@ -4,7 +4,6 @@ import {
   type Result,
   type ResultOk,
 } from "@chocbite/ts-lib-result";
-import type { StateArrayRead, StateArrayWrite } from "./array/sync";
 
 /**Function used to subscribe to state changes
  * @template RT - The type of the state’s value when read.*/
@@ -291,50 +290,85 @@ export type StateROSW<
   REL extends Option<StateRelated> = Option<{}>,
 > = ROSW<RT, WT, REL>;
 
-//#State Array Types
-export type StateArray<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = State<StateArrayRead<AT>, StateArrayWrite<AT>, REL>;
-
-export type StateArrayREA<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateREA<StateArrayRead<AT>, REL, StateArrayWrite<AT>>;
-
-export type StateArrayROA<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateROA<StateArrayRead<AT>, REL, StateArrayWrite<AT>>;
-
-export type StateArrayRES<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateRES<StateArrayRead<AT>, REL, StateArrayWrite<AT>>;
-
-export type StateArrayROS<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateROS<StateArrayRead<AT>, REL, StateArrayWrite<AT>>;
-
-export type StateArrayREAW<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateREAW<StateArrayRead<AT>, StateArrayWrite<AT>, REL>;
-
-export type StateArrayROAW<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateROAW<StateArrayRead<AT>, StateArrayWrite<AT>, REL>;
-
-export type StateArrayRESW<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateRESW<StateArrayRead<AT>, StateArrayWrite<AT>, REL>;
-
-export type StateArrayROSW<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateROSW<StateArrayRead<AT>, StateArrayWrite<AT>, REL>;
-
 export type StateOpt<REL> = REL extends OptionNone ? Option<{}> : REL;
+
+//               _____  _____        __     __
+//         /\   |  __ \|  __ \     /\\ \   / /
+//        /  \  | |__) | |__) |   /  \\ \_/ /
+//       / /\ \ |  _  /|  _  /   / /\ \\   /
+//      / ____ \| | \ \| | \ \  / ____ \| |
+//     /_/    \_\_|  \_\_|  \_\/_/    \_\_|
+
+export const ARRAY_READ_TYPE = Symbol("state_array_read_type");
+export const ARRAY_READ_INDEX = Symbol("state_array_read_index");
+export const ARRAY_READ_ITEMS = Symbol("state_array_read_items");
+
+export const StateArrayReadType = {
+  added: "added",
+  removed: "removed",
+  changed: "changed",
+  fresh: "fresh",
+} as const;
+export type StateArrayReadType =
+  (typeof StateArrayReadType)[keyof typeof StateArrayReadType];
+
+export type StateArrayRead<TYPE> = TYPE[] &
+  (
+    | {
+        [ARRAY_WRITE_TYPE]: "added";
+        [ARRAY_WRITE_INDEX]: number;
+        [ARRAY_WRITE_ITEMS]: readonly TYPE[];
+      }
+    | {
+        [ARRAY_WRITE_TYPE]: "removed";
+        [ARRAY_WRITE_INDEX]: number;
+        [ARRAY_WRITE_ITEMS]: readonly TYPE[];
+      }
+    | {
+        [ARRAY_WRITE_TYPE]: "changed";
+        [ARRAY_WRITE_INDEX]: number;
+        [ARRAY_WRITE_ITEMS]: readonly TYPE[];
+      }
+    | {
+        [ARRAY_WRITE_TYPE]: "fresh";
+      }
+  );
+
+export const ARRAY_WRITE_TYPE = Symbol("state_array_write_type");
+export const ARRAY_WRITE_INDEX = Symbol("state_array_write_index");
+export const ARRAY_WRITE_ITEMS = Symbol("state_array_write_items");
+export const ARRAY_WRITE_ITEM = Symbol("state_array_write_item");
+export const ARRAY_DELETED_COUNT = Symbol("state_array_deleted_count");
+
+export type StateArrayWrite<TYPE> = TYPE[] &
+  (
+    | {
+        [ARRAY_WRITE_TYPE]: "write";
+        [ARRAY_WRITE_ITEMS]: readonly TYPE[];
+      }
+    | {
+        [ARRAY_WRITE_TYPE]: "change";
+        [ARRAY_WRITE_INDEX]: number;
+        [ARRAY_WRITE_ITEM]: TYPE;
+      }
+    | {
+        [ARRAY_WRITE_TYPE]: "push";
+        [ARRAY_WRITE_ITEMS]: readonly TYPE[];
+      }
+    | {
+        [ARRAY_WRITE_TYPE]: "unshift";
+        [ARRAY_WRITE_ITEMS]: readonly TYPE[];
+      }
+    | { [ARRAY_WRITE_TYPE]: "pop" }
+    | { [ARRAY_WRITE_TYPE]: "shift" }
+    | {
+        [ARRAY_WRITE_TYPE]: "delete";
+        [ARRAY_WRITE_ITEM]: TYPE;
+      }
+    | {
+        [ARRAY_WRITE_TYPE]: "splice";
+        [ARRAY_WRITE_INDEX]: number;
+        [ARRAY_DELETED_COUNT]: number;
+        [ARRAY_WRITE_ITEMS]?: readonly TYPE[];
+      }
+  );

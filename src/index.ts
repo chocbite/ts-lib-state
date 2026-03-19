@@ -131,15 +131,6 @@ export {
 //     |_____/   |_/_/    \_\_|  |______|    |_|     |_|  |_|    |______|_____/
 export type {
   State,
-  StateArray,
-  StateArrayREA,
-  StateArrayREAW,
-  StateArrayRES,
-  StateArrayRESW,
-  StateArrayROA,
-  StateArrayROAW,
-  StateArrayROS,
-  StateArrayROSW,
   StateInferResult,
   StateInferSub,
   StateInferType,

@@ -12,11 +12,7 @@ import { type StateHelper as HELPER } from "../helpers";
 import { STATE_SYNC, type StateSyncROS } from "../sync/sync";
 import type {
   StateRelated as RELATED,
-  StateArray,
-  StateArrayRES,
-  StateArrayRESW,
-  StateArrayROS,
-  StateArrayROSW,
+  State,
   StateRES,
   StateRESW,
   StateROS,
@@ -34,38 +30,6 @@ import type {
 
 const STATE_ARRAY_KEY = Symbol("is_state_array");
 
-export type StateArrayWrite<TYPE> =
-  | { type: "write"; items: readonly TYPE[] }
-  | { type: "change"; index: number; item: TYPE }
-  | { type: "push"; items: readonly TYPE[] }
-  | { type: "unshift"; items: readonly TYPE[] }
-  | { type: "pop" }
-  | { type: "shift" }
-  | { type: "delete"; item: TYPE }
-  | {
-      type: "splice";
-      index: number;
-      delete_count: number;
-      items?: readonly TYPE[];
-    };
-
-export const StateArrayReadType = {
-  added: "added",
-  removed: "removed",
-  changed: "changed",
-  fresh: "fresh",
-} as const;
-export type StateArrayReadType =
-  (typeof StateArrayReadType)[keyof typeof StateArrayReadType];
-
-export interface StateArrayRead<TYPE> {
-  array: readonly TYPE[];
-  type: StateArrayReadType;
-  index: number;
-  items: readonly TYPE[];
-}
-
-type SAR<AT> = StateArrayRead<AT>;
 type SAW<AT> = StateArrayWrite<AT>;
 
 type ArraySetter<
@@ -118,9 +82,9 @@ export type StateArraySyncROS<
   REL extends Option<RELATED> = Option<{}>,
 > = StateROS<SAR<AT>, REL, SAW<AT>> &
   Owner<AT, ResultOk<SAR<AT>>, REL> & {
-    readonly state: StateArray<AT, REL>;
-    readonly read_only: StateArrayROS<AT, REL>;
-    readonly read_write?: StateArrayROSW<AT, REL>;
+    readonly state: State<AT, REL>;
+    readonly read_only: StateROS<AT, REL>;
+    readonly read_write?: StateROSW<AT, REL>;
   };
 
 export type StateArraySyncROSWS<
@@ -128,9 +92,9 @@ export type StateArraySyncROSWS<
   REL extends Option<RELATED> = Option<{}>,
 > = StateROSW<SAR<AT>, SAW<AT>, REL> &
   OwnerWS<AT, ResultOk<SAR<AT>>, REL> & {
-    readonly state: StateArray<AT, REL>;
-    readonly read_only: StateArrayROS<AT, REL>;
-    readonly read_write: StateArrayROSW<AT, REL>;
+    readonly state: State<AT, REL>;
+    readonly read_only: StateROS<AT, REL>;
+    readonly read_write: StateROSW<AT, REL>;
   };
 
 export type StateArraySyncRES<
@@ -139,9 +103,9 @@ export type StateArraySyncRES<
 > = StateRES<SAR<AT>, REL, SAW<AT>> &
   Owner<AT, ResultOk<SAR<AT>>, REL> & {
     set_err(error: string): void;
-    readonly state: StateArray<AT, REL>;
-    readonly read_only: StateArrayRES<AT, REL>;
-    readonly read_write?: StateArrayRESW<AT, REL>;
+    readonly state: State<AT, REL>;
+    readonly read_only: StateRES<AT, REL>;
+    readonly read_write?: StateRESW<AT, REL>;
   };
 
 export type StateArraySyncRESWS<
@@ -150,9 +114,9 @@ export type StateArraySyncRESWS<
 > = StateRESW<SAR<AT>, SAW<AT>, REL> &
   OwnerWS<AT, ResultOk<SAR<AT>>, REL> & {
     set_err(error: string): void;
-    readonly state: StateArray<AT, REL>;
-    readonly read_only: StateArrayRES<AT, REL>;
-    readonly read_write: StateArrayRESW<AT, REL>;
+    readonly state: State<AT, REL>;
+    readonly read_only: StateRES<AT, REL>;
+    readonly read_write: StateRESW<AT, REL>;
   };
 
 //##################################################################################################################################################
@@ -245,14 +209,14 @@ class RXS<
   get setter(): ArraySetter<AT, RRT, REL> | undefined {
     return this.#setter;
   }
-  get state(): StateArray<AT, REL> {
-    return this as StateArray<AT, REL>;
+  get state(): State<AT, REL> {
+    return this as State<AT, REL>;
   }
-  get read_only(): StateArrayROS<AT, REL> {
-    return this as StateArrayROS<AT, REL>;
+  get read_only(): StateROS<AT, REL> {
+    return this as StateROS<AT, REL>;
   }
-  get read_write(): StateArrayROSW<AT, REL> | undefined {
-    return this.#setter ? (this as StateArrayROSW<AT, REL>) : undefined;
+  get read_write(): StateROSW<AT, REL> | undefined {
+    return this.#setter ? (this as StateROSW<AT, REL>) : undefined;
   }
 
   //#Reader Context
