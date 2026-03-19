@@ -7,10 +7,9 @@ import {
   test_state_sub,
   test_state_then,
   test_state_write,
-  test_state_write_sync,
+  TestStateWrite,
   type TestStateOkSync,
   type TestStateSync,
-  type TestStateWriteSync,
 } from "../tests_shared";
 
 describe("Sync states", function () {
@@ -91,16 +90,13 @@ describe("Sync states", function () {
     it("GetOk", async function () {
       await test_state_get_ok(maker);
     });
-    const maker_write: TestStateWriteSync = () => {
+    const maker_write: TestStateWrite = () => {
       const state = st.s.ros_ws.ok(1, true);
       const set = (val: ResultOk<number>) => state.set(val);
       return { o: true, s: true, w: true, ws: true, state, set };
     };
     it("Write", async function () {
       await test_state_write(maker_write);
-    });
-    it("WriteSync", async function () {
-      await test_state_write_sync(maker_write);
     });
   });
   //##################################################################################################################################################
@@ -128,16 +124,13 @@ describe("Sync states", function () {
     it("Get", async function () {
       await test_state_get(maker);
     });
-    const maker_write: TestStateWriteSync = () => {
+    const maker_write: TestStateWrite = () => {
       const state = st.s.res_ws.ok(1, true);
       const set = (val: Result<number, string>) => state.set(val);
       return { o: false, s: true, w: true, ws: true, state, set };
     };
     it("Write", async function () {
       await test_state_write(maker_write);
-    });
-    it("WriteSync", async function () {
-      await test_state_write_sync(maker_write);
     });
   });
 });

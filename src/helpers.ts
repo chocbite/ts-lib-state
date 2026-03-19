@@ -2,6 +2,7 @@ import { number_step_start_decimal } from "@chocbite/ts-lib-math";
 import {
   err,
   ok,
+  Option,
   OptionSome,
   some,
   type Result,
@@ -10,22 +11,73 @@ import type { SVGFunc } from "@chocbite/ts-lib-svg";
 import { StateBase } from "./base";
 import {
   type State,
-  type StateHelper,
   type StateREA,
-  type StateREAWA,
-  type StateREAWS,
+  type StateREAW,
   type StateRelated,
   type StateRES,
-  type StateRESWA,
-  type StateRESWS,
+  type StateRESW,
   type StateROA,
-  type StateROAWA,
-  type StateROAWS,
+  type StateROAW,
   type StateROS,
-  type StateROSWA,
-  type StateROSWS,
+  type StateROSW,
   type StateSub,
 } from "./types";
+
+//##################################################################################################################################################
+//      ____           _____ ______
+//     |  _ \   /\    / ____|  ____|
+//     | |_) | /  \  | (___ | |__
+//     |  _ < / /\ \  \___ \|  __|
+//     | |_) / ____ \ ____) | |____
+//     |____/_/    \_\_____/|______|
+export interface StateRelatedBase extends StateRelated {
+  writable?: State<boolean>;
+}
+
+export abstract class StateHelper<
+  WT,
+  REL extends Option<StateRelatedBase>,
+> implements StateRelatedBase {
+  readonly writable?: State<boolean>;
+
+  constructor(writable?: State<boolean>) {
+    if (writable) this.writable = writable;
+  }
+
+  abstract related(): REL;
+
+  abstract limit(value: WT): Promise<Result<WT, string>>;
+
+  abstract check(value: WT): Promise<Result<WT, string>>;
+}
+
+//##################################################################################################################################################
+//      ____   ____   ____  _      ______          _   _
+//     |  _ \ / __ \ / __ \| |    |  ____|   /\   | \ | |
+//     | |_) | |  | | |  | | |    | |__     /  \  |  \| |
+//     |  _ <| |  | | |  | | |    |  __|   / /\ \ | . ` |
+//     | |_) | |__| | |__| | |____| |____ / ____ \| |\  |
+//     |____/ \____/ \____/|______|______/_/    \_\_| \_|
+export interface StateBooleanRelated extends StateRelatedBase {}
+
+export class StateBooleanHelper
+  extends StateHelper<boolean, OptionSome<StateBooleanRelated>>
+  implements StateBooleanRelated
+{
+  async limit(value: boolean): Promise<Result<boolean, string>> {
+    return ok(value);
+  }
+
+  async check(value: boolean): Promise<Result<boolean, string>> {
+    if (this.writable !== undefined && !this.writable)
+      return err("not writable");
+    return ok(value);
+  }
+
+  related(): OptionSome<StateBooleanRelated> {
+    return some(this);
+  }
+}
 
 //##################################################################################################################################################
 //      _   _ _    _ __  __ ____  ______ _____
@@ -34,91 +86,74 @@ import {
 //     | . ` | |  | | |\/| |  _ <|  __| |  _  /
 //     | |\  | |__| | |  | | |_) | |____| | \ \
 //     |_| \_|\____/|_|  |_|____/|______|_|  \_\
-export interface StateNumberRelated extends StateRelated {
-  min?: number;
-  max?: number;
-  unit?: string;
-  decimals?: number;
-  step?: number;
-  start?: number;
+export interface StateNumberRelated extends StateRelatedBase {
+  min?: State<number>;
+  max?: State<number>;
+  unit?: State<string>;
+  decimals?: State<number>;
+  step?: State<number>;
+  start?: State<number>;
 }
 
 export class StateNumberHelper
-  implements
-    StateNumberRelated,
-    StateHelper<number, OptionSome<StateNumberRelated>>
+  extends StateHelper<number, OptionSome<StateNumberRelated>>
+  implements StateNumberRelated
 {
-  min: number | undefined;
-  max: number | undefined;
-  unit: string | undefined;
-  decimals: number | undefined;
-  step: number | undefined;
-  start: number | undefined;
+  readonly min?: State<number>;
+  readonly max?: State<number>;
+  readonly unit?: State<string>;
+  readonly decimals?: State<number>;
+  readonly step?: State<number>;
+  readonly start?: State<number>;
 
   constructor(
-    min?: number,
-    max?: number,
-    unit?: string,
-    decimals?: number,
-    step?: number,
-    start?: number,
+    min?: State<number>,
+    max?: State<number>,
+    unit?: State<string>,
+    decimals?: State<number>,
+    step?: State<number>,
+    start?: State<number>,
+    writable?: State<boolean>,
   ) {
-    if (min !== undefined) this.min = min;
-    if (max !== undefined) this.max = max;
-    if (unit !== undefined) this.unit = unit;
-    if (decimals !== undefined) {
-      this.decimals = decimals;
-      if (step !== undefined) this.step = step;
-      if (start !== undefined) this.start = start;
-    } else {
-      if (step !== undefined) {
-        this.step = step;
-        const match = String(step).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
-        this.decimals = match
-          ? Math.max(
-              0,
-              (match[1] ? match[1].length : 0) - (match[2] ? +match[2] : 0),
-            )
-          : 0;
-        if (start !== undefined) {
-          this.start = start;
-          const match = String(start).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
-          this.decimals = Math.max(
-            this.decimals,
-            match
-              ? Math.max(
-                  0,
-                  (match[1] ? match[1].length : 0) - (match[2] ? +match[2] : 0),
-                )
-              : 0,
-          );
-        }
-      }
-    }
+    super(writable);
+    if (min) this.min = min;
+    if (max) this.max = max;
+    if (unit) this.unit = unit;
+    if (step) this.step = step;
+    if (start) this.start = start;
+    if (decimals) this.decimals = decimals;
   }
 
-  limit(value: number): Result<number, string> {
+  async limit(value: number): Promise<Result<number, string>> {
+    const [min, max, step, start, decimals] = await Promise.all([
+      this.min,
+      this.max,
+      this.step,
+      this.start,
+      this.decimals,
+    ]);
     return ok(
       Math.min(
-        this.max ?? Infinity,
+        max?.unwrap_or(Infinity) ?? Infinity,
         Math.max(
-          this.min ?? -Infinity,
+          min?.unwrap_or(-Infinity) ?? -Infinity,
           number_step_start_decimal(
             value,
-            this.step,
-            this.start,
-            this.decimals,
+            step?.unwrap_or(undefined),
+            start?.unwrap_or(undefined),
+            decimals?.unwrap_or(undefined),
           ),
         ),
       ),
     );
   }
 
-  check(value: number): Result<number, string> {
-    if (this.max !== undefined && value > this.max)
-      return err(value + " is bigger than the limit of " + this.max);
-    if (this.min !== undefined && value < this.min)
-      return err(value + " is smaller than the limit of " + this.min);
+  async check(value: number): Promise<Result<number, string>> {
+    const [min, max] = await Promise.all([this.min, this.max]);
+    if (max?.ok && value > max.value)
+      return err(value + " is bigger than the limit of " + max.value);
+    if (min?.ok && value < min.value)
+      return err(value + " is smaller than the limit of " + min.value);
     return ok(value);
   }
 
@@ -136,14 +171,23 @@ const nums = {
    * @param step allowed step size for number 0.1 allows 0,0.1,0.2,0.3...
    * @param start start offset for step, 0.5 and step 2 allows 0.5,2.5,4.5,6.5*/
   helper(
-    min?: number,
-    max?: number,
-    unit?: string,
-    decimals?: number,
-    step?: number,
-    start?: number,
+    min?: State<number>,
+    max?: State<number>,
+    unit?: State<string>,
+    decimals?: State<number>,
+    step?: State<number>,
+    start?: State<number>,
+    writable?: State<boolean>,
   ) {
-    return new StateNumberHelper(min, max, unit, decimals, step, start);
+    return new StateNumberHelper(
+      min,
+      max,
+      unit,
+      decimals,
+      step,
+      start,
+      writable,
+    );
   },
 };
 
@@ -154,48 +198,60 @@ const nums = {
 //      \___ \   | |  |  _  /  | | | . ` | | |_ |
 //      ____) |  | |  | | \ \ _| |_| |\  | |__| |
 //     |_____/   |_|  |_|  \_\_____|_| \_|\_____|
-export interface StateStringRelated extends StateRelated {
-  max_length?: number;
-  max_length_bytes?: number;
+export interface StateStringRelated extends StateRelatedBase {
+  max_length?: State<number>;
+  max_length_bytes?: State<number>;
 }
 
 export class StateStringHelper
-  implements
-    StateStringRelated,
-    StateHelper<string, OptionSome<StateStringRelated>>
+  extends StateHelper<string, OptionSome<StateStringRelated>>
+  implements StateStringRelated
 {
-  max_length: number | undefined;
-  max_length_bytes: number | undefined;
-  constructor(max_length?: number, max_length_bytes?: number) {
-    if (max_length !== undefined) this.max_length = max_length;
-    if (max_length_bytes !== undefined)
-      this.max_length_bytes = max_length_bytes;
+  max_length?: State<number>;
+  max_length_bytes?: State<number>;
+  constructor(
+    max_length?: State<number>,
+    max_length_bytes?: State<number>,
+    writable?: State<boolean>,
+  ) {
+    super(writable);
+    if (max_length) this.max_length = max_length;
+    if (max_length_bytes) this.max_length_bytes = max_length_bytes;
   }
-  limit(value: string): Result<string, string> {
-    if (this.max_length && value.length > this.max_length)
-      value = value.slice(0, this.max_length);
-    if (this.max_length_bytes) {
+
+  async limit(value: string): Promise<Result<string, string>> {
+    const [max_length, max_length_bytes] = await Promise.all([
+      this.max_length,
+      this.max_length_bytes,
+    ]);
+    if (max_length?.ok && value.length > max_length.value)
+      value = value.slice(0, max_length.value);
+    if (max_length_bytes?.ok) {
       value = new TextDecoder().decode(
-        new TextEncoder().encode(value).slice(0, this.max_length_bytes),
+        new TextEncoder().encode(value).slice(0, max_length_bytes.value),
       );
       if (value.at(-1)?.charCodeAt(0) === 65533) value = value.slice(0, -1);
     }
     return ok(value);
   }
-  check(value: string): Result<string, string> {
-    if (this.max_length !== undefined && value.length > this.max_length)
+  async check(value: string): Promise<Result<string, string>> {
+    const [max_length, max_length_bytes] = await Promise.all([
+      this.max_length,
+      this.max_length_bytes,
+    ]);
+    if (max_length?.ok && value.length > max_length.value)
       return err(
         "the text is longer than the limit of " +
-          this.max_length +
+          max_length.value +
           " characters",
       );
     if (
-      this.max_length_bytes !== undefined &&
-      new TextEncoder().encode(value).length > this.max_length_bytes
+      max_length_bytes?.ok &&
+      new TextEncoder().encode(value).length > max_length_bytes.value
     )
       return err(
         "the text is longer than the limit of " +
-          this.max_length_bytes +
+          max_length_bytes.value +
           " bytes",
       );
     return ok(value);
@@ -209,8 +265,12 @@ const strings = {
   /**String limiter struct
    * @param max_length max length for string
    * @param max_length_bytes max byte length for string*/
-  helper(max_length?: number, max_length_bytes?: number) {
-    return new StateStringHelper(max_length, max_length_bytes);
+  helper(
+    max_length?: State<number>,
+    max_length_bytes?: State<number>,
+    writable?: State<boolean>,
+  ) {
+    return new StateStringHelper(max_length, max_length_bytes, writable);
   },
 };
 
@@ -233,7 +293,7 @@ type StateEnumHelperList<K extends PropertyKey> = {
 
 export interface StateEnumRelated<
   L extends StateEnumHelperList<any>,
-> extends StateRelated {
+> extends StateRelatedBase {
   list: L;
   map<K extends keyof L, R>(func: (key: K, val: EnumHelperEntry) => R): R[];
 }
@@ -241,26 +301,31 @@ export interface StateEnumRelated<
 export class StateEnumHelper<
   L extends StateEnumHelperList<any>,
   K extends PropertyKey = keyof L,
-  R extends StateRelated = StateEnumRelated<L>,
->
-  implements StateHelper<K, OptionSome<R>>, StateEnumRelated<L>
-{
-  list: L;
+  R extends StateRelatedBase = StateEnumRelated<L>,
+> extends StateHelper<K, OptionSome<R>> {
+  readonly list: State<L>;
 
-  constructor(list: L) {
+  constructor(list: State<L>, writable?: State<boolean>) {
+    super(writable);
     this.list = list;
   }
 
-  map<K extends keyof L, R>(func: (key: K, val: EnumHelperEntry) => R): R[] {
-    return Object.keys(this.list).map((key) =>
-      func(key as K, this.list[key as K]),
+  async map<K extends keyof L, R>(
+    func: (key: K, val: EnumHelperEntry) => R,
+  ): Promise<R[]> {
+    const list = await this.list;
+    if (list.err) return [];
+    return Object.keys(list.value).map((key) =>
+      func(key as K, list.value[key as K]),
     );
   }
-  limit(value: K): Result<K, string> {
+  async limit(value: K): Promise<Result<K, string>> {
     return ok(value);
   }
-  check(value: K): Result<K, string> {
-    if (value in this.list) return ok(value);
+  async check(value: K): Promise<Result<K, string>> {
+    const list = await this.list;
+    if (list.err) return err("list is not available");
+    if (value in list.value) return ok(value);
     return err(String(value) + " is not in list");
   }
   related(): OptionSome<R> {
@@ -273,9 +338,9 @@ const enums = {
   helper<
     L extends StateEnumHelperList<any>,
     K extends PropertyKey = keyof L,
-    R extends StateRelated = StateEnumRelated<L>,
-  >(list: L) {
-    return new StateEnumHelper<L, K, R>(list);
+    R extends StateRelatedBase = StateEnumRelated<L>,
+  >(list: State<L>, writable?: State<boolean>) {
+    return new StateEnumHelper<L, K, R>(list, writable);
   },
   /**Creates an enum description list, passing the enum as a generic type to this function makes things look a bit nicer */
   list<K extends PropertyKey>(list: StateEnumHelperList<K>): typeof list {
@@ -284,6 +349,13 @@ const enums = {
 };
 
 //##################################################################################################################################################
+//      ______ _    _ _   _  _____ _______ _____ ____  _   _  _____
+//     |  ____| |  | | \ | |/ ____|__   __|_   _/ __ \| \ | |/ ____|
+//     | |__  | |  | |  \| | |       | |    | || |  | |  \| | (___
+//     |  __| | |  | | . ` | |       | |    | || |  | | . ` |\___ \
+//     | |    | |__| | |\  | |____   | |   _| || |__| | |\  |____) |
+//     |_|     \____/|_| \_|\_____|  |_|  |_____\____/|_| \_|_____/
+
 //##################################################################################################################################################
 /**Waits for a state to have a specific value or until timeout is reached
  * @param value value to wait for
@@ -309,7 +381,6 @@ async function await_value<T>(
 }
 
 //##################################################################################################################################################
-//##################################################################################################################################################
 /**Compare two states for equality
  * @param state1 first state
  * @param state2 second state
@@ -325,7 +396,6 @@ async function compare(
 }
 
 //##################################################################################################################################################
-//##################################################################################################################################################
 /**Compare two sync states for equality
  * @param state1 first state
  * @param state2 second state
@@ -337,7 +407,6 @@ function compare_sync(state1: StateRES<any>, state2: StateRES<any>): boolean {
   return res1.value !== res2.value;
 }
 
-//##################################################################################################################################################
 //##################################################################################################################################################
 const is = {
   rea(s: any): s is StateREA<any> {
@@ -352,29 +421,17 @@ const is = {
   ros(s: any): s is StateROS<any> {
     return s instanceof StateBase && s.rsync && s.rok;
   },
-  rea_wa(s: any): s is StateREAWA<any> {
+  reaw(s: any): s is StateREAW<any> {
     return s instanceof StateBase && s.writable;
   },
-  rea_ws(s: any): s is StateREAWS<any> {
-    return s instanceof StateBase && s.writable && s.wsync;
-  },
-  roa_wa(s: any): s is StateROAWA<any> {
+  roaw(s: any): s is StateROAW<any> {
     return s instanceof StateBase && s.writable && s.rok;
   },
-  roa_ws(s: any): s is StateROAWS<any> {
-    return s instanceof StateBase && s.writable && s.wsync && s.rok;
-  },
-  res_wa(s: any): s is StateRESWA<any> {
+  resw(s: any): s is StateRESW<any> {
     return s instanceof StateBase && s.writable && s.rsync;
   },
-  res_ws(s: any): s is StateRESWS<any> {
-    return s instanceof StateBase && s.writable && s.wsync && s.rsync;
-  },
-  ros_wa(s: any): s is StateROSWA<any> {
+  rosw(s: any): s is StateROSW<any> {
     return s instanceof StateBase && s.writable && s.rsync && s.rok;
-  },
-  ros_ws(s: any): s is StateROSWS<any> {
-    return s instanceof StateBase && s.writable && s.wsync && s.rsync && s.rok;
   },
 };
 

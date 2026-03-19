@@ -72,11 +72,9 @@ export { type StateCollectedROA } from "./collected/roa";
 export { type StateCollectedROS } from "./collected/ros";
 export {
   type StateDelayedREA,
-  type StateDelayedREAWA,
-  type StateDelayedREAWS,
+  type StateDelayedREAW,
   type StateDelayedROA,
-  type StateDelayedROAWA,
-  type StateDelayedROAWS,
+  type StateDelayedROAW,
 } from "./delayed/delayed";
 export {
   StateEnumHelper,
@@ -88,29 +86,25 @@ export {
 } from "./helpers";
 export {
   type StateLazyRES,
-  type StateLazyRESWS,
+  type StateLazyRESW as StateLazyRESWS,
   type StateLazyROS,
-  type StateLazyROSWS,
+  type StateLazyROSW as StateLazyROSWS,
 } from "./lazy/lazy";
 export {
   type StateProxyREA,
-  type StateProxyREAWA,
-  type StateProxyREAWS,
+  type StateProxyREAW as StateProxyREAWA,
 } from "./proxy/rea";
 export {
   type StateProxyRES,
-  type StateProxyRESWA,
-  type StateProxyRESWS,
+  type StateProxyRESW as StateProxyRESWA,
 } from "./proxy/res";
 export {
   type StateProxyROA,
-  type StateProxyROAWA,
-  type StateProxyROAWS,
+  type StateProxyROAW as StateProxyROAWA,
 } from "./proxy/roa";
 export {
   type StateProxyROS,
-  type StateProxyROSWA,
-  type StateProxyROSWS,
+  type StateProxyROSW as StateProxyROSWA,
 } from "./proxy/ros";
 export {
   type StateResourceFuncREA,
@@ -124,9 +118,9 @@ export {
 } from "./resource/roa";
 export {
   type StateSyncRES,
-  type StateSyncRESWS,
+  type StateSyncRESW as StateSyncRESWS,
   type StateSyncROS,
-  type StateSyncROSWS,
+  type StateSyncROSW as StateSyncROSWS,
 } from "./sync/sync";
 
 //       _____ _______    _______ ______   _________     _______  ______  _____
@@ -139,31 +133,23 @@ export type {
   State,
   StateArray,
   StateArrayREA,
-  StateArrayREAWA,
-  StateArrayREAWS,
+  StateArrayREAW,
   StateArrayRES,
-  StateArrayRESWA,
-  StateArrayRESWS,
+  StateArrayRESW,
   StateArrayROA,
-  StateArrayROAWA,
-  StateArrayROAWS,
+  StateArrayROAW,
   StateArrayROS,
-  StateArrayROSWA,
-  StateArrayROSWS,
+  StateArrayROSW,
   StateInferResult,
   StateInferSub,
   StateInferType,
   StateREA,
-  StateREAWA,
-  StateREAWS,
+  StateREAW,
   StateRES,
-  StateRESWA,
-  StateRESWS,
+  StateRESW,
   StateROA,
-  StateROAWA,
-  StateROAWS,
+  StateROAW,
   StateROS,
-  StateROSWA,
-  StateROSWS,
+  StateROSW,
   StateSub,
 } from "./types";

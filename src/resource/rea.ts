@@ -6,12 +6,12 @@ import {
   type Result,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "../base";
+import { type StateHelper as Helper } from "../helpers";
 import {
   type StateRelated as RELATED,
   type State,
-  type StateHelper,
   type StateREA,
-  type StateREAWA,
+  type StateREAW,
 } from "../types";
 
 //##################################################################################################################################################
@@ -217,7 +217,7 @@ class FuncREA<
     debounce: number,
     validity: number | true,
     retention: number,
-    helper?: StateHelper<WT, REL>,
+    helper?: Helper<WT, REL>,
   ) {
     super();
     this.single_get = once;
@@ -234,7 +234,7 @@ class FuncREA<
   readonly debounce: number;
   readonly validity: number | true;
   readonly retention: number;
-  #helper?: StateHelper<WT, REL>;
+  #helper?: Helper<WT, REL>;
 
   /**Called if the state is awaited, returns the value once*/
   protected single_get(_state: Owner<RT, WT, REL>): void {}
@@ -271,7 +271,7 @@ const rea = {
       validity?: number | true;
       retention?: number;
     },
-    helper?: StateHelper<WT, REL>,
+    helper?: Helper<WT, REL>,
   ) {
     return new FuncREA<RT, REL, WT>(
       once,
@@ -288,12 +288,12 @@ const rea = {
 };
 
 //##################################################################################################################################################
-//      _____  ______           __          __
-//     |  __ \|  ____|   /\     \ \        / /\
-//     | |__) | |__     /  \     \ \  /\  / /  \
-//     |  _  /|  __|   / /\ \     \ \/  \/ / /\ \
-//     | | \ \| |____ / ____ \     \  /\  / ____ \
-//     |_|  \_\______/_/    \_\     \/  \/_/    \_\
+//      _____  ______     __          __
+//     |  __ \|  ____|   /\ \        / /
+//     | |__) | |__     /  \ \  /\  / /
+//     |  _  /|  __|   / /\ \ \/  \/ /
+//     | | \ \| |____ / ____ \  /\  /
+//     |_|  \_\______/_/    \_\/  \/
 
 /**State Resource
  * state for representing a remote resource
@@ -320,7 +320,7 @@ export interface StateResourceOwnerREAWA<RT, WT, REL extends Option<RELATED>> {
   get buffer(): Result<RT, string> | undefined;
   get state(): State<RT, WT, REL>;
   get read_only(): StateREA<RT, REL, WT>;
-  get read_write(): StateREAWA<RT, WT, REL>;
+  get read_write(): StateREAW<RT, WT, REL>;
 }
 
 export abstract class StateResourceREAWA<
@@ -436,8 +436,8 @@ export abstract class StateResourceREAWA<
   get read_only(): StateREA<RT, REL, WT> {
     return this as StateREA<RT, REL, WT>;
   }
-  get read_write(): StateREAWA<RT, WT, REL> {
-    return this as StateREAWA<RT, WT, REL>;
+  get read_write(): StateREAW<RT, WT, REL> {
+    return this as StateREAW<RT, WT, REL>;
   }
 
   //Reader Context
@@ -493,9 +493,9 @@ export abstract class StateResourceREAWA<
     });
   }
 
-  abstract limit(value: WT): Result<WT, string>;
+  abstract limit(value: WT): Promise<Result<WT, string>>;
 
-  abstract check(value: WT): Result<WT, string>;
+  abstract check(value: WT): Promise<Result<WT, string>>;
 }
 
 //##################################################################################################################################################
@@ -509,7 +509,7 @@ export type StateResourceFuncREAWA<
   RT,
   REL extends Option<RELATED> = Option<{}>,
   WT = any,
-> = StateREAWA<RT, WT, REL> & OwnerWA<RT, WT, REL>;
+> = StateREAW<RT, WT, REL> & OwnerWA<RT, WT, REL>;
 /**Alternative state resource which can be initialized with functions
  * @template RT - The type of the state’s value when read.
  * @template WT - The type which can be written to the state.
@@ -532,7 +532,7 @@ class FuncREAWA<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>
       value: WT,
       state: OwnerWA<RT, WT, REL>,
     ) => Promise<Result<void, string>>,
-    helper?: StateHelper<WT, REL>,
+    helper?: Helper<WT, REL>,
   ) {
     super();
     this.single_get = once;
@@ -552,7 +552,7 @@ class FuncREAWA<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>
   readonly validity: number | true;
   readonly retention: number;
   readonly write_debounce: number;
-  #helper?: StateHelper<WT, REL>;
+  #helper?: Helper<WT, REL>;
 
   /**Called if the state is awaited, returns the value once*/
   protected single_get(_state: OwnerWA<RT, WT, REL>): void {}
@@ -568,15 +568,19 @@ class FuncREAWA<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>
     _value: WT,
     _state: OwnerWA<RT, WT, REL>,
   ): Promise<Result<void, string>> {
-    return err("State not writable");
+    return err("not writable");
   }
 
-  limit(value: WT): Result<WT, string> {
-    return this.#helper?.limit ? this.#helper.limit(value) : ok(value);
+  limit(value: WT): Promise<Result<WT, string>> {
+    return this.#helper?.limit
+      ? this.#helper.limit(value)
+      : Promise.resolve(ok(value));
   }
 
-  check(value: WT): Result<WT, string> {
-    return this.#helper?.check ? this.#helper.check(value) : ok(value);
+  check(value: WT): Promise<Result<WT, string>> {
+    return this.#helper?.check
+      ? this.#helper.check(value)
+      : Promise.resolve(ok(value));
   }
 
   related(): REL {
@@ -613,7 +617,7 @@ const rea_wa = {
       retention?: number;
       write_debounce?: number;
     },
-    helper?: StateHelper<WT, REL>,
+    helper?: Helper<WT, REL>,
   ) {
     return new FuncREAWA<RT, WT, REL>(
       once,

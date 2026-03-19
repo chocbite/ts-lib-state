@@ -8,14 +8,14 @@ import {
   type Result,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "../base";
+import { type StateHelper as Helper } from "../helpers";
 import {
-  type StateHelper as Helper,
   type StateRelated as RELATED,
   type State,
   type StateRES,
-  type StateRESWS,
+  type StateRESW,
   type StateROS,
-  type StateROSWS,
+  type StateROSW,
 } from "../types";
 
 //##################################################################################################################################################
@@ -33,9 +33,9 @@ type LazySetter<
   WT = RT,
 > = (
   value: WT,
-  state: OwnerWS<RT, RRT, WT, REL>,
+  state: OwnerWrite<RT, RRT, WT, REL>,
   old?: RRT,
-) => Result<void, string>;
+) => Promise<Result<void, string>>;
 
 interface Owner<
   RT,
@@ -48,7 +48,7 @@ interface Owner<
   setter?: LazySetter<RT, RRT, REL, WT>;
   readonly state: State<RT, WT, REL>;
 }
-export interface OwnerWS<
+export interface OwnerWrite<
   RT,
   RRT extends Result<RT, string>,
   WT,
@@ -64,17 +64,17 @@ export type StateLazyROS<
 > = StateROS<RT, REL, WT> &
   Owner<RT, ResultOk<RT>, WT, REL> & {
     readonly read_only: StateROS<RT, REL, WT>;
-    readonly read_write?: StateROSWS<RT, WT, REL>;
+    readonly read_write?: StateROSW<RT, WT, REL>;
   };
 
-export type StateLazyROSWS<
+export type StateLazyROSW<
   RT,
   WT = RT,
   REL extends Option<RELATED> = Option<{}>,
-> = StateROSWS<RT, WT, REL> &
-  OwnerWS<RT, ResultOk<RT>, WT, REL> & {
+> = StateROSW<RT, WT, REL> &
+  OwnerWrite<RT, ResultOk<RT>, WT, REL> & {
     readonly read_only: StateROS<RT, REL, WT>;
-    readonly read_write: StateROSWS<RT, WT, REL>;
+    readonly read_write: StateROSW<RT, WT, REL>;
   };
 
 export type StateLazyRES<
@@ -85,18 +85,18 @@ export type StateLazyRES<
   Owner<RT, Result<RT, string>, WT, REL> & {
     set_err(error: string): void;
     readonly read_only: StateRES<RT, REL, WT>;
-    readonly read_write?: StateRESWS<RT, WT, REL>;
+    readonly read_write?: StateRESW<RT, WT, REL>;
   };
 
-export type StateLazyRESWS<
+export type StateLazyRESW<
   RT,
   WT = RT,
   REL extends Option<RELATED> = Option<{}>,
-> = StateRESWS<RT, WT, REL> &
-  OwnerWS<RT, Result<RT, string>, WT, REL> & {
+> = StateRESW<RT, WT, REL> &
+  OwnerWrite<RT, Result<RT, string>, WT, REL> & {
     set_err(error: string): void;
     readonly read_only: StateRES<RT, REL, WT>;
-    readonly read_write: StateRESWS<RT, WT, REL>;
+    readonly read_write: StateRESW<RT, WT, REL>;
   };
 
 //##################################################################################################################################################
@@ -125,24 +125,26 @@ class RXS<
     if (setter === true)
       this.#setter = (value, state, old) => {
         if (old && !old.err && (value as unknown as RT) === old.value)
-          return ok(undefined);
-        return this.#helper?.limit
-          ? this.#helper
-              ?.limit(value)
-              .map((e) => state.set_ok(e as unknown as RT))
-          : ok(state.set_ok(value as unknown as RT));
+          return Promise.resolve(ok(undefined));
+        return this.#helper
+          ? this.#helper.limit(value).then((e) => {
+              if (e.err) return err(e.error);
+              state.set_ok(e as unknown as RT);
+              return ok(undefined);
+            })
+          : Promise.resolve(ok(state.set_ok(value as unknown as RT)));
       };
     else this.#setter = setter;
     if (helper) this.#helper = helper;
     this.get = () => this.#clean() ?? (this.#value = init());
     this.set = (value) => this.set(this.#clean() ?? value);
-    const write_sync = this.write_sync.bind(this);
-    this.write_sync = (value) =>
-      write_sync(value).map((val) => this.#clean() ?? val);
+    const write = this.write.bind(this);
+    this.write = (value) =>
+      write(value).then((val) => val.map((valu) => this.#clean() ?? valu));
   }
 
   #clean(): void {
-    (["get", "set", "write_sync"] as const).forEach((k) => delete this[k]);
+    (["get", "set", "write"] as const).forEach((k) => delete this[k]);
   }
 
   #value?: RRT;
@@ -201,26 +203,24 @@ class RXS<
   get writable(): boolean {
     return this.#setter !== undefined;
   }
-  get wsync(): boolean {
-    return this.writable;
-  }
-  async write(value: WT): Promise<Result<void, string>> {
-    return this.write_sync(value);
-  }
-  write_sync(value: WT): Result<void, string> {
+  write(value: WT): Promise<Result<void, string>> {
     if (this.#setter)
       return this.#setter(
         value,
-        this as OwnerWS<RT, RRT, WT, REL>,
+        this as OwnerWrite<RT, RRT, WT, REL>,
         this.#value,
       );
-    return err("State not writable");
+    return Promise.resolve(err("not writable"));
   }
-  limit(value: WT): Result<WT, string> {
-    return this.#helper?.limit ? this.#helper.limit(value) : ok(value);
+  limit(value: WT): Promise<Result<WT, string>> {
+    return this.#helper?.limit
+      ? this.#helper.limit(value)
+      : Promise.resolve(ok(value));
   }
-  check(value: WT): Result<WT, string> {
-    return this.#helper?.check ? this.#helper.check(value) : ok(value);
+  check(value: WT): Promise<Result<WT, string>> {
+    return this.#helper?.check
+      ? this.#helper.check(value)
+      : Promise.resolve(ok(value));
   }
 }
 
@@ -273,7 +273,7 @@ const ros_ws = {
       () => ok(init()),
       helper,
       setter,
-    ) as StateLazyROSWS<RT, WT, REL>;
+    ) as StateLazyROSW<RT, WT, REL>;
   },
   /**Creates a lazy ok state from an initial result, lazy meaning the value is only evaluated on first access.
    * @param init initial result for state.
@@ -287,7 +287,7 @@ const ros_ws = {
       init,
       helper,
       setter,
-    ) as StateLazyROSWS<RT, WT, REL>;
+    ) as StateLazyROSW<RT, WT, REL>;
   },
 };
 const res = {
@@ -342,7 +342,7 @@ const res_ws = {
       () => ok(init()),
       helper,
       setter,
-    ) as StateLazyRESWS<RT, WT, REL>;
+    ) as StateLazyRESW<RT, WT, REL>;
   },
   /**Creates a writable lazy state from an initial error, lazy meaning the value is only evaluated on first access.
    * @param init initial error for state.
@@ -356,7 +356,7 @@ const res_ws = {
       () => err(init()),
       helper,
       setter,
-    ) as StateLazyRESWS<RT, WT, REL>;
+    ) as StateLazyRESW<RT, WT, REL>;
   },
   /**Creates a writable lazy state from an initial result, lazy meaning the value is only evaluated on first access.
    * @param init initial result for state.
@@ -370,7 +370,7 @@ const res_ws = {
       init,
       helper,
       setter,
-    ) as StateLazyRESWS<RT, WT, REL>;
+    ) as StateLazyRESW<RT, WT, REL>;
   },
 };
 

@@ -20,13 +20,16 @@ export abstract class StateBase<
   #read_promises?: ((val: RRT) => void)[];
 
   //#Reader Context
-  abstract readonly rsync: boolean;
-  abstract readonly rok: boolean;
   abstract then<T = RRT>(
     func: (value: RRT) => T | PromiseLike<T>,
   ): PromiseLike<T>;
+
+  abstract readonly rsync: boolean;
   get?(): RRT;
+
+  abstract readonly rok: boolean;
   ok?(): RT;
+
   sub<T = StateSub<RRT>>(func: StateSub<RRT>, update?: boolean): T {
     if (this.#subscribers.has(func)) {
       console.error("Function already registered as subscriber", this, func);
@@ -56,13 +59,10 @@ export abstract class StateBase<
   }
 
   //#Writer Context
-  abstract readonly wsync: boolean;
   abstract readonly writable: boolean;
-
   write?(value: WT): Promise<Result<void, string>>;
-  limit?(value: WT): Result<WT, string>;
-  check?(value: WT): Result<WT, string>;
-  write_sync?(value: WT): Result<void, string>;
+  limit?(value: WT): Promise<Result<WT, string>>;
+  check?(value: WT): Promise<Result<WT, string>>;
 
   /**Called when subscriber is added*/
   protected on_subscribe(): void {}

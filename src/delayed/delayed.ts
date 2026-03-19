@@ -8,16 +8,14 @@ import {
   type Result,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "../base";
+import { type StateHelper as Helper } from "../helpers";
 import {
-  type StateHelper as Helper,
   type StateRelated as RELATED,
   type State,
   type StateREA,
-  type StateREAWA,
-  type StateREAWS,
+  type StateREAW,
   type StateROA,
-  type StateROAWA,
-  type StateROAWS,
+  type StateROAW,
 } from "../types";
 
 //##################################################################################################################################################
@@ -28,25 +26,14 @@ import {
 //        | |     | |  | |    | |____ ____) |
 //        |_|     |_|  |_|    |______|_____/
 
-type DelayedSetterWS<
+type DelayedSetter<
   RT,
   RRT extends Result<RT, string>,
   REL extends Option<RELATED>,
   WT = RT,
 > = (
   value: WT,
-  state: OwnerWS<RT, RRT, WT, REL>,
-  old?: RRT,
-) => Result<void, string>;
-
-type DelayedSetterWA<
-  RT,
-  RRT extends Result<RT, string>,
-  REL extends Option<RELATED>,
-  WT = RT,
-> = (
-  value: WT,
-  state: OwnerWA<RT, RRT, WT, REL>,
+  state: OwnerWrite<RT, RRT, WT, REL>,
   old?: RRT,
 ) => Promise<Result<void, string>>;
 
@@ -58,27 +45,17 @@ interface Owner<
 > {
   set(value: RRT): void;
   set_ok(value: RT): void;
-  setter_sync?: DelayedSetterWS<RT, RRT, REL, WT>;
-  setter_async?: DelayedSetterWA<RT, RRT, REL, WT>;
+  setter?: DelayedSetter<RT, RRT, REL, WT>;
   readonly state: State<RT, WT, REL>;
 }
 
-export interface OwnerWS<
+export interface OwnerWrite<
   RT,
   RRT extends Result<RT, string>,
   WT,
   REL extends Option<RELATED>,
 > extends Owner<RT, RRT, WT, REL> {
-  setter_sync: DelayedSetterWS<RT, RRT, REL, WT>;
-}
-
-export interface OwnerWA<
-  RT,
-  RRT extends Result<RT, string>,
-  WT,
-  REL extends Option<RELATED>,
-> extends Owner<RT, RRT, WT, REL> {
-  setter_async: DelayedSetterWA<RT, RRT, REL, WT>;
+  setter: DelayedSetter<RT, RRT, REL, WT>;
 }
 
 export type StateDelayedROA<
@@ -88,30 +65,17 @@ export type StateDelayedROA<
 > = StateROA<RT, REL, WT> &
   Owner<RT, ResultOk<RT>, WT, REL> & {
     readonly read_only: StateROA<RT, REL, WT>;
-    readonly read_write_sync?: StateROAWS<RT, WT, REL>;
-    readonly read_write_async?: StateROAWA<RT, WT, REL>;
+    readonly read_write?: StateROAW<RT, WT, REL>;
   };
 
-export type StateDelayedROAWS<
+export type StateDelayedROAW<
   RT,
   WT = RT,
   REL extends Option<RELATED> = Option<{}>,
-> = StateROAWS<RT, WT, REL> &
-  OwnerWS<RT, ResultOk<RT>, WT, REL> & {
+> = StateROAW<RT, WT, REL> &
+  OwnerWrite<RT, ResultOk<RT>, WT, REL> & {
     readonly read_only: StateROA<RT, REL, WT>;
-    readonly read_write_sync: StateROAWS<RT, WT, REL>;
-    readonly read_write_async?: StateROAWA<RT, WT, REL>;
-  };
-
-export type StateDelayedROAWA<
-  RT,
-  WT = RT,
-  REL extends Option<RELATED> = Option<{}>,
-> = StateROAWA<RT, WT, REL> &
-  OwnerWA<RT, ResultOk<RT>, WT, REL> & {
-    readonly read_only: StateROA<RT, REL, WT>;
-    readonly read_write_sync?: StateROAWS<RT, WT, REL>;
-    readonly read_write_async: StateROAWA<RT, WT, REL>;
+    readonly read_write: StateROAW<RT, WT, REL>;
   };
 
 export type StateDelayedREA<
@@ -122,32 +86,18 @@ export type StateDelayedREA<
   Owner<RT, Result<RT, string>, WT, REL> & {
     set_err(error: string): void;
     readonly read_only: StateREA<RT, REL, WT>;
-    readonly read_write_sync?: StateREAWS<RT, WT, REL>;
-    readonly read_write_async?: StateREAWA<RT, WT, REL>;
+    readonly read_write?: StateREAW<RT, WT, REL>;
   };
 
-export type StateDelayedREAWS<
+export type StateDelayedREAW<
   RT,
   WT = RT,
   REL extends Option<RELATED> = Option<{}>,
-> = StateREAWS<RT, WT, REL> &
-  OwnerWS<RT, Result<RT, string>, WT, REL> & {
+> = StateREAW<RT, WT, REL> &
+  OwnerWrite<RT, Result<RT, string>, WT, REL> & {
     set_err(error: string): void;
     readonly read_only: StateREA<RT, REL, WT>;
-    readonly read_write_sync: StateREAWS<RT, WT, REL>;
-    readonly read_write_async?: StateREAWA<RT, WT, REL>;
-  };
-
-export type StateDelayedREAWA<
-  RT,
-  WT = RT,
-  REL extends Option<RELATED> = Option<{}>,
-> = StateREAWA<RT, WT, REL> &
-  OwnerWA<RT, Result<RT, string>, WT, REL> & {
-    set_err(error: string): void;
-    readonly read_only: StateREA<RT, REL, WT>;
-    readonly read_write_sync?: StateREAWS<RT, WT, REL>;
-    readonly read_write_async: StateREAWA<RT, WT, REL>;
+    readonly read_write: StateREAW<RT, WT, REL>;
   };
 
 //##################################################################################################################################################
@@ -170,38 +120,23 @@ class RXA<
   constructor(
     init?: () => PromiseLike<RRT>,
     helper?: Helper<WT, REL>,
-    setter_sync?: DelayedSetterWS<RT, RRT, REL, WT> | true,
-    setter_async?: DelayedSetterWA<RT, RRT, REL, WT> | true,
+    setter?: DelayedSetter<RT, RRT, REL, WT> | true,
   ) {
     super();
 
-    //############
-    //Sync setter
-    if (setter_sync === true)
-      this.#setter_sync = (value, state, old) => {
+    if (setter === true)
+      this.#setter = async (value, state, old) => {
         if (old && !old.err && (value as unknown as RT) === old.value)
-          return ok(undefined);
-        return this.#helper?.limit
-          ? this.#helper
-              ?.limit(value)
-              .map((e) => state.set_ok(e as unknown as RT))
-          : ok(state.set_ok(value as unknown as RT));
+          return Promise.resolve(ok(undefined));
+        return this.#helper
+          ? this.#helper.limit(value).then((e) => {
+              if (e.err) return err(e.error);
+              state.set_ok(e as unknown as RT);
+              return ok(undefined);
+            })
+          : Promise.resolve(ok(state.set_ok(value as unknown as RT)));
       };
-    else this.#setter_sync = setter_sync;
-
-    //############
-    //Async setter
-    if (setter_async === true)
-      this.#setter_async = async (value, state, old) => {
-        if (old && !old.err && (value as unknown as RT) === old.value)
-          return ok(undefined);
-        return this.#helper?.limit
-          ? this.#helper
-              ?.limit(value)
-              .map((e) => state.set_ok(e as unknown as RT))
-          : ok(state.set_ok(value as unknown as RT));
-      };
-    else this.#setter_async = setter_async;
+    else this.#setter = setter;
 
     //############
     //Reader initialization
@@ -230,25 +165,17 @@ class RXA<
       this.#clean();
       this.set(this.ful_r_prom(value));
     };
-
-    const write_sync = this.write_sync.bind(this);
-    this.write_sync = (value) =>
-      write_sync(value).map((val) => this.#clean() ?? val);
-
     const write = this.write.bind(this);
     this.write = async (value) =>
       (await write(value)).map((val) => this.#clean() ?? val);
   }
 
   #clean(): void {
-    (["then", "set", "write", "write_sync"] as const).forEach(
-      (k) => delete this[k],
-    );
+    (["then", "set", "write"] as const).forEach((k) => delete this[k]);
   }
 
   #value?: RRT;
-  #setter_sync?: DelayedSetterWS<RT, RRT, REL, WT>;
-  #setter_async?: DelayedSetterWA<RT, RRT, REL, WT>;
+  #setter?: DelayedSetter<RT, RRT, REL, WT>;
   #helper?: Helper<WT, REL>;
 
   //#Owner Context
@@ -261,17 +188,11 @@ class RXA<
   set_err(error: string): void {
     this.set(err(error) as RRT);
   }
-  set setter_sync(setter: DelayedSetterWS<RT, RRT, REL, WT> | undefined) {
-    this.#setter_sync = setter;
+  set setter(setter: DelayedSetter<RT, RRT, REL, WT> | undefined) {
+    this.#setter = setter;
   }
-  get setter_sync(): DelayedSetterWS<RT, RRT, REL, WT> | undefined {
-    return this.#setter_sync;
-  }
-  set setter_async(setter: DelayedSetterWA<RT, RRT, REL, WT> | undefined) {
-    this.#setter_async = setter;
-  }
-  get setter_async(): DelayedSetterWA<RT, RRT, REL, WT> | undefined {
-    return this.#setter_async;
+  get setter(): DelayedSetter<RT, RRT, REL, WT> | undefined {
+    return this.#setter;
   }
 
   get state(): State<RT, WT, REL> {
@@ -280,11 +201,8 @@ class RXA<
   get read_only(): State<RT, WT, REL> {
     return this as State<RT, WT, any>;
   }
-  get read_write_sync(): State<RT, WT, REL> | undefined {
-    return this.#setter_sync ? (this as State<RT, WT, any>) : undefined;
-  }
-  get read_write_async(): State<RT, WT, REL> | undefined {
-    return this.#setter_async ? (this as State<RT, WT, any>) : undefined;
+  get read_write(): State<RT, WT, REL> | undefined {
+    return this.#setter ? (this as State<RT, WT, any>) : undefined;
   }
 
   //#Reader Context
@@ -301,10 +219,10 @@ class RXA<
   ok(): RT {
     return (this.#value! as ResultOk<RT>).value;
   }
-  async then<TResult1 = RRT>(
+  then<TResult1 = RRT>(
     func: (value: RRT) => TResult1 | PromiseLike<TResult1>,
   ): Promise<TResult1> {
-    return func(this.#value!);
+    return Promise.resolve(func(this.#value!));
   }
   related(): REL {
     return this.#helper?.related ? this.#helper.related() : (none() as REL);
@@ -312,40 +230,26 @@ class RXA<
 
   //#Writer Context
   get writable(): boolean {
-    return Boolean(this.#setter_sync || this.#setter_async);
+    return Boolean(this.#setter);
   }
-  get wsync(): boolean {
-    return Boolean(this.#setter_sync);
-  }
-  async write(value: WT): Promise<Result<void, string>> {
-    if (this.#setter_async)
-      return this.#setter_async(
+  write(value: WT): Promise<Result<void, string>> {
+    if (this.#setter)
+      return this.#setter(
         value,
-        this as OwnerWA<RT, RRT, WT, REL>,
+        this as OwnerWrite<RT, RRT, WT, REL>,
         this.#value,
       );
-    else if (this.#setter_sync)
-      return this.#setter_sync(
-        value,
-        this as OwnerWS<RT, RRT, WT, REL>,
-        this.#value,
-      );
-    return err("State not writable");
+    return Promise.resolve(err("not writable"));
   }
-  write_sync(value: WT): Result<void, string> {
-    if (this.#setter_sync)
-      return this.#setter_sync(
-        value,
-        this as OwnerWS<RT, RRT, WT, REL>,
-        this.#value,
-      );
-    return err("State not writable");
+  limit(value: WT): Promise<Result<WT, string>> {
+    return this.#helper?.limit
+      ? this.#helper.limit(value)
+      : Promise.resolve(ok(value));
   }
-  limit(value: WT): Result<WT, string> {
-    return this.#helper?.limit ? this.#helper.limit(value) : ok(value);
-  }
-  check(value: WT): Result<WT, string> {
-    return this.#helper?.check ? this.#helper.check(value) : ok(value);
+  check(value: WT): Promise<Result<WT, string>> {
+    return this.#helper?.check
+      ? this.#helper.check(value)
+      : Promise.resolve(ok(value));
   }
 }
 
@@ -384,67 +288,35 @@ const roa = {
     >;
   },
 };
-const roa_ws = {
-  /**Creates a delayed ok state from an initial value, delayed meaning the value is a promise evaluated on first access.
-   * @param init initial value for state.
-   * @param helper functions to check and limit the value, and to return related states.*/
-  ok<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>(
-    init?: () => PromiseLike<RT>,
-    setter: DelayedSetterWS<RT, ResultOk<RT>, REL, WT> | true = true,
-    helper?: Helper<WT, REL>,
-  ) {
-    return new RXA<RT, ResultOk<RT>, REL, WT>(
-      init ? async () => ok(await init()) : undefined,
-      helper,
-      setter,
-    ) as StateDelayedROAWS<RT, WT, REL>;
-  },
-  /**Creates a delayed ok state from an initial result, delayed meaning the value is a promise evaluated on first access.
-   * @param init initial result for state.
-   * @param helper functions to check and limit the value, and to return related states.*/
-  result<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>(
-    init?: () => PromiseLike<ResultOk<RT>>,
-    setter: DelayedSetterWS<RT, ResultOk<RT>, REL, WT> | true = true,
-    helper?: Helper<WT, REL>,
-  ) {
-    return new RXA<RT, ResultOk<RT>, REL, WT>(
-      init,
-      helper,
-      setter,
-    ) as StateDelayedROAWS<RT, WT, REL>;
-  },
-};
 
-const roa_wa = {
+const roaw = {
   /**Creates a delayed ok state from an initial value, delayed meaning the value is a promise evaluated on first access.
    * @param init initial value for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>(
     init?: () => PromiseLike<RT>,
-    setter: DelayedSetterWA<RT, ResultOk<RT>, REL, WT> | true = true,
+    setter: DelayedSetter<RT, ResultOk<RT>, REL, WT> | true = true,
     helper?: Helper<WT, REL>,
   ) {
     return new RXA<RT, ResultOk<RT>, REL, WT>(
       init ? async () => ok(await init()) : undefined,
       helper,
-      undefined,
       setter,
-    ) as StateDelayedROAWA<RT, WT, REL>;
+    ) as StateDelayedROAW<RT, WT, REL>;
   },
   /**Creates a delayed ok state from an initial result, delayed meaning the value is a promise evaluated on first access.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>(
     init?: () => PromiseLike<ResultOk<RT>>,
-    setter: DelayedSetterWA<RT, ResultOk<RT>, REL, WT> | true = true,
+    setter: DelayedSetter<RT, ResultOk<RT>, REL, WT> | true = true,
     helper?: Helper<WT, REL>,
   ) {
     return new RXA<RT, ResultOk<RT>, REL, WT>(
       init,
       helper,
-      undefined,
       setter,
-    ) as StateDelayedROAWA<RT, WT, REL>;
+    ) as StateDelayedROAW<RT, WT, REL>;
   },
 };
 
@@ -486,96 +358,49 @@ const rea = {
     ) as StateDelayedREA<RT, REL, WT>;
   },
 };
-const rea_ws = {
-  /**Creates a delayed ok state from an initial value, delayed meaning the value is a promise evaluated on first access.
-   * @param init initial value for state.
-   * @param helper functions to check and limit the value, and to return related states.*/
-  ok<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>(
-    init?: () => PromiseLike<RT>,
-    setter: DelayedSetterWS<RT, Result<RT, string>, REL, WT> | true = true,
-    helper?: Helper<WT, REL>,
-  ) {
-    return new RXA<RT, Result<RT, string>, REL, WT>(
-      init ? async () => ok(await init()) : undefined,
-      helper,
-      setter,
-    ) as StateDelayedREAWS<RT, WT, REL>;
-  },
-  /**Creates a writable delayed state from an initial error, delayed meaning the value is a promise evaluated on first access.
-   * @param init initial error for state.
-   * @param helper functions to check and limit the value, and to return related states.*/
-  err<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>(
-    init?: () => PromiseLike<string>,
-    setter: DelayedSetterWS<RT, Result<RT, string>, REL, WT> | true = true,
-    helper?: Helper<WT, REL>,
-  ) {
-    return new RXA<RT, Result<RT, string>, REL, WT>(
-      init ? async () => err(await init()) : undefined,
-      helper,
-      setter,
-    ) as StateDelayedREAWS<RT, WT, REL>;
-  },
-  /**Creates a delayed ok state from an initial result, delayed meaning the value is a promise evaluated on first access.
-   * @param init initial result for state.
-   * @param helper functions to check and limit the value, and to return related states.*/
-  result<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>(
-    init?: () => PromiseLike<Result<RT, string>>,
-    setter: DelayedSetterWS<RT, Result<RT, string>, REL, WT> | true = true,
-    helper?: Helper<WT, REL>,
-  ) {
-    return new RXA<RT, Result<RT, string>, REL, WT>(
-      init,
-      helper,
-      setter,
-    ) as StateDelayedREAWS<RT, WT, REL>;
-  },
-};
 
-const rea_wa = {
+const reaw = {
   /**Creates a delayed ok state from an initial value, delayed meaning the value is a promise evaluated on first access.
    * @param init initial value for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>(
     init?: () => PromiseLike<RT>,
-    setter: DelayedSetterWA<RT, Result<RT, string>, REL, WT> | true = true,
+    setter: DelayedSetter<RT, Result<RT, string>, REL, WT> | true = true,
     helper?: Helper<WT, REL>,
   ) {
     return new RXA<RT, Result<RT, string>, REL, WT>(
       init ? async () => ok(await init()) : undefined,
       helper,
-      undefined,
       setter,
-    ) as StateDelayedREAWA<RT, WT, REL>;
+    ) as StateDelayedREAW<RT, WT, REL>;
   },
   /**Creates a writable delayed state from an initial error, delayed meaning the value is a promise evaluated on first access.
    * @param init initial error for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   err<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>(
     init?: () => PromiseLike<string>,
-    setter: DelayedSetterWA<RT, Result<RT, string>, REL, WT> | true = true,
+    setter: DelayedSetter<RT, Result<RT, string>, REL, WT> | true = true,
     helper?: Helper<WT, REL>,
   ) {
     return new RXA<RT, Result<RT, string>, REL, WT>(
       init ? async () => err(await init()) : undefined,
       helper,
-      undefined,
       setter,
-    ) as StateDelayedREAWA<RT, WT, REL>;
+    ) as StateDelayedREAW<RT, WT, REL>;
   },
   /**Creates a delayed ok state from an initial result, delayed meaning the value is a promise evaluated on first access.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>(
     init?: () => PromiseLike<Result<RT, string>>,
-    setter: DelayedSetterWA<RT, Result<RT, string>, REL, WT> | true = true,
+    setter: DelayedSetter<RT, Result<RT, string>, REL, WT> | true = true,
     helper?: Helper<WT, REL>,
   ) {
     return new RXA<RT, Result<RT, string>, REL, WT>(
       init,
       helper,
-      undefined,
       setter,
-    ) as StateDelayedREAWA<RT, WT, REL>;
+    ) as StateDelayedREAW<RT, WT, REL>;
   },
 };
 
@@ -590,14 +415,10 @@ const rea_wa = {
 export const STATE_DELAYED = {
   /**Read only delayed states with guarenteed ok, delayed meaning the value is a promise evaluated on first access. */
   roa,
-  /**Read write delayed states with guarenteed ok and sync write, delayed meaning the value is a promise evaluated on first access. */
-  roa_ws,
   /**Read write delayed states with guarenteed ok and async write, delayed meaning the value is a promise evaluated on first access. */
-  roa_wa,
+  roaw,
   /**Read only delayed states with error, delayed meaning the value is a promise evaluated on first access. */
   rea,
-  /**Read write delayed states with error and sync write, delayed meaning the value is a promise evaluated on first access. */
-  rea_ws,
   /**Read write delayed state with error and async write, delayed meaning the value is a promise evaluated on first access. */
-  rea_wa,
+  reaw,
 };

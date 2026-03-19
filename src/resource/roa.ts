@@ -1,9 +1,9 @@
 import { none, ResultOk, type Option } from "@chocbite/ts-lib-result";
 import { StateBase } from "../base";
+import { type StateHelper as Helper } from "../helpers";
 import {
   type StateRelated as RELATED,
   type State,
-  type StateHelper,
   type StateROA,
 } from "../types";
 
@@ -207,7 +207,7 @@ class FuncROA<RT, REL extends Option<RELATED> = Option<{}>, WT = any>
     debounce: number,
     validity: number | true,
     retention: number,
-    helper?: StateHelper<WT, REL>,
+    helper?: Helper<WT, REL>,
   ) {
     super();
     this.single_get = once;
@@ -224,7 +224,7 @@ class FuncROA<RT, REL extends Option<RELATED> = Option<{}>, WT = any>
   readonly debounce: number;
   readonly validity: number | true;
   readonly retention: number;
-  #helper?: StateHelper<WT, REL>;
+  #helper?: Helper<WT, REL>;
 
   /**Called if the state is awaited, returns the value once*/
   protected single_get(_state: Owner<RT, WT, REL>): void {}
@@ -261,7 +261,7 @@ const roa = {
       validity?: number | true;
       retention?: number;
     },
-    helper?: StateHelper<WT, REL>,
+    helper?: Helper<WT, REL>,
   ) {
     return new FuncROA<RT, REL, WT>(
       once,
