@@ -292,12 +292,9 @@ type StateEnumHelperList<K extends PropertyKey> = {
 };
 
 export interface StateEnumRelated<
-  L extends StateEnumHelperList<any>,
+  L extends StateEnumHelperList<PropertyKey> = StateEnumHelperList<PropertyKey>,
 > extends StateRelatedBase {
   list: State<L>;
-  map<K extends keyof L, R>(
-    func: (key: K, val: EnumHelperEntry) => R,
-  ): Promise<R[]>;
 }
 
 export class StateEnumHelper<
@@ -315,24 +312,17 @@ export class StateEnumHelper<
     this.list = list;
   }
 
-  async map<K extends keyof L, R>(
-    func: (key: K, val: EnumHelperEntry) => R,
-  ): Promise<R[]> {
-    const list = await this.list;
-    if (list.err) return [];
-    return Object.keys(list.value).map((key) =>
-      func(key as K, list.value[key as K]),
-    );
-  }
   async limit(value: K): Promise<Result<K, string>> {
     return ok(value);
   }
+
   async check(value: K): Promise<Result<K, string>> {
     const list = await this.list;
     if (list.err) return err("list is not available");
     if (value in list.value) return ok(value);
     return err(String(value) + " is not in list");
   }
+
   related(): OptionSome<R> {
     return some(this as unknown as R);
   }
@@ -350,6 +340,16 @@ const enums = {
   /**Creates an enum description list, passing the enum as a generic type to this function makes things look a bit nicer */
   list<K extends PropertyKey>(list: StateEnumHelperList<K>): typeof list {
     return list;
+  },
+  /**Maps over an enum description list
+   * @param list enum description list
+   * @param func function to apply to each entry
+   * @returns array of results*/
+  map<K extends PropertyKey, R>(
+    list: StateEnumHelperList<K>,
+    func: (key: K, val: EnumHelperEntry) => R,
+  ): R[] {
+    return Object.keys(list).map((key) => func(key as K, list[key as K]));
   },
 };
 
