@@ -9,3 +9,6 @@ state_inst.write(11);
 console.warn(await state_inst);
 
 state_inst.write(-11);
+
+console.warn(state.is(state_inst));
+console.warn(state.h.is.reaw(state.ok(5)));

@@ -8,8 +8,8 @@ import {
   type Result,
 } from "@chocbite/ts-lib-result";
 import type { SVGFunc } from "@chocbite/ts-lib-svg";
-import { StateBase } from "./base";
 import {
+  STATE_KEY,
   type State,
   type StateREA,
   type StateREAW,
@@ -415,28 +415,54 @@ function compare_sync(state1: StateRES<any>, state2: StateRES<any>): boolean {
 //##################################################################################################################################################
 const is = {
   rea(s: any): s is StateREA<any> {
-    return s instanceof StateBase;
+    return (s as { [STATE_KEY]: boolean })[STATE_KEY] || false;
   },
   roa(s: any): s is StateROA<any> {
-    return s instanceof StateBase && s.rok;
+    return (
+      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      (s as State<any>).rok
+    );
   },
   res(s: any): s is StateRES<any> {
-    return s instanceof StateBase && s.rsync;
+    return (
+      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      (s as State<any>).rsync
+    );
   },
   ros(s: any): s is StateROS<any> {
-    return s instanceof StateBase && s.rsync && s.rok;
+    return (
+      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      (s as State<any>).rsync &&
+      (s as State<any>).rok
+    );
   },
   reaw(s: any): s is StateREAW<any> {
-    return s instanceof StateBase && s.writable;
+    return (
+      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      (s as State<any>).writable
+    );
   },
   roaw(s: any): s is StateROAW<any> {
-    return s instanceof StateBase && s.writable && s.rok;
+    return (
+      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      (s as State<any>).writable &&
+      (s as State<any>).rok
+    );
   },
   resw(s: any): s is StateRESW<any> {
-    return s instanceof StateBase && s.writable && s.rsync;
+    return (
+      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      (s as State<any>).writable &&
+      (s as State<any>).rsync
+    );
   },
   rosw(s: any): s is StateROSW<any> {
-    return s instanceof StateBase && s.writable && s.rsync && s.rok;
+    return (
+      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      (s as State<any>).writable &&
+      (s as State<any>).rsync &&
+      (s as State<any>).rok
+    );
   },
 };
 

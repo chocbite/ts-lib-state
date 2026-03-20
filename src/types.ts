@@ -299,76 +299,129 @@ export type StateOpt<REL> = REL extends OptionNone ? Option<{}> : REL;
 //      / ____ \| | \ \| | \ \  / ____ \| |
 //     /_/    \_\_|  \_\_|  \_\/_/    \_\_|
 
-export const ARRAY_READ_TYPE = Symbol("state_array_read_type");
-export const ARRAY_READ_INDEX = Symbol("state_array_read_index");
-export const ARRAY_READ_ITEMS = Symbol("state_array_read_items");
+export const STATE_ARRAY_READ_KEY = Symbol("state_array_read_key");
 
-export const StateArrayReadType = {
-  added: "added",
-  removed: "removed",
-  changed: "changed",
-  fresh: "fresh",
-} as const;
-export type StateArrayReadType =
-  (typeof StateArrayReadType)[keyof typeof StateArrayReadType];
+export type StateArrayRead<TYPE> = TYPE[] & {
+  [STATE_ARRAY_READ_KEY]:
+    | {
+        type: "added";
+        index: number;
+        items: readonly TYPE[];
+      }
+    | {
+        type: "removed";
+        index: number;
+        items: readonly TYPE[];
+      }
+    | {
+        type: "changed";
+        index: number;
+        items: readonly TYPE[];
+      }
+    | {
+        type: "fresh";
+      };
+};
+export const STATE_ARRAY_WRITE_KEY = Symbol("state_array_write_key");
 
-export type StateArrayRead<TYPE> = TYPE[] &
-  (
+export type StateArrayWrite<TYPE> = TYPE[] & {
+  [STATE_ARRAY_WRITE_KEY]:
     | {
-        [ARRAY_WRITE_TYPE]: "added";
-        [ARRAY_WRITE_INDEX]: number;
-        [ARRAY_WRITE_ITEMS]: readonly TYPE[];
+        type: "write";
+        items: readonly TYPE[];
       }
     | {
-        [ARRAY_WRITE_TYPE]: "removed";
-        [ARRAY_WRITE_INDEX]: number;
-        [ARRAY_WRITE_ITEMS]: readonly TYPE[];
+        type: "change";
+        index: number;
+        item: TYPE;
       }
     | {
-        [ARRAY_WRITE_TYPE]: "changed";
-        [ARRAY_WRITE_INDEX]: number;
-        [ARRAY_WRITE_ITEMS]: readonly TYPE[];
+        type: "push";
+        items: readonly TYPE[];
       }
     | {
-        [ARRAY_WRITE_TYPE]: "fresh";
+        type: "unshift";
+        items: readonly TYPE[];
       }
-  );
+    | { type: "pop" }
+    | { type: "shift" }
+    | {
+        type: "delete";
+        item: TYPE;
+      }
+    | {
+        type: "splice";
+        index: number;
+        deletedCount: number;
+        items?: readonly TYPE[];
+      };
+};
 
-export const ARRAY_WRITE_TYPE = Symbol("state_array_write_type");
-export const ARRAY_WRITE_INDEX = Symbol("state_array_write_index");
-export const ARRAY_WRITE_ITEMS = Symbol("state_array_write_items");
-export const ARRAY_WRITE_ITEM = Symbol("state_array_write_item");
-export const ARRAY_DELETED_COUNT = Symbol("state_array_deleted_count");
+//       ____  ____       _ ______ _____ _______
+//      / __ \|  _ \     | |  ____/ ____|__   __|
+//     | |  | | |_) |    | | |__ | |       | |
+//     | |  | |  _ < _   | |  __|| |       | |
+//     | |__| | |_) | |__| | |___| |____   | |
+//      \____/|____/ \____/|______\_____|  |_|
 
-export type StateArrayWrite<TYPE> = TYPE[] &
-  (
+export const STATE_OBJECT_READ_KEY = Symbol("state_object_read_key");
+
+export type StateObjectRead<TYPE> = {
+  [key: PropertyKey]: TYPE;
+} & {
+  [STATE_OBJECT_READ_KEY]:
     | {
-        [ARRAY_WRITE_TYPE]: "write";
-        [ARRAY_WRITE_ITEMS]: readonly TYPE[];
+        type: "added";
+        index: number;
+        items: readonly TYPE[];
       }
     | {
-        [ARRAY_WRITE_TYPE]: "change";
-        [ARRAY_WRITE_INDEX]: number;
-        [ARRAY_WRITE_ITEM]: TYPE;
+        type: "removed";
+        index: number;
+        items: readonly TYPE[];
       }
     | {
-        [ARRAY_WRITE_TYPE]: "push";
-        [ARRAY_WRITE_ITEMS]: readonly TYPE[];
+        type: "changed";
+        index: number;
+        items: readonly TYPE[];
       }
     | {
-        [ARRAY_WRITE_TYPE]: "unshift";
-        [ARRAY_WRITE_ITEMS]: readonly TYPE[];
-      }
-    | { [ARRAY_WRITE_TYPE]: "pop" }
-    | { [ARRAY_WRITE_TYPE]: "shift" }
+        type: "fresh";
+      };
+};
+export const STATE_OBJECT_WRITE_KEY = Symbol("state_object_write_key");
+
+export type StateObjectWrite<TYPE> = {
+  [key: PropertyKey]: TYPE;
+} & {
+  [STATE_OBJECT_WRITE_KEY]:
     | {
-        [ARRAY_WRITE_TYPE]: "delete";
-        [ARRAY_WRITE_ITEM]: TYPE;
+        type: "write";
+        items: readonly TYPE[];
       }
     | {
-        [ARRAY_WRITE_TYPE]: "splice";
-        [ARRAY_WRITE_INDEX]: number;
-        [ARRAY_DELETED_COUNT]: number;
-        [ARRAY_WRITE_ITEMS]?: readonly TYPE[];
+        type: "change";
+        index: number;
+        item: TYPE;
       }
-  );
+    | {
+        type: "push";
+        items: readonly TYPE[];
+      }
+    | {
+        type: "unshift";
+        items: readonly TYPE[];
+      }
+    | { type: "pop" }
+    | { type: "shift" }
+    | {
+        type: "delete";
+        item: TYPE;
+      }
+    | {
+        type: "splice";
+        index: number;
+        deletedCount: number;
+        items?: readonly TYPE[];
+      };
+};

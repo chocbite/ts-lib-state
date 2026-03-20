@@ -42,9 +42,8 @@ export const state = {
   r: { ...STATE_RESOURCE_REA, ...STATE_RESOURCE_ROA },
   s: STATE_SYNC,
   /**Returns true if the given object promises to be a state */
-  is(s: unknown): s is State<any, any> {
-    //@ts-expect-error Will not crash
-    return Boolean(s) && s[STATE_KEY] === true;
+  is(s: any): s is State<any, any> {
+    return (s as { [STATE_KEY]: boolean })[STATE_KEY] || false;
   },
   /**Utility base class for state, with basic state functionality */
   class: StateBase,
@@ -58,13 +57,10 @@ export const state = {
 export default state;
 
 export {
-  type StateArrayRead,
-  type StateArrayReadType,
   type StateArraySyncRES,
   type StateArraySyncRESWS,
   type StateArraySyncROS,
   type StateArraySyncROSWS,
-  type StateArrayWrite,
 } from "./array/sync";
 export { type StateCollectedREA } from "./collected/rea";
 export { type StateCollectedRES } from "./collected/res";
