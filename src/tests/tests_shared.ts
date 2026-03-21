@@ -11,7 +11,7 @@ import type {
   StateROS,
   StateROSW,
   StateSub,
-} from "./types";
+} from "../types";
 
 function err_gen() {
   return "Test Error";

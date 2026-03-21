@@ -10,7 +10,7 @@ import {
   TestStateWrite,
   type TestStateOkSync,
   type TestStateSync,
-} from "../tests_shared";
+} from "./tests_shared";
 
 describe("Initialize lazy states", function () {
   describe("ROS", { timeout: 100 }, function () {
@@ -87,25 +87,25 @@ describe("Initialize lazy states", function () {
   //##################################################################################################################################################
   describe("ROS_WS", { timeout: 100 }, function () {
     it("ok", async function () {
-      st.l.ros_ws.ok(() => 1);
+      st.l.rosw.ok(() => 1);
     });
     it("result ok", async function () {
-      st.l.ros_ws.result(() => ok(1));
+      st.l.rosw.result(() => ok(1));
     });
     it("cleanup successfull", async function () {
-      const init = st.l.ros_ws.ok(() => 1);
+      const init = st.l.rosw.ok(() => 1);
       // eslint-disable-next-line @typescript-eslint/unbound-method
       const set = init.set;
       // eslint-disable-next-line @typescript-eslint/unbound-method
       const write = init.write;
       await init;
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(init.set).not.eq(set, "set");
+      expect(init.set).not.eq(set);
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(init.write).not.eq(write, "write");
+      expect(init.write).not.eq(write);
     });
     const maker: TestStateOkSync = () => {
-      const state = st.l.ros_ws.ok(() => 1);
+      const state = st.l.rosw.ok(() => 1);
       const set = (val: ResultOk<number>) => state.set(val);
       return { o: true, s: true, w: true, ws: true, state, set };
     };
@@ -122,7 +122,7 @@ describe("Initialize lazy states", function () {
       await test_state_get_ok(maker);
     });
     const maker_write: TestStateWrite = () => {
-      const state = st.l.ros_ws.ok(() => 1, true);
+      const state = st.l.rosw.ok(() => 1, true);
       const set = (val: ResultOk<number>) => state.set(val);
       return { o: true, s: true, w: true, ws: true, state, set };
     };
@@ -133,16 +133,16 @@ describe("Initialize lazy states", function () {
   //##################################################################################################################################################
   describe("RES_WS", { timeout: 100 }, function () {
     it("ok", async function () {
-      st.l.res_ws.ok(() => 1);
+      st.l.resw.ok(() => 1);
     });
     it("err", async function () {
-      st.l.res_ws.err(() => "1");
+      st.l.resw.err(() => "1");
     });
     it("result ok", async function () {
-      st.l.res_ws.result(() => ok(1));
+      st.l.resw.result(() => ok(1));
     });
     it("cleanup successfull", async function () {
-      const init = st.l.res_ws.ok(() => 1);
+      const init = st.l.resw.ok(() => 1);
       // eslint-disable-next-line @typescript-eslint/unbound-method
       const set = init.set;
       const write = init.write;
@@ -152,7 +152,7 @@ describe("Initialize lazy states", function () {
       expect(init.write).not.eq(write, "write");
     });
     const maker: TestStateSync = () => {
-      const state = st.l.res_ws.ok(() => 1);
+      const state = st.l.resw.ok(() => 1);
       const set = (val: Result<number, string>) => state.set(val);
       return { o: false, s: true, w: true, ws: true, state, set };
     };
@@ -166,7 +166,7 @@ describe("Initialize lazy states", function () {
       await test_state_get(maker);
     });
     const maker_write: TestStateWrite = () => {
-      const state = st.l.res_ws.ok(() => 1, true);
+      const state = st.l.resw.ok(() => 1, true);
       const set = (val: Result<number, string>) => state.set(val);
       return { o: false, s: true, w: true, ws: true, state, set };
     };

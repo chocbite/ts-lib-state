@@ -1,27 +1,23 @@
-import { STATE_ARRAY } from "./array/sync";
 import { StateBase } from "./base";
 import { STATE_COLLECTS_NUMBER } from "./collected/number";
 import { STATE_COLLECTED_REA } from "./collected/rea";
 import { STATE_COLLECTED_RES } from "./collected/res";
 import { STATE_COLLECTED_ROA } from "./collected/roa";
 import { STATE_COLLECTED_ROS } from "./collected/ros";
-import { STATE_DELAYED } from "./delayed/delayed";
 import { STATE_HELPERS } from "./helpers";
-import { STATE_LAZY } from "./lazy/lazy";
+import { STATE_DELAYED, STATE_LAZY, STATE_SYNC } from "./normal";
 import { STATE_PROXY_REA } from "./proxy/rea";
 import { STATE_PROXY_RES } from "./proxy/res";
 import { STATE_PROXY_ROA } from "./proxy/roa";
 import { STATE_PROXY_ROS } from "./proxy/ros";
 import { STATE_RESOURCE_REA } from "./resource/rea";
 import { STATE_RESOURCE_ROA } from "./resource/roa";
-import { STATE_SYNC } from "./sync/sync";
 import { STATE_KEY, type State } from "./types";
 
 export const state = {
   /**The state key is a symbol used to identify state objects
    * To implement a custom state, set this key to true on the object */
   STATE_KEY,
-  a: STATE_ARRAY,
   /**Collected states, collects values from multiple states and reduces it to one */
   c: {
     rea: STATE_COLLECTED_REA,
@@ -43,35 +39,23 @@ export const state = {
   s: STATE_SYNC,
   /**Returns true if the given object promises to be a state */
   is(s: any): s is State<any, any> {
-    return (s as { [STATE_KEY]: boolean })[STATE_KEY] || false;
+    return Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]);
   },
   /**Utility base class for state, with basic state functionality */
   class: StateBase,
   ok: STATE_SYNC.ros.ok,
   err: STATE_SYNC.res.err,
   from: STATE_SYNC.res.ok,
-  ok_ws: STATE_SYNC.ros_ws.ok,
-  err_ws: STATE_SYNC.res_ws.err,
-  from_ws: STATE_SYNC.res_ws.ok,
+  ok_ws: STATE_SYNC.rosw.ok,
+  err_ws: STATE_SYNC.resw.err,
+  from_ws: STATE_SYNC.resw.ok,
 };
 export default state;
 
-export {
-  type StateArraySyncRES,
-  type StateArraySyncRESWS,
-  type StateArraySyncROS,
-  type StateArraySyncROSWS,
-} from "./array/sync";
 export { type StateCollectedREA } from "./collected/rea";
 export { type StateCollectedRES } from "./collected/res";
 export { type StateCollectedROA } from "./collected/roa";
 export { type StateCollectedROS } from "./collected/ros";
-export {
-  type StateDelayedREA,
-  type StateDelayedREAW,
-  type StateDelayedROA,
-  type StateDelayedROAW,
-} from "./delayed/delayed";
 export {
   StateEnumHelper,
   StateNumberHelper,
@@ -81,11 +65,19 @@ export {
   type StateStringRelated,
 } from "./helpers";
 export {
+  type StateDelayedREA,
+  type StateDelayedREAW,
+  type StateDelayedROA,
+  type StateDelayedROAW,
   type StateLazyRES,
-  type StateLazyRESW as StateLazyRESWS,
+  type StateLazyRESW,
   type StateLazyROS,
-  type StateLazyROSW as StateLazyROSWS,
-} from "./lazy/lazy";
+  type StateLazyROSW,
+  type StateSyncRES,
+  type StateSyncRESW,
+  type StateSyncROS,
+  type StateSyncROSW,
+} from "./normal";
 export { type StateProxyREA, type StateProxyREAW } from "./proxy/rea";
 export { type StateProxyRES, type StateProxyRESW } from "./proxy/res";
 export { type StateProxyROA, type StateProxyROAW } from "./proxy/roa";
@@ -100,12 +92,6 @@ export {
   type StateResourceFuncROA,
   type StateResourceROA,
 } from "./resource/roa";
-export {
-  type StateSyncRES,
-  type StateSyncRESW,
-  type StateSyncROS,
-  type StateSyncROSW,
-} from "./sync/sync";
 
 //       _____ _______    _______ ______   _________     _______  ______  _____
 //      / ____|__   __|/\|__   __|  ____| |__   __\ \   / /  __ \|  ____|/ ____|

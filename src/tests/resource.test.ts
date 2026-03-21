@@ -13,7 +13,7 @@ import {
   type TestStateAll,
   type TestStateOk,
   type TestStateWrite,
-} from "../tests_shared";
+} from "./tests_shared";
 
 describe("Resource states", function () {
   //##################################################################################################################################################

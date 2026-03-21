@@ -361,7 +361,6 @@ const enums = {
 //     | |    | |__| | |\  | |____   | |   _| || |__| | |\  |____) |
 //     |_|     \____/|_| \_|\_____|  |_|  |_____\____/|_| \_|_____/
 
-//##################################################################################################################################################
 /**Waits for a state to have a specific value or until timeout is reached
  * @param value value to wait for
  * @param state state to wait on
@@ -415,56 +414,64 @@ function compare_sync(state1: StateRES<any>, state2: StateRES<any>): boolean {
 //##################################################################################################################################################
 const is = {
   rea(s: any): s is StateREA<any> {
-    return (s as { [STATE_KEY]: boolean })[STATE_KEY] || false;
+    return Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]);
   },
   roa(s: any): s is StateROA<any> {
     return (
-      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
       (s as State<any>).rok
     );
   },
   res(s: any): s is StateRES<any> {
     return (
-      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
       (s as State<any>).rsync
     );
   },
   ros(s: any): s is StateROS<any> {
     return (
-      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
       (s as State<any>).rsync &&
       (s as State<any>).rok
     );
   },
   reaw(s: any): s is StateREAW<any> {
     return (
-      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
       (s as State<any>).writable
     );
   },
   roaw(s: any): s is StateROAW<any> {
     return (
-      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
       (s as State<any>).writable &&
       (s as State<any>).rok
     );
   },
   resw(s: any): s is StateRESW<any> {
     return (
-      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
       (s as State<any>).writable &&
       (s as State<any>).rsync
     );
   },
   rosw(s: any): s is StateROSW<any> {
     return (
-      ((s as { [STATE_KEY]: boolean })[STATE_KEY] || false) &&
+      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
       (s as State<any>).writable &&
       (s as State<any>).rsync &&
       (s as State<any>).rok
     );
   },
 };
+
+//##################################################################################################################################################
+//               _____  _____        __     __
+//         /\   |  __ \|  __ \     /\\ \   / /
+//        /  \  | |__) | |__) |   /  \\ \_/ /
+//       / /\ \ |  _  /|  _  /   / /\ \\   /
+//      / ____ \| | \ \| | \ \  / ____ \| |
+//     /_/    \_\_|  \_\_|  \_\/_/    \_\_|
 
 //##################################################################################################################################################
 //      ________   _______   ____  _____ _______ _____

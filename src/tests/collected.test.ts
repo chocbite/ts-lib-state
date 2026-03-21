@@ -11,7 +11,7 @@ import {
   type TestStateOk,
   type TestStateOkSync,
   type TestStateSync,
-} from "../tests_shared";
+} from "./tests_shared";
 
 describe("Collected states", function () {
   //##################################################################################################################################################

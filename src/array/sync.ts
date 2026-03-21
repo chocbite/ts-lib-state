@@ -9,7 +9,7 @@ import {
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "../base";
 import { type StateHelper as HELPER } from "../helpers";
-import { STATE_SYNC, type StateSyncROS } from "../sync/sync";
+import { STATE_SYNC, type StateSyncROS } from "../normal";
 import type {
   StateRelated as RELATED,
   State,

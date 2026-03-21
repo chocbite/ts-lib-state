@@ -10,7 +10,7 @@ import {
   TestStateWrite,
   type TestStateOkSync,
   type TestStateSync,
-} from "../tests_shared";
+} from "./tests_shared";
 
 describe("Sync states", function () {
   describe("ROS", { timeout: 100 }, function () {
@@ -68,13 +68,13 @@ describe("Sync states", function () {
   //##################################################################################################################################################
   describe("ROSWS", { timeout: 100 }, function () {
     it("ok", async function () {
-      st.s.ros_ws.ok(1, true);
+      st.s.rosw.ok(1, true);
     });
     it("result ok", async function () {
-      st.s.ros_ws.result(ok(1), true);
+      st.s.rosw.result(ok(1), true);
     });
     const maker: TestStateOkSync = () => {
-      const state = st.s.ros_ws.ok(1, true);
+      const state = st.s.rosw.ok(1, true);
       const set = (val: ResultOk<number>) => state.set(val);
       return { o: true, s: true, w: true, ws: true, state, set };
     };
@@ -91,7 +91,7 @@ describe("Sync states", function () {
       await test_state_get_ok(maker);
     });
     const maker_write: TestStateWrite = () => {
-      const state = st.s.ros_ws.ok(1, true);
+      const state = st.s.rosw.ok(1, true);
       const set = (val: ResultOk<number>) => state.set(val);
       return { o: true, s: true, w: true, ws: true, state, set };
     };
@@ -102,16 +102,16 @@ describe("Sync states", function () {
   //##################################################################################################################################################
   describe("RESWS", { timeout: 100 }, function () {
     it("ok", async function () {
-      st.s.res_ws.ok(1, true);
+      st.s.resw.ok(1, true);
     });
     it("err", async function () {
-      st.s.res_ws.err("1", true);
+      st.s.resw.err("1", true);
     });
     it("result ok", async function () {
-      st.s.res_ws.result(ok(1), true);
+      st.s.resw.result(ok(1), true);
     });
     const maker: TestStateSync = () => {
-      const state = st.s.res_ws.ok(1, true);
+      const state = st.s.resw.ok(1, true);
       const set = (val: Result<number, string>) => state.set(val);
       return { o: false, s: true, w: true, ws: true, state, set };
     };
@@ -125,7 +125,7 @@ describe("Sync states", function () {
       await test_state_get(maker);
     });
     const maker_write: TestStateWrite = () => {
-      const state = st.s.res_ws.ok(1, true);
+      const state = st.s.resw.ok(1, true);
       const set = (val: Result<number, string>) => state.set(val);
       return { o: false, s: true, w: true, ws: true, state, set };
     };

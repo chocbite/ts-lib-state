@@ -18,7 +18,7 @@ import {
   test_state_write,
   type TestStateAll,
   type TestStateWrite,
-} from "../tests_shared";
+} from "./tests_shared";
 
 describe("Initialize delayed states", function () {
   //##################################################################################################################################################
