@@ -373,17 +373,17 @@ export type StateObjectRead<TYPE> = {
     | {
         type: "added";
         index: number;
-        items: readonly TYPE[];
+        items: Readonly<{ [key: PropertyKey]: TYPE }>;
       }
     | {
         type: "removed";
         index: number;
-        items: readonly TYPE[];
+        items: Readonly<{ [key: PropertyKey]: TYPE }>;
       }
     | {
         type: "changed";
         index: number;
-        items: readonly TYPE[];
+        items: Readonly<{ [key: PropertyKey]: TYPE }>;
       }
     | {
         type: "fresh";
@@ -396,32 +396,15 @@ export type StateObjectWrite<TYPE> = {
 } & {
   [STATE_OBJECT_WRITE_KEY]:
     | {
-        type: "write";
-        items: readonly TYPE[];
+        type: "add";
+        items: { [key: PropertyKey]: TYPE };
+      }
+    | {
+        type: "remove";
+        items: readonly PropertyKey[];
       }
     | {
         type: "change";
-        index: number;
-        item: TYPE;
-      }
-    | {
-        type: "push";
-        items: readonly TYPE[];
-      }
-    | {
-        type: "unshift";
-        items: readonly TYPE[];
-      }
-    | { type: "pop" }
-    | { type: "shift" }
-    | {
-        type: "delete";
-        item: TYPE;
-      }
-    | {
-        type: "splice";
-        index: number;
-        deletedCount: number;
-        items?: readonly TYPE[];
+        items: { [key: PropertyKey]: TYPE };
       };
 };
