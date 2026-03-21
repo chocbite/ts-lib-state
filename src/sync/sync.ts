@@ -2,6 +2,7 @@ import {
   err,
   none,
   ok,
+  RESULT_KEY,
   ResultOk,
   type Option,
   type Result,
@@ -116,7 +117,7 @@ class RXS<
   implements Owner<RT, RRT, WT, REL>
 {
   constructor(
-    init: RRT,
+    init: RRT | (() => RRT),
     helper?: Helper<WT, REL>,
     setter?: SyncSetter<RT, RRT, REL, WT> | true,
   ) {
@@ -136,10 +137,22 @@ class RXS<
       };
     else this.#setter = setter;
     if (helper) this.#helper = helper;
-    this.#value = init;
+    if (init[RESULT_KEY]) {
+      this.#value = init;
+    } else {
+      this.get = () => this.#clean() ?? (this.#value = init());
+      this.set = (value) => this.set(this.#clean() ?? value);
+      const write = this.write.bind(this);
+      this.write = (value) =>
+        write(value).then((val) => val.map((valu) => this.#clean() ?? valu));
+    }
   }
 
-  #value: RRT;
+  #clean(): void {
+    (["get", "set", "write"] as const).forEach((k) => delete this[k]);
+  }
+
+  #value?: RRT;
   #setter?: SyncSetter<RT, RRT, REL, WT>;
   #helper?: Helper<WT, REL>;
 
@@ -173,16 +186,16 @@ class RXS<
   get rok(): boolean {
     return this.#value.ok;
   }
-  get rsync(): true {
-    return true;
+  get rsync(): boolean {
+    return Boolean(this.#value);
   }
   async then<TResult1 = RRT>(
     func: (value: RRT) => TResult1 | PromiseLike<TResult1>,
   ): Promise<TResult1> {
-    return func(this.#value);
+    return func(this.#value!);
   }
   get(): RRT {
-    return this.#value;
+    return this.#value!;
   }
   ok(): RT {
     return (this.#value as ResultOk<RT>).value;

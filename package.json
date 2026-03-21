@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@vitest/browser-playwright": "^4.1.0",
-    "eslint": "^10.0.3",
+    "eslint": "^10.1.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.1",
@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@chocbite/ts-lib-math": "^1.0.0",
-    "@chocbite/ts-lib-result": "^1.0.0",
+    "@chocbite/ts-lib-result": "^1.1.1",
     "@chocbite/ts-lib-svg": "^1.0.1"
   }
 }
