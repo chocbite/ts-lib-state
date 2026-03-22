@@ -371,7 +371,7 @@ export const STATE_OBJECT_READ_KEY = Symbol("state_object_read_key");
 export type StateObjectRead<TYPE> = {
   [key: PropertyKey]: TYPE;
 } & {
-  [STATE_OBJECT_READ_KEY]:
+  [STATE_OBJECT_READ_KEY]?:
     | {
         type: "added";
         index: number;
@@ -396,7 +396,7 @@ export const STATE_OBJECT_WRITE_KEY = Symbol("state_object_write_key");
 export type StateObjectWrite<TYPE> = {
   [key: PropertyKey]: TYPE;
 } & {
-  [STATE_OBJECT_WRITE_KEY]:
+  [STATE_OBJECT_WRITE_KEY]?:
     | {
         type: "add";
         items: { [key: PropertyKey]: TYPE };

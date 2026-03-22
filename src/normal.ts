@@ -31,7 +31,7 @@ import {
 
 type Setter<
   RT,
-  RRT extends Result<RT extends [] ? readonly [] : RT, string>,
+  RRT extends Result<RT, string>,
   REL extends Option<RELATED>,
   WT = RT,
 > = (
@@ -42,7 +42,7 @@ type Setter<
 
 interface Owner<
   RT,
-  RRT extends Result<RT extends [] ? readonly [] : RT, string>,
+  RRT extends Result<RT, string>,
   WT,
   REL extends Option<RELATED>,
 > {
@@ -53,7 +53,7 @@ interface Owner<
 }
 export interface OwnerWrite<
   RT,
-  RRT extends Result<RT extends [] ? readonly [] : RT, string>,
+  RRT extends Result<RT, string>,
   WT,
   REL extends Option<RELATED>,
 > extends Owner<RT, RRT, WT, REL> {
@@ -65,7 +65,7 @@ export type StateSyncROS<
   REL extends Option<RELATED> = Option<{}>,
   WT = any,
 > = StateROS<RT, REL, WT> &
-  Owner<RT, ResultOk<RT extends [] ? readonly [] : RT>, WT, REL> & {
+  Owner<RT, ResultOk<RT>, WT, REL> & {
     readonly read_only: StateROS<RT, REL, WT>;
     readonly read_write?: StateROSW<RT, WT, REL>;
   };
