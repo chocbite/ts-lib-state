@@ -329,7 +329,6 @@ export type StateArrayWrite<TYPE> = TYPE[] & {
   [STATE_ARRAY_WRITE_KEY]?:
     | {
         type: "fresh";
-        items: TYPE[];
       }
     | {
         type: "change";

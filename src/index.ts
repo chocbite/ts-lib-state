@@ -1,53 +1,46 @@
 import { StateBase } from "./base";
-import { STATE_COLLECTS_NUMBER } from "./collected/number";
-import { STATE_COLLECTED_REA } from "./collected/rea";
-import { STATE_COLLECTED_RES } from "./collected/res";
-import { STATE_COLLECTED_ROA } from "./collected/roa";
-import { STATE_COLLECTED_ROS } from "./collected/ros";
-import { STATE_HELPERS } from "./helpers";
-import { STATE_DELAYED, STATE_LAZY, STATE_SYNC } from "./normal";
-import { STATE_PROXY_REA } from "./proxy/rea";
-import { STATE_PROXY_RES } from "./proxy/res";
-import { STATE_PROXY_ROA } from "./proxy/roa";
-import { STATE_PROXY_ROS } from "./proxy/ros";
-import { STATE_RESOURCE } from "./resource";
+import { COLLECTS_NUMBER } from "./collected/number";
+import { COLLECTED_REA } from "./collected/rea";
+import { COLLECTED_RES } from "./collected/res";
+import { COLLECTED_ROA } from "./collected/roa";
+import { COLLECTED_ROS } from "./collected/ros";
+import { ARRAY, HELPERS } from "./helpers";
+import { DELAYED, LAZY, SYNC } from "./normal";
+import { PROXY } from "./proxy";
+import { RESOURCE } from "./resource";
 import { STATE_KEY, type State } from "./types";
 
 export const state = {
   /**The state key is a symbol used to identify state objects
    * To implement a custom state, set this key to true on the object */
   STATE_KEY,
+  a: ARRAY,
   /**Collected states, collects values from multiple states and reduces it to one */
   c: {
-    rea: STATE_COLLECTED_REA,
-    res: STATE_COLLECTED_RES,
-    roa: STATE_COLLECTED_ROA,
-    ros: STATE_COLLECTED_ROS,
-    num: STATE_COLLECTS_NUMBER,
+    rea: COLLECTED_REA,
+    res: COLLECTED_RES,
+    roa: COLLECTED_ROA,
+    ros: COLLECTED_ROS,
+    num: COLLECTS_NUMBER,
   },
-  d: STATE_DELAYED,
-  h: STATE_HELPERS,
-  l: STATE_LAZY,
-  p: {
-    ...STATE_PROXY_REA,
-    ...STATE_PROXY_RES,
-    ...STATE_PROXY_ROA,
-    ...STATE_PROXY_ROS,
-  },
-  r: STATE_RESOURCE,
-  s: STATE_SYNC,
+  d: DELAYED,
+  h: HELPERS,
+  l: LAZY,
+  p: PROXY,
+  r: RESOURCE,
+  s: SYNC,
   /**Returns true if the given object promises to be a state */
   is(s: any): s is State<any, any> {
     return Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]);
   },
   /**Utility base class for state, with basic state functionality */
   class: StateBase,
-  ok: STATE_SYNC.ros.ok,
-  err: STATE_SYNC.res.err,
-  from: STATE_SYNC.res.ok,
-  ok_ws: STATE_SYNC.rosw.ok,
-  err_ws: STATE_SYNC.resw.err,
-  from_ws: STATE_SYNC.resw.ok,
+  ok: SYNC.ros.ok,
+  err: SYNC.res.err,
+  from: SYNC.res.ok,
+  ok_ws: SYNC.rosw.ok,
+  err_ws: SYNC.resw.err,
+  from_ws: SYNC.resw.ok,
 };
 export default state;
 
@@ -77,10 +70,16 @@ export {
   type StateSyncROS,
   type StateSyncROSW,
 } from "./normal";
-export { type StateProxyREA, type StateProxyREAW } from "./proxy/rea";
-export { type StateProxyRES, type StateProxyRESW } from "./proxy/res";
-export { type StateProxyROA, type StateProxyROAW } from "./proxy/roa";
-export { type StateProxyROS, type StateProxyROSW } from "./proxy/ros";
+export {
+  type StateProxyREA,
+  type StateProxyREAW,
+  type StateProxyRES,
+  type StateProxyRESW,
+  type StateProxyROA,
+  type StateProxyROAW,
+  type StateProxyROS,
+  type StateProxyROSW,
+} from "./proxy";
 export {
   type StateResource,
   type StateResourceFuncREA,

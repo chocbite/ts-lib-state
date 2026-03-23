@@ -159,7 +159,7 @@ export class RES<RT, IN extends StateRES<any>[], WT>
 }
 
 /**Collected states, collects values from multiple states and reduces it to one */
-export const STATE_COLLECTED_RES = {
+export const COLLECTED_RES = {
   /**Creates a state that collects multiple states values and reduces it to one.
    * @param transform - Function to translate value of collected states, false means first states values is used.
    * @param states - The states to collect.*/

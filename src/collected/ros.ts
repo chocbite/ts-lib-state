@@ -148,7 +148,7 @@ export class ROS<RT, IN extends [StateRES<any>, ...StateRES<any>[]], WT>
   }
 }
 
-export const STATE_COLLECTED_ROS = {
+export const COLLECTED_ROS = {
   /**Creates a guarenteed ok state that collects multiple states values and reduces it to one.
    * @param transform - Function to translate value of collected states, false means first states values is used.
    * @param states - The states to collect.*/

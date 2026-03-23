@@ -867,7 +867,7 @@ class FuncREAW<RT, WT = RT, REL extends Option<RELATED> = Option<{}>>
 //     |______/_/ \_\_|     \____/|_|  \_\ |_| |_____/
 
 /**State that represent a remote resource*/
-export const STATE_RESOURCE = {
+export const RESOURCE = {
   /**Extension class for making custom state resources */
   class: StateResource,
   /**Remote resource */

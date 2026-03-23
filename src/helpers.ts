@@ -475,16 +475,10 @@ const is = {
 //       / /\ \ |  _  /|  _  /   / /\ \\   /
 //      / ____ \| | \ \| | \ \  / ____ \| |
 //     /_/    \_\_|  \_\_|  \_\/_/    \_\_|
-const array = {
-  read<RT>(arr: readonly RT[]): StateArrayRead<RT> {
-    return arr as StateArrayRead<RT>;
-  },
-  //# Array Write Helpers
-  write<T>(items: T[]): StateArrayWrite<T> {
-    (items as StateArrayWrite<T>)[STATE_ARRAY_WRITE_KEY] = {
-      type: "fresh",
-      items,
-    };
+
+const write = {
+  fresh<T>(items: T[]): StateArrayWrite<T> {
+    (items as StateArrayWrite<T>)[STATE_ARRAY_WRITE_KEY] = { type: "fresh" };
     return items;
   },
   index<T>(index: number, value: T): StateArrayWrite<T> {
@@ -530,21 +524,6 @@ const array = {
     };
     return arr;
   },
-  pluck<T>(index: number): StateArrayWrite<T> {
-    const arr = [] as StateArrayWrite<T>;
-    arr[STATE_ARRAY_WRITE_KEY] = { type: "splice", index, delete_count: 1 };
-    return arr;
-  },
-  insert<T>(index: number, ...items: T[]): StateArrayWrite<T> {
-    const arr = [] as StateArrayWrite<T>;
-    arr[STATE_ARRAY_WRITE_KEY] = {
-      type: "splice",
-      index,
-      delete_count: 0,
-      items,
-    };
-    return arr;
-  },
 };
 
 //##################################################################################################################################################
@@ -556,7 +535,7 @@ const array = {
 //     |______/_/ \_\_|     \____/|_|  \_\ |_| |_____/
 
 /**Helper function and types for states */
-export const STATE_HELPERS = {
+export const HELPERS = {
   is,
   nums,
   strings,
@@ -564,5 +543,11 @@ export const STATE_HELPERS = {
   await_value,
   compare,
   compare_sync,
-  array,
+};
+
+export const ARRAY = {
+  read<RT>(arr: readonly RT[]): StateArrayRead<RT> {
+    return arr as StateArrayRead<RT>;
+  },
+  write,
 };

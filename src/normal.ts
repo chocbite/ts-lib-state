@@ -797,7 +797,7 @@ const delayed_reaw = {
 //     | |____ / . \| |    | |__| | | \ \  | |  ____) |
 //     |______/_/ \_\_|     \____/|_|  \_\ |_| |_____/
 /**Sync valueholding states */
-export const STATE_SYNC = {
+export const SYNC = {
   /**Sync read only states with guarenteed ok*/
   ros: sync_ros,
   /**Sync read and sync write with guarenteed ok*/
@@ -809,7 +809,7 @@ export const STATE_SYNC = {
 };
 
 /**Lazy valueholding states, lazy means the given function is evaluated on first access */
-export const STATE_LAZY = {
+export const LAZY = {
   /**Sync Read lazy states with guarenteed ok, lazy meaning the value is only evaluated on first access. */
   ros: lazy_ros,
   /**Sync Read And Sync Write lazy states with guarenteed ok, lazy meaning the value is only evaluated on first access. */
@@ -821,7 +821,7 @@ export const STATE_LAZY = {
 };
 
 /**Delayed valueholding states, delayed means the given promise is evaluated on first access */
-export const STATE_DELAYED = {
+export const DELAYED = {
   /**Read only delayed states with guarenteed ok, delayed meaning the value is a promise evaluated on first access. */
   roa: delayed_roa,
   /**Read write delayed states with guarenteed ok and async write, delayed meaning the value is a promise evaluated on first access. */

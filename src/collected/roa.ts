@@ -164,7 +164,7 @@ export class ROA<RT, IN extends [State<any>, ...State<any>[]], WT>
   }
 }
 
-export const STATE_COLLECTED_ROA = {
+export const COLLECTED_ROA = {
   /**Creates a guarenteed ok state that collects multiple states values and reduces it to one.
    * @param transform - Function to translate value of collected states, false means first states values is used.
    * @param states - The states to collect.*/

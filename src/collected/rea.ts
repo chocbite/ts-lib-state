@@ -171,7 +171,7 @@ export class REA<RT, IN extends State<any>[], WT>
   }
 }
 
-export const STATE_COLLECTED_REA = {
+export const COLLECTED_REA = {
   /**Creates a state that collects multiple states values and reduces it to one.
    * @param transform - Function to translate value of collected states, false means first states values is used.
    * @param states - The states to collect.*/
