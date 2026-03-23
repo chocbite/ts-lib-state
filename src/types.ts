@@ -302,8 +302,8 @@ export type StateOpt<REL> = REL extends OptionNone ? Option<{}> : REL;
 
 export const STATE_ARRAY_READ_KEY = Symbol("state_array_read_key");
 
-export type StateArrayRead<TYPE> = TYPE[] & {
-  [STATE_ARRAY_READ_KEY]:
+export type StateArrayRead<TYPE> = readonly TYPE[] & {
+  [STATE_ARRAY_READ_KEY]?:
     | {
         type: "added";
         index: number;
@@ -326,10 +326,10 @@ export type StateArrayRead<TYPE> = TYPE[] & {
 export const STATE_ARRAY_WRITE_KEY = Symbol("state_array_write_key");
 
 export type StateArrayWrite<TYPE> = TYPE[] & {
-  [STATE_ARRAY_WRITE_KEY]:
+  [STATE_ARRAY_WRITE_KEY]?:
     | {
-        type: "write";
-        items: readonly TYPE[];
+        type: "fresh";
+        items: TYPE[];
       }
     | {
         type: "change";
@@ -338,11 +338,11 @@ export type StateArrayWrite<TYPE> = TYPE[] & {
       }
     | {
         type: "push";
-        items: readonly TYPE[];
+        items: TYPE[];
       }
     | {
         type: "unshift";
-        items: readonly TYPE[];
+        items: TYPE[];
       }
     | { type: "pop" }
     | { type: "shift" }
@@ -353,8 +353,8 @@ export type StateArrayWrite<TYPE> = TYPE[] & {
     | {
         type: "splice";
         index: number;
-        deletedCount: number;
-        items?: readonly TYPE[];
+        delete_count: number;
+        items?: TYPE[];
       };
 };
 

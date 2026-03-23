@@ -9,7 +9,10 @@ import {
 } from "@chocbite/ts-lib-result";
 import type { SVGFunc } from "@chocbite/ts-lib-svg";
 import {
+  STATE_ARRAY_WRITE_KEY,
   STATE_KEY,
+  StateArrayRead,
+  StateArrayWrite,
   type State,
   type StateREA,
   type StateREAW,
@@ -472,6 +475,77 @@ const is = {
 //       / /\ \ |  _  /|  _  /   / /\ \\   /
 //      / ____ \| | \ \| | \ \  / ____ \| |
 //     /_/    \_\_|  \_\_|  \_\/_/    \_\_|
+const array = {
+  read<RT>(arr: readonly RT[]): StateArrayRead<RT> {
+    return arr as StateArrayRead<RT>;
+  },
+  //# Array Write Helpers
+  write<T>(items: T[]): StateArrayWrite<T> {
+    (items as StateArrayWrite<T>)[STATE_ARRAY_WRITE_KEY] = {
+      type: "fresh",
+      items,
+    };
+    return items;
+  },
+  index<T>(index: number, value: T): StateArrayWrite<T> {
+    const arr = [] as StateArrayWrite<T>;
+    arr[STATE_ARRAY_WRITE_KEY] = {
+      type: "change",
+      index,
+      item: value,
+    };
+    return arr;
+  },
+  push<T>(...items: T[]): StateArrayWrite<T> {
+    const arr = [] as StateArrayWrite<T>;
+    arr[STATE_ARRAY_WRITE_KEY] = { type: "push", items };
+    return arr;
+  },
+  pop<T>(): StateArrayWrite<T> {
+    const arr = [] as StateArrayWrite<T>;
+    arr[STATE_ARRAY_WRITE_KEY] = { type: "pop" };
+    return arr;
+  },
+  shift<T>(): StateArrayWrite<T> {
+    const arr = [] as StateArrayWrite<T>;
+    arr[STATE_ARRAY_WRITE_KEY] = { type: "shift" };
+    return arr;
+  },
+  unshift<T>(...items: T[]): StateArrayWrite<T> {
+    const arr = [] as StateArrayWrite<T>;
+    arr[STATE_ARRAY_WRITE_KEY] = { type: "unshift", items };
+    return arr;
+  },
+  splice<T>(
+    start: number,
+    delete_count?: number,
+    ...items: T[]
+  ): StateArrayWrite<T> {
+    const arr = [] as StateArrayWrite<T>;
+    arr[STATE_ARRAY_WRITE_KEY] = {
+      type: "splice",
+      index: start,
+      delete_count: delete_count ?? 0,
+      items,
+    };
+    return arr;
+  },
+  pluck<T>(index: number): StateArrayWrite<T> {
+    const arr = [] as StateArrayWrite<T>;
+    arr[STATE_ARRAY_WRITE_KEY] = { type: "splice", index, delete_count: 1 };
+    return arr;
+  },
+  insert<T>(index: number, ...items: T[]): StateArrayWrite<T> {
+    const arr = [] as StateArrayWrite<T>;
+    arr[STATE_ARRAY_WRITE_KEY] = {
+      type: "splice",
+      index,
+      delete_count: 0,
+      items,
+    };
+    return arr;
+  },
+};
 
 //##################################################################################################################################################
 //      ________   _______   ____  _____ _______ _____
@@ -490,4 +564,5 @@ export const STATE_HELPERS = {
   await_value,
   compare,
   compare_sync,
+  array,
 };

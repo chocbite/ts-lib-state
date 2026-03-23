@@ -10,8 +10,7 @@ import { STATE_PROXY_REA } from "./proxy/rea";
 import { STATE_PROXY_RES } from "./proxy/res";
 import { STATE_PROXY_ROA } from "./proxy/roa";
 import { STATE_PROXY_ROS } from "./proxy/ros";
-import { STATE_RESOURCE_REA } from "./resource/rea";
-import { STATE_RESOURCE_ROA } from "./resource/roa";
+import { STATE_RESOURCE } from "./resource";
 import { STATE_KEY, type State } from "./types";
 
 export const state = {
@@ -35,7 +34,7 @@ export const state = {
     ...STATE_PROXY_ROA,
     ...STATE_PROXY_ROS,
   },
-  r: { ...STATE_RESOURCE_REA, ...STATE_RESOURCE_ROA },
+  r: STATE_RESOURCE,
   s: STATE_SYNC,
   /**Returns true if the given object promises to be a state */
   is(s: any): s is State<any, any> {
@@ -83,15 +82,12 @@ export { type StateProxyRES, type StateProxyRESW } from "./proxy/res";
 export { type StateProxyROA, type StateProxyROAW } from "./proxy/roa";
 export { type StateProxyROS, type StateProxyROSW } from "./proxy/ros";
 export {
+  type StateResource,
   type StateResourceFuncREA,
   type StateResourceFuncREAW,
-  type StateResourceREA,
-  type StateResourceREAW,
-} from "./resource/rea";
-export {
   type StateResourceFuncROA,
-  type StateResourceROA,
-} from "./resource/roa";
+  type StateResourceFuncROAW,
+} from "./resource";
 
 //       _____ _______    _______ ______   _________     _______  ______  _____
 //      / ____|__   __|/\|__   __|  ____| |__   __\ \   / /  __ \|  ____|/ ____|
