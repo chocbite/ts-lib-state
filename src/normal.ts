@@ -6,7 +6,7 @@ import {
   type Option,
   type Result,
 } from "@chocbite/ts-lib-result";
-import { StateArrayMethods } from "./array";
+import { ArrayOwner, StateArrayMethods } from "./array";
 import { StateBase } from "./base";
 import { type StateHelper as Helper } from "./helpers";
 import {
@@ -290,7 +290,19 @@ class RXXX<
     return this.#setter ? (this as State<RT, WT, any>) : undefined;
   }
 
-  get array(): RT extends any[] ? StateArrayMethods<RT[number]> : never {}
+  #array?: ArrayOwner<RT extends any[] ? RT[number] : never>;
+  get array(): RT extends any[] ? ArrayOwner<RT[number]> : never {
+    return (this.#array ??= new ArrayOwner<
+      RT extends any[] ? RT[number] : never
+    >(
+      () =>
+        (this.#value ?? ok([] as RT)) as Result<
+          (RT extends any[] ? RT[number] : never)[],
+          string
+        >,
+      (v) => this.set(v as RRT),
+    )) as RT extends any[] ? ArrayOwner<RT[number]> : never;
+  }
 
   //#Reader Context
   #rok: boolean;
@@ -300,10 +312,14 @@ class RXXX<
   get rsync(): boolean {
     return Boolean(this.#value);
   }
-  async then<TResult1 = RRT>(
+  then<TResult1 = RRT>(
     func: (value: RRT) => TResult1 | PromiseLike<TResult1>,
   ): Promise<TResult1> {
-    return func(this.get());
+    try {
+      return Promise.resolve(func(this.get()));
+    } catch (error) {
+      return Promise.reject(error as Error);
+    }
   }
   get(): RRT {
     return this.#value!;

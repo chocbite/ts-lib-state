@@ -1,9 +1,12 @@
 import { ok, ResultOk, type Result } from "@chocbite/ts-lib-result";
 import type { State, StateRES, StateROA, StateROS } from "../types";
-import { COLLECTED_REA, type StateCollectedREA } from "./rea";
-import { COLLECTED_RES, type StateCollectedRES } from "./res";
-import { COLLECTED_ROA, type StateCollectedROA } from "./roa";
-import { COLLECTED_ROS, type StateCollectedROS } from "./ros";
+import {
+  COLLECTED,
+  StateCollectedREA,
+  StateCollectedRES,
+  StateCollectedROA,
+  type StateCollectedROS,
+} from "./collected";
 
 //##################################################################################################################################################
 //       _____ _    _ __  __
@@ -12,13 +15,14 @@ import { COLLECTED_ROS, type StateCollectedROS } from "./ros";
 //      \___ \| |  | | |\/| |
 //      ____) | |__| | |  | |
 //     |_____/ \____/|_|  |_|
-class NumberSumREA<S extends State<number>[]> extends COLLECTED_REA.class<
+class NumberSumREA<S extends State<number>[]> extends COLLECTED.class<
   number,
   S,
-  number
+  number,
+  Result<number, string>
 > {
   constructor(...states: S) {
-    super(false, ...states);
+    super(false, false, false, ...states);
   }
   protected getter(values: Result<number, string>[]): Result<number, string> {
     let sum = 0;
@@ -33,9 +37,9 @@ class NumberSumREA<S extends State<number>[]> extends COLLECTED_REA.class<
 //##################################################################################################################################################
 class NumberSumROA<
   S extends [StateROA<number>, ...StateROA<number>[]],
-> extends COLLECTED_ROA.class<number, S, number> {
+> extends COLLECTED.class<number, S, number, ResultOk<number>> {
   constructor(...states: S) {
-    super(false, ...states);
+    super(true, false, false, ...states);
   }
   protected getter(values: ResultOk<number>[]): ResultOk<number> {
     return ok(values.reduce((acc, val) => acc + val.value, 0));
@@ -43,13 +47,14 @@ class NumberSumROA<
 }
 
 //##################################################################################################################################################
-class NumberSumRES<S extends StateRES<number>[]> extends COLLECTED_RES.class<
+class NumberSumRES<S extends StateRES<number>[]> extends COLLECTED.class<
   number,
   S,
-  number
+  number,
+  Result<number, string>
 > {
   constructor(...states: S) {
-    super(false, ...states);
+    super(false, true, false, ...states);
   }
   protected getter(values: Result<number, string>[]): Result<number, string> {
     let sum = 0;
@@ -64,9 +69,9 @@ class NumberSumRES<S extends StateRES<number>[]> extends COLLECTED_RES.class<
 //##################################################################################################################################################
 class NumberSumROS<
   S extends [StateROS<number>, ...StateROS<number>[]],
-> extends COLLECTED_ROS.class<number, S, number> {
+> extends COLLECTED.class<number, S, number, ResultOk<number>> {
   constructor(...states: S) {
-    super(false, ...states);
+    super(true, true, false, ...states);
   }
   protected getter(values: ResultOk<number>[]): ResultOk<number> {
     return ok(values.reduce((acc, val) => acc + val.value, 0));
@@ -84,9 +89,9 @@ class NumberSumROS<
 class NumberPercentageREA<
   S extends State<number>,
   T extends State<number>,
-> extends COLLECTED_REA.class<number, [S, T], number> {
+> extends COLLECTED.class<number, [S, T], number, Result<number, string>> {
   constructor(st1: S, st2: T) {
-    super(false, st1, st2);
+    super(false, false, false, st1, st2);
   }
   protected getter(
     values: [Result<number, string>, Result<number, string>],
@@ -103,9 +108,9 @@ class NumberPercentageREA<
 class NumberPercentageROA<
   S extends StateROA<number>,
   T extends StateROA<number>,
-> extends COLLECTED_ROA.class<number, [S, T], number> {
+> extends COLLECTED.class<number, [S, T], number, ResultOk<number>> {
   constructor(st1: S, st2: T) {
-    super(false, st1, st2);
+    super(true, false, false, st1, st2);
   }
   protected getter(
     values: [ResultOk<number>, ResultOk<number>],
@@ -120,9 +125,9 @@ class NumberPercentageROA<
 class NumberPercentageRES<
   S extends StateRES<number>,
   T extends StateRES<number>,
-> extends COLLECTED_RES.class<number, [S, T], number> {
+> extends COLLECTED.class<number, [S, T], number, Result<number, string>> {
   constructor(st1: S, st2: T) {
-    super(false, st1, st2);
+    super(false, true, false, st1, st2);
   }
   protected getter(
     values: [Result<number, string>, Result<number, string>],
@@ -139,9 +144,9 @@ class NumberPercentageRES<
 class NumberPercentageROS<
   S extends StateROS<number>,
   T extends StateROS<number>,
-> extends COLLECTED_ROS.class<number, [S, T], number> {
+> extends COLLECTED.class<number, [S, T], number, ResultOk<number>> {
   constructor(st1: S, st2: T) {
-    super(false, st1, st2);
+    super(true, true, false, st1, st2);
   }
   protected getter(
     values: [ResultOk<number>, ResultOk<number>],

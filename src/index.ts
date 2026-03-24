@@ -1,10 +1,7 @@
 import { ARRAY } from "./array";
 import { StateBase } from "./base";
+import { COLLECTED } from "./collected/collected";
 import { COLLECTS_NUMBER } from "./collected/number";
-import { COLLECTED_REA } from "./collected/rea";
-import { COLLECTED_RES } from "./collected/res";
-import { COLLECTED_ROA } from "./collected/roa";
-import { COLLECTED_ROS } from "./collected/ros";
 import { HELPERS } from "./helpers";
 import { DELAYED, LAZY, SYNC } from "./normal";
 import { PROXY } from "./proxy";
@@ -18,10 +15,7 @@ export const state = {
   a: ARRAY,
   /**Collected states, collects values from multiple states and reduces it to one */
   c: {
-    rea: COLLECTED_REA,
-    res: COLLECTED_RES,
-    roa: COLLECTED_ROA,
-    ros: COLLECTED_ROS,
+    ...COLLECTED,
     num: COLLECTS_NUMBER,
   },
   d: DELAYED,
@@ -45,10 +39,12 @@ export const state = {
 };
 export default state;
 
-export { type StateCollectedREA } from "./collected/rea";
-export { type StateCollectedRES } from "./collected/res";
-export { type StateCollectedROA } from "./collected/roa";
-export { type StateCollectedROS } from "./collected/ros";
+export {
+  type StateCollectedREA,
+  type StateCollectedRES,
+  type StateCollectedROA,
+  type StateCollectedROS,
+} from "./collected/collected";
 export {
   StateEnumHelper,
   StateNumberHelper,

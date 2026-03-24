@@ -232,11 +232,15 @@ class RXXX<
   get rsync(): boolean {
     return this.#state.rsync;
   }
-  async then<T = RROUT>(
-    func: (value: RROUT) => T | PromiseLike<T>,
-  ): Promise<T> {
-    if (this.#buffer) return func(this.#buffer);
-    return func(this.transform_read(await this.#state));
+  then<T = RROUT>(func: (value: RROUT) => T | PromiseLike<T>): Promise<T> {
+    try {
+      if (this.#buffer) return Promise.resolve(func(this.#buffer));
+      return Promise.resolve(
+        this.#state.then((v) => func(this.transform_read(v))),
+      );
+    } catch (error) {
+      return Promise.reject(error as Error);
+    }
   }
   get(): RROUT {
     if (this.#buffer) return this.#buffer;

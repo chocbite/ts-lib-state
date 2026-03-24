@@ -133,76 +133,100 @@ export const ARRAY = {
 };
 
 export class ArrayOwner<T> implements StateArrayMethods<T> {
-  #array: T[] & StateArrayReadTypes<T>;
+  #getter: () => Result<T[], string>;
   #setter: (v: ResultOk<T[] & StateArrayReadTypes<T>>) => void;
   constructor(
-    result: Result<T[], string>,
+    getter: () => Result<T[], string>,
     setter: (v: ResultOk<T[] & StateArrayReadTypes<T>>) => void,
   ) {
-    this.#array = result.unwrap_or([]);
+    this.#getter = getter;
     this.#setter = setter;
   }
   get array(): readonly T[] {
-    return this.#array;
+    return this.#getter().unwrap_or<T[]>([]);
   }
   get length(): number {
-    return this.#array.length;
+    return this.#getter().unwrap_or<T[]>([]).length;
   }
   at(index: number): T | undefined {
-    return this.#array[index];
+    return this.#getter().unwrap_or<T[]>([])[index];
   }
   set_index(index: number, value: T): void {
-    this.#array[index] = value;
-    this.#array[ARRAY_READ_KEY] = { type: "changed", index, items: [value] };
-    this.#setter(ok(this.#array));
+    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
+      StateArrayReadTypes<T>;
+    arr[index] = value;
+    arr[ARRAY_READ_KEY] = { type: "changed", index, items: [value] };
+    this.#setter(ok(arr));
   }
   push(...items: T[]): number {
-    const index = this.#array.length;
-    const new_len = this.#array.push(...items);
-    this.#array[ARRAY_READ_KEY] = { type: "added", index, items };
-    this.#setter(ok(this.#array));
+    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
+      StateArrayReadTypes<T>;
+    const index = arr.length;
+    const new_len = arr.push(...items);
+    arr[ARRAY_READ_KEY] = { type: "added", index, items };
+    this.#setter(ok(arr));
     return new_len;
   }
   pop(): T | undefined {
-    const l = this.#array.length;
-    const p = this.#array.pop();
-    if (this.#array.length < l) {
-      this.#array[ARRAY_READ_KEY] = {
-        type: "removed",
-        index: this.#array.length,
-        items: [p!],
-      };
-      this.#setter(ok(this.#array));
+    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
+      StateArrayReadTypes<T>;
+    const l = arr.length;
+    const p = arr.pop();
+    if (arr.length < l) {
+      arr[ARRAY_READ_KEY] = { type: "removed", index: arr.length, items: [p!] };
+      this.#setter(ok(arr));
     }
     return p;
   }
   shift(): T | undefined {
-    const l = this.#array.length;
-    const s = this.#array.shift();
-    if (this.#array.length < l) {
-      this.#array[ARRAY_READ_KEY] = {
+    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
+      StateArrayReadTypes<T>;
+    const l = arr.length;
+    const s = arr.shift();
+    if (arr.length < l) {
+      arr[ARRAY_READ_KEY] = {
         type: "removed",
         index: 0,
         items: [s!],
       };
-      this.#setter(ok(this.#array));
+      this.#setter(ok(arr));
     }
     return s;
   }
   unshift(...items: T[]): number {
-    const new_len = this.#array.unshift(...items);
-    this.#array[ARRAY_READ_KEY] = { type: "added", index: 0, items };
-    this.#setter(ok(this.#array));
+    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
+      StateArrayReadTypes<T>;
+    const new_len = arr.unshift(...items);
+    arr[ARRAY_READ_KEY] = { type: "added", index: 0, items };
+    this.#setter(ok(arr));
     return new_len;
   }
   splice(start: number, delete_count?: number, ...items: T[]): T[] {
-    const r = this.#array.splice(start, delete_count!, ...items);
-    if (r.length > 0)
-      this.update_subs(ok(this.#mr("removed", start, r)) as RRT);
-    if (items.length > 0)
-      this.update_subs(ok(this.#mr("added", start, items)) as RRT);
-    if (this.#length) this.#length.set_ok(this.#array.length);
+    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
+      StateArrayReadTypes<T>;
+    const r = arr.splice(start, delete_count!, ...items);
+    if (r.length > 0) {
+      arr[ARRAY_READ_KEY] = { type: "removed", index: start, items: r };
+      this.#setter(ok(arr));
+    }
+    if (items.length > 0) {
+      arr[ARRAY_READ_KEY] = { type: "added", index: start, items };
+      this.#setter(ok(arr));
+    }
     return r;
   }
-  delete(val: T): void;
+  delete(val: T): void {
+    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
+      StateArrayReadTypes<T>;
+    for (let i = 0; i < arr.length; i++)
+      if ((arr[i] = val)) {
+        arr[ARRAY_READ_KEY] = {
+          type: "removed",
+          index: i,
+          items: [val],
+        };
+        this.#setter(ok(arr));
+        i--;
+      }
+  }
 }
