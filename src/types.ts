@@ -293,71 +293,6 @@ export type StateROSW<
 export type StateOpt<REL> = REL extends OptionNone ? Option<{}> : REL;
 
 //###########################################################################################################################################################
-//               _____  _____        __     __
-//         /\   |  __ \|  __ \     /\\ \   / /
-//        /  \  | |__) | |__) |   /  \\ \_/ /
-//       / /\ \ |  _  /|  _  /   / /\ \\   /
-//      / ____ \| | \ \| | \ \  / ____ \| |
-//     /_/    \_\_|  \_\_|  \_\/_/    \_\_|
-
-export const STATE_ARRAY_READ_KEY = Symbol("state_array_read_key");
-
-export type StateArrayRead<TYPE> = readonly TYPE[] & {
-  [STATE_ARRAY_READ_KEY]?:
-    | {
-        type: "added";
-        index: number;
-        items: readonly TYPE[];
-      }
-    | {
-        type: "removed";
-        index: number;
-        items: readonly TYPE[];
-      }
-    | {
-        type: "changed";
-        index: number;
-        items: readonly TYPE[];
-      }
-    | {
-        type: "fresh";
-      };
-};
-export const STATE_ARRAY_WRITE_KEY = Symbol("state_array_write_key");
-
-export type StateArrayWrite<TYPE> = TYPE[] & {
-  [STATE_ARRAY_WRITE_KEY]?:
-    | {
-        type: "fresh";
-      }
-    | {
-        type: "change";
-        index: number;
-        item: TYPE;
-      }
-    | {
-        type: "push";
-        items: TYPE[];
-      }
-    | {
-        type: "unshift";
-        items: TYPE[];
-      }
-    | { type: "pop" }
-    | { type: "shift" }
-    | {
-        type: "delete";
-        item: TYPE;
-      }
-    | {
-        type: "splice";
-        index: number;
-        delete_count: number;
-        items?: TYPE[];
-      };
-};
-
-//###########################################################################################################################################################
 //       ____  ____       _ ______ _____ _______
 //      / __ \|  _ \     | |  ____/ ____|__   __|
 //     | |  | | |_) |    | | |__ | |       | |
@@ -409,3 +344,9 @@ export type StateObjectWrite<TYPE> = {
         items: { [key: PropertyKey]: TYPE };
       };
 };
+
+export interface StateObjectMethods<T> {
+  add(key: PropertyKey, value: T): void;
+  remove(key: PropertyKey): void;
+  change(key: PropertyKey, value: T): void;
+}

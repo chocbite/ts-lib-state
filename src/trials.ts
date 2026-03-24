@@ -11,6 +11,8 @@ state_inst.sub((v) => {
 state_inst.set_ok([6]);
 state_inst.write(state.a.write.push(7));
 
+state_inst.array.push(8);
+
 const test = state.p.ros(state_inst, (v) => ok(v.unwrap()[0]));
 test.sub((v) => {
   console.warn(v.value);

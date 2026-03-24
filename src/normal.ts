@@ -6,6 +6,7 @@ import {
   type Option,
   type Result,
 } from "@chocbite/ts-lib-result";
+import { StateArrayMethods } from "./array";
 import { StateBase } from "./base";
 import { type StateHelper as Helper } from "./helpers";
 import {
@@ -50,16 +51,8 @@ interface Owner<
   set_ok(value: RT): void;
   setter?: Setter<RT, RRT, REL, WT>;
   readonly state: State<RT, WT, REL>;
+  readonly array: RT extends any[] ? StateArrayMethods<RT[number]> : never;
 }
-export interface OwnerWrite<
-  RT,
-  RRT extends Result<RT, string>,
-  WT,
-  REL extends Option<RELATED>,
-> extends Owner<RT, RRT, WT, REL> {
-  setter: Setter<RT, RRT, REL, WT>;
-}
-
 export type StateSyncROS<
   RT,
   REL extends Option<RELATED> = Option<{}>,
@@ -75,22 +68,6 @@ export type StateLazyROS<
   REL extends Option<RELATED> = Option<{}>,
   WT = any,
 > = StateSyncROS<RT, REL, WT>;
-
-export type StateSyncROSW<
-  RT,
-  WT = RT,
-  REL extends Option<RELATED> = Option<{}>,
-> = StateROSW<RT, WT, REL> &
-  OwnerWrite<RT, ResultOk<RT>, WT, REL> & {
-    readonly read_only: StateROS<RT, REL, WT>;
-    readonly read_write: StateROSW<RT, WT, REL>;
-  };
-
-export type StateLazyROSW<
-  RT,
-  WT = RT,
-  REL extends Option<RELATED> = Option<{}>,
-> = StateSyncROSW<RT, WT, REL>;
 
 export type StateSyncRES<
   RT,
@@ -109,6 +86,51 @@ export type StateLazyRES<
   WT = any,
 > = StateSyncRES<RT, REL, WT>;
 
+export type StateDelayedROA<
+  RT,
+  REL extends Option<RELATED> = Option<{}>,
+  WT = any,
+> = StateROA<RT, REL, WT> &
+  Owner<RT, ResultOk<RT>, WT, REL> & {
+    readonly read_only: StateROA<RT, REL, WT>;
+    readonly read_write?: StateROAW<RT, WT, REL>;
+  };
+
+export type StateDelayedREA<
+  RT,
+  REL extends Option<RELATED> = Option<{}>,
+  WT = any,
+> = StateREA<RT, REL, WT> &
+  Owner<RT, Result<RT, string>, WT, REL> & {
+    set_err(error: string): void;
+    readonly read_only: StateREA<RT, REL, WT>;
+    readonly read_write?: StateREAW<RT, WT, REL>;
+  };
+export interface OwnerWrite<
+  RT,
+  RRT extends Result<RT, string>,
+  WT,
+  REL extends Option<RELATED>,
+> extends Owner<RT, RRT, WT, REL> {
+  setter: Setter<RT, RRT, REL, WT>;
+}
+
+export type StateSyncROSW<
+  RT,
+  WT = RT,
+  REL extends Option<RELATED> = Option<{}>,
+> = StateROSW<RT, WT, REL> &
+  OwnerWrite<RT, ResultOk<RT>, WT, REL> & {
+    readonly read_only: StateROS<RT, REL, WT>;
+    readonly read_write: StateROSW<RT, WT, REL>;
+  };
+
+export type StateLazyROSW<
+  RT,
+  WT = RT,
+  REL extends Option<RELATED> = Option<{}>,
+> = StateSyncROSW<RT, WT, REL>;
+
 export type StateSyncRESW<
   RT,
   WT = RT,
@@ -126,16 +148,6 @@ export type StateLazyRESW<
   REL extends Option<RELATED> = Option<{}>,
 > = StateSyncRESW<RT, WT, REL>;
 
-export type StateDelayedROA<
-  RT,
-  REL extends Option<RELATED> = Option<{}>,
-  WT = any,
-> = StateROA<RT, REL, WT> &
-  Owner<RT, ResultOk<RT>, WT, REL> & {
-    readonly read_only: StateROA<RT, REL, WT>;
-    readonly read_write?: StateROAW<RT, WT, REL>;
-  };
-
 export type StateDelayedROAW<
   RT,
   WT = RT,
@@ -144,17 +156,6 @@ export type StateDelayedROAW<
   OwnerWrite<RT, ResultOk<RT>, WT, REL> & {
     readonly read_only: StateROA<RT, REL, WT>;
     readonly read_write: StateROAW<RT, WT, REL>;
-  };
-
-export type StateDelayedREA<
-  RT,
-  REL extends Option<RELATED> = Option<{}>,
-  WT = any,
-> = StateREA<RT, REL, WT> &
-  Owner<RT, Result<RT, string>, WT, REL> & {
-    set_err(error: string): void;
-    readonly read_only: StateREA<RT, REL, WT>;
-    readonly read_write?: StateREAW<RT, WT, REL>;
   };
 
 export type StateDelayedREAW<
@@ -288,6 +289,8 @@ class RXXX<
   get read_write(): State<RT, WT, REL> | undefined {
     return this.#setter ? (this as State<RT, WT, any>) : undefined;
   }
+
+  get array(): RT extends any[] ? StateArrayMethods<RT[number]> : never {}
 
   //#Reader Context
   #rok: boolean;

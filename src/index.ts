@@ -1,10 +1,11 @@
+import { ARRAY } from "./array";
 import { StateBase } from "./base";
 import { COLLECTS_NUMBER } from "./collected/number";
 import { COLLECTED_REA } from "./collected/rea";
 import { COLLECTED_RES } from "./collected/res";
 import { COLLECTED_ROA } from "./collected/roa";
 import { COLLECTED_ROS } from "./collected/ros";
-import { ARRAY, HELPERS } from "./helpers";
+import { HELPERS } from "./helpers";
 import { DELAYED, LAZY, SYNC } from "./normal";
 import { PROXY } from "./proxy";
 import { RESOURCE } from "./resource";
