@@ -26,8 +26,8 @@
     "lint": "eslint src/**/*.ts",
     "test": "vitest run",
     "prepublishOnly": "npm run build",
-    "upgrades": "npx npm-check-updates",
-    "upgrade": "npx npm-check-updates -u && npm install"
+    "upgrades": "npx npm-check-updates --target semver",
+    "upgrade": "npx npm-check-updates --target semver -u && npm install"
   },
   "devDependencies": {
     "@vitest/browser-playwright": "^4.1.0",

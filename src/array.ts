@@ -73,47 +73,42 @@ export interface StateArrayMethods<T> {
 }
 
 const write = {
-  fresh<T>(array: T[] = []): StateArrayWrite<T> {
+  fresh<T>(array: T[]): StateArrayWrite<T> {
     (array as StateArrayWrite<T>)[ARRAY_WRITE_KEY] = { type: "fresh" };
     return array;
   },
-  index<T>(array: T[] = [], index: number, value: T): StateArrayWrite<T> {
-    (array as StateArrayWrite<T>)[ARRAY_WRITE_KEY] = {
-      type: "change",
-      index,
-      item: value,
-    };
+  index<T>(index: number, value: T): StateArrayWrite<T> {
+    const array: StateArrayWrite<T> = [];
+    array[ARRAY_WRITE_KEY] = { type: "change", index, item: value };
     return array;
   },
-  push<T>(array: T[] = [], ...items: T[]): StateArrayWrite<T> {
-    (array as StateArrayWrite<T>)[ARRAY_WRITE_KEY] = {
-      type: "push",
-      items,
-    };
+  push<T>(...items: T[]): StateArrayWrite<T> {
+    const array: StateArrayWrite<T> = [];
+    array[ARRAY_WRITE_KEY] = { type: "push", items };
     return array;
   },
-  pop<T>(array: T[] = []): StateArrayWrite<T> {
-    (array as StateArrayWrite<T>)[ARRAY_WRITE_KEY] = { type: "pop" };
+  pop<T>(): StateArrayWrite<T> {
+    const array: StateArrayWrite<T> = [];
+    array[ARRAY_WRITE_KEY] = { type: "pop" };
     return array;
   },
-  shift<T>(array: T[] = []): StateArrayWrite<T> {
-    (array as StateArrayWrite<T>)[ARRAY_WRITE_KEY] = { type: "shift" };
+  unshift<T>(...items: T[]): StateArrayWrite<T> {
+    const array: StateArrayWrite<T> = [];
+    array[ARRAY_WRITE_KEY] = { type: "unshift", items };
     return array;
   },
-  unshift<T>(array: T[] = [], ...items: T[]): StateArrayWrite<T> {
-    (array as StateArrayWrite<T>)[ARRAY_WRITE_KEY] = {
-      type: "unshift",
-      items,
-    };
+  shift<T>(): StateArrayWrite<T> {
+    const array: StateArrayWrite<T> = [];
+    array[ARRAY_WRITE_KEY] = { type: "shift" };
     return array;
   },
   splice<T>(
-    array: T[] = [],
     start: number,
     delete_count?: number,
     ...items: T[]
   ): StateArrayWrite<T> {
-    (array as StateArrayWrite<T>)[ARRAY_WRITE_KEY] = {
+    const array: StateArrayWrite<T> = [];
+    array[ARRAY_WRITE_KEY] = {
       type: "splice",
       index: start,
       delete_count: delete_count ?? 0,
@@ -125,11 +120,13 @@ const write = {
 
 export const ARRAY = {
   read<RT>(arr: readonly RT[]): StateArrayRead<RT> {
+    (arr as StateArrayRead<RT>)[ARRAY_READ_KEY] ??= { type: "fresh" };
     return arr as StateArrayRead<RT>;
   },
   write,
   read_key: ARRAY_READ_KEY,
   write_key: ARRAY_WRITE_KEY,
+  write_owner<T>(owner: ArrayOwner<T>, write: StateArrayWrite<T>): void {},
 };
 
 export class ArrayOwner<T> implements StateArrayMethods<T> {
