@@ -1,4 +1,14 @@
-import { ok, Result, ResultOk } from "@chocbite/ts-lib-result";
+import {
+  err,
+  ok,
+  OptionSome,
+  Result,
+  ResultOk,
+  some,
+} from "@chocbite/ts-lib-result";
+import { StateHelper, StateRelatedBase } from "./helpers";
+import { SYNC } from "./normal";
+import { State, StateROS } from "./types";
 
 export const ARRAY_READ_KEY = Symbol("state_array_read_key");
 
@@ -225,5 +235,51 @@ export class ArrayOwner<T> implements StateArrayMethods<T> {
         this.#setter(ok(arr));
         i--;
       }
+  }
+}
+
+//      _    _ ______ _      _____  ______ _____
+//     | |  | |  ____| |    |  __ \|  ____|  __ \
+//     | |__| | |__  | |    | |__) | |__  | |__) |
+//     |  __  |  __| | |    |  ___/|  __| |  _  /
+//     | |  | | |____| |____| |    | |____| | \ \
+//     |_|  |_|______|______|_|    |______|_|  \_\
+//
+//
+
+export interface StateArrayRelated extends StateRelatedBase {
+  length: StateROS<number>;
+}
+
+export class StateArrayHelper
+  extends StateHelper<boolean, OptionSome<StateArrayRelated>>
+  implements StateArrayRelated
+{
+  readonly length = SYNC.ros.ok(0);
+
+  readonly min?: State<number>;
+  readonly max?: State<number>;
+  readonly unit?: State<string>;
+  readonly decimals?: State<number>;
+  readonly step?: State<number>;
+  readonly start?: State<number>;
+
+  constructor(max_length?: State<number>, writable?: State<boolean>) {
+    super(writable);
+    if (max_length) this.max = max_length;
+  }
+
+  async limit(value: boolean): Promise<Result<boolean, string>> {
+    return ok(value);
+  }
+
+  async check(value: boolean): Promise<Result<boolean, string>> {
+    if (this.writable !== undefined && !this.writable)
+      return err("not writable");
+    return ok(value);
+  }
+
+  related(): OptionSome<StateArrayRelated> {
+    return some(this);
   }
 }

@@ -35,14 +35,19 @@ export interface StateRelatedBase extends StateRelated {
 }
 
 export abstract class StateHelper<
+  RT,
   WT,
   REL extends Option<StateRelatedBase>,
+  RRT,
 > implements StateRelatedBase {
   readonly writable?: State<boolean>;
 
   constructor(writable?: State<boolean>) {
     if (writable) this.writable = writable;
   }
+
+  /**Called by state when value is set */
+  set(_value: RRT): void {}
 
   abstract related(): REL;
 
@@ -60,8 +65,8 @@ export abstract class StateHelper<
 //     |____/ \____/ \____/|______|______/_/    \_\_| \_|
 export interface StateBooleanRelated extends StateRelatedBase {}
 
-export class StateBooleanHelper
-  extends StateHelper<boolean, OptionSome<StateBooleanRelated>>
+export class StateBooleanHelper<RRT>
+  extends StateHelper<boolean, boolean, OptionSome<StateBooleanRelated>, RRT>
   implements StateBooleanRelated
 {
   async limit(value: boolean): Promise<Result<boolean, string>> {
@@ -95,8 +100,8 @@ export interface StateNumberRelated extends StateRelatedBase {
   start?: State<number>;
 }
 
-export class StateNumberHelper
-  extends StateHelper<number, OptionSome<StateNumberRelated>>
+export class StateNumberHelper<RRT>
+  extends StateHelper<number, number, OptionSome<StateNumberRelated>, RRT>
   implements StateNumberRelated
 {
   readonly min?: State<number>;
@@ -203,8 +208,8 @@ export interface StateStringRelated extends StateRelatedBase {
   max_length_bytes?: State<number>;
 }
 
-export class StateStringHelper
-  extends StateHelper<string, OptionSome<StateStringRelated>>
+export class StateStringHelper<RRT>
+  extends StateHelper<string, string, OptionSome<StateStringRelated>, RRT>
   implements StateStringRelated
 {
   max_length?: State<number>;
@@ -301,8 +306,9 @@ export class StateEnumHelper<
   L extends StateEnumHelperList<PropertyKey> = StateEnumHelperList<PropertyKey>,
   K extends PropertyKey = keyof L,
   R extends StateRelatedBase = StateEnumRelated<L>,
+  RRT extends Result<K, string> = Result<K, string>,
 >
-  extends StateHelper<K, OptionSome<R>>
+  extends StateHelper<K, K, OptionSome<R>, RRT>
   implements StateEnumRelated<L>
 {
   readonly list: State<L>;

@@ -1,5 +1,9 @@
 import { ok } from "@chocbite/ts-lib-result";
 import state from "..";
+import { HELPERS } from "../helpers";
+
+const zxcv = state.s.ros.ok(5, HELPERS.nums.helper());
+zxcv.helper;
 
 const state_inst = state.s.rosw.ok([5]);
 

@@ -1,4 +1,5 @@
 import { type Option, type Result } from "@chocbite/ts-lib-result";
+import { StateHelper } from "./helpers";
 import {
   STATE_KEY,
   type StateBase as Base,
@@ -11,11 +12,17 @@ export abstract class StateBase<
   WT,
   REL extends Option<StateRelated>,
   RRT extends Result<RT, string>,
+  H extends StateHelper<RT, WT, REL, RRT> | undefined,
 > implements Base<RT, WT, REL, RRT> {
   get [STATE_KEY](): true {
     return true;
   }
 
+  constructor(helper: H) {
+    this.helper = helper;
+  }
+
+  readonly helper: H;
   #subscribers: Set<StateSub<RRT>> = new Set();
   #read_promises?: ((val: RRT) => void)[];
 
@@ -71,6 +78,7 @@ export abstract class StateBase<
 
   /**Updates all subscribers with a value */
   protected update_subs(value: RRT): void {
+    if (this.helper) this.helper.set(value);
     for (const subscriber of this.#subscribers) {
       try {
         subscriber(value);
