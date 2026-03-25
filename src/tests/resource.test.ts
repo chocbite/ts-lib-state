@@ -6,7 +6,9 @@ import {
   StateResourceFuncREA,
   StateResourceFuncREAW,
   StateResourceFuncROA,
+  StateResourceFuncROAW,
   StateROA,
+  StateROAW,
 } from "..";
 import {
   test_state_sub,
@@ -91,6 +93,45 @@ describe("Resource states", function () {
       await test_state_then(maker, 50);
     });
   });
+
+  //##################################################################################################################################################
+  //      _____   ____     __          __
+  //     |  __ \ / __ \   /\ \        / /
+  //     | |__) | |  | | /  \ \  /\  / /
+  //     |  _  /| |  | |/ /\ \ \/  \/ /
+  //     | | \ \| |__| / ____ \  /\  /
+  //     |_|  \_\\____/_/    \_\/  \/
+  describe("ROAW", { timeout: 500 }, function () {
+    it("ok", async function () {
+      const init = st.r.roaw.from<number>(
+        () => {},
+        () => {},
+        () => {},
+      );
+      assertType<StateROAW<number>>(init);
+      assertType<StateResourceFuncROAW<number>>(init);
+    });
+    const maker: TestStateWrite = () => {
+      let val: ResultOk<number> = ok(1);
+      const state = st.r.roaw.from<number>(
+        async (state) => state.update_single(val),
+        () => {},
+        () => {},
+      );
+      const set = (v: ResultOk<number>) => {
+        val = v;
+        state.update_resource(v);
+      };
+      return { o: true, s: false, w: true, state, set };
+    };
+    it("Subscribing And Unsubscribing", async function () {
+      await test_state_sub(maker, 50);
+    });
+    describe("Then", async function () {
+      await test_state_then(maker, 50);
+    });
+  });
+
   //##################################################################################################################################################
   //      _____  ______     __          __
   //     |  __ \|  ____|   /\ \        / /
@@ -98,7 +139,7 @@ describe("Resource states", function () {
   //     |  _  /|  __|   / /\ \ \/  \/ /
   //     | | \ \| |____ / ____ \  /\  /
   //     |_|  \_\______/_/    \_\/  \/
-  describe("REA", { timeout: 500 }, function () {
+  describe("REAW", { timeout: 500 }, function () {
     it("ok", async function () {
       const init = st.r.reaw.from<number>(
         () => {},
@@ -129,11 +170,3 @@ describe("Resource states", function () {
     });
   });
 });
-
-//##################################################################################################################################################
-//      _____   ____     __          __
-//     |  __ \ / __ \   /\ \        / /
-//     | |__) | |  | | /  \ \  /\  / /
-//     |  _  /| |  | |/ /\ \ \/  \/ /
-//     | | \ \| |__| / ____ \  /\  /
-//     |_|  \_\\____/_/    \_\/  \/

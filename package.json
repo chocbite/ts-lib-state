@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@chocbite/ts-lib-math": "^1.0.0",
-    "@chocbite/ts-lib-result": "^1.1.2",
+    "@chocbite/ts-lib-result": "^1.1.3",
     "@chocbite/ts-lib-svg": "^1.0.1"
   }
 }

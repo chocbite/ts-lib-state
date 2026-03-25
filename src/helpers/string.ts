@@ -8,7 +8,11 @@ export interface StateStringRelated extends StateRelatedBase {
 }
 
 export class StateStringHelper
-  extends StateHelperBase<string, string, OptionSome<StateStringRelated>>
+  extends StateHelperBase<
+    Result<string, string>,
+    string,
+    OptionSome<StateStringRelated>
+  >
   implements StateStringRelated
 {
   max_length?: State<number>;

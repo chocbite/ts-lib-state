@@ -3,10 +3,10 @@ import { ok, ResultOk, type Result } from "@chocbite/ts-lib-result";
 import { assertType, describe, expect, it } from "vitest";
 import {
   state as st,
-  StateDelayedREA,
-  StateDelayedREAW,
-  StateDelayedROA,
-  StateDelayedROAW,
+  StateNormalREA,
+  StateNormalREAW,
+  StateNormalROA,
+  StateNormalROAW,
   StateREA,
   StateREAW,
   StateROA,
@@ -32,12 +32,12 @@ describe("Initialize delayed states", function () {
     it("ok", async function () {
       const init = st.d.roa.ok(() => sleep(1, 1));
       assertType<StateROA<number>>(init);
-      assertType<StateDelayedROA<number>>(init);
+      assertType<StateNormalROA<number>>(init);
     });
     it("result ok", async function () {
       const init = st.d.roa.result(() => sleep(1, ok(1)));
       assertType<StateROA<number>>(init);
-      assertType<StateDelayedROA<number>>(init);
+      assertType<StateNormalROA<number>>(init);
     });
     it("cleanup successfull", async function () {
       const init = st.d.roa.ok(() => sleep(1, 1));
@@ -88,17 +88,17 @@ describe("Initialize delayed states", function () {
     it("ok", async function () {
       const init = st.d.rea.ok(() => sleep(1, 1));
       assertType<StateREA<number>>(init);
-      assertType<StateDelayedREA<number>>(init);
+      assertType<StateNormalREA<number>>(init);
     });
     it("err", async function () {
       const init = st.d.rea.err<number>(() => sleep(1, "1"));
       assertType<StateREA<number>>(init);
-      assertType<StateDelayedREA<number>>(init);
+      assertType<StateNormalREA<number>>(init);
     });
     it("result ok", async function () {
       const init = st.d.rea.result(() => sleep(1, ok(1)));
       assertType<StateREA<number>>(init);
-      assertType<StateDelayedREA<number>>(init);
+      assertType<StateNormalREA<number>>(init);
     });
     it("cleanup successfull", async function () {
       const init = st.d.rea.ok(() => sleep(1, 1));
@@ -149,12 +149,12 @@ describe("Initialize delayed states", function () {
     it("ok", async function () {
       const init = st.d.roaw.ok(() => sleep(1, 1));
       assertType<StateROAW<number>>(init);
-      assertType<StateDelayedROAW<number>>(init);
+      assertType<StateNormalROAW<number>>(init);
     });
     it("result ok", async function () {
       const init = st.d.roaw.result(() => sleep(1, ok(1)));
       assertType<StateROAW<number>>(init);
-      assertType<StateDelayedROAW<number>>(init);
+      assertType<StateNormalROAW<number>>(init);
     });
     it("cleanup successfull", async function () {
       const init = st.d.roaw.ok(() => sleep(1, 1));
@@ -213,17 +213,17 @@ describe("Initialize delayed states", function () {
     it("ok", async function () {
       const init = st.d.reaw.ok(() => sleep(1, 1));
       assertType<StateREAW<number>>(init);
-      assertType<StateDelayedREAW<number>>(init);
+      assertType<StateNormalREAW<number>>(init);
     });
     it("err", async function () {
       const init = st.d.reaw.err<number>(() => sleep(1, "1"));
       assertType<StateREAW<number>>(init);
-      assertType<StateDelayedREAW<number>>(init);
+      assertType<StateNormalREAW<number>>(init);
     });
     it("result ok", async function () {
       const init = st.d.reaw.result(() => sleep(1, ok(1)));
       assertType<StateREAW<number>>(init);
-      assertType<StateDelayedREAW<number>>(init);
+      assertType<StateNormalREAW<number>>(init);
     });
     it("cleanup successfull", async function () {
       const init = st.d.reaw.ok(() => sleep(1, 1));

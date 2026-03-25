@@ -3,6 +3,7 @@ import {
   none,
   OptionNone,
   Result,
+  ResultInferOk,
   type ResultOk,
 } from "@chocbite/ts-lib-result";
 import { StateBase, StateNoHelper } from "./base";
@@ -60,7 +61,7 @@ interface Owner<
    * This function is used to compute the derived state based on the current states.
    * @param getter - The new getter function. This function should accept an array of states and return the derived state.*/
   set_getter(getter: (values: StateCollectedTransVal<IN>) => RRT): void;
-  get state(): State<RT, WT, any>;
+  get state(): State<RT, any, WT>;
 }
 export type StateCollectedROS<
   RT,
@@ -112,7 +113,7 @@ export class RXX<
   WT,
   RRT extends Result<RT, string>,
 >
-  extends StateBase<RT, WT, RRT, StateNoHelper>
+  extends StateBase<RRT, WT, StateNoHelper>
   implements Owner<RT, IN, WT, RRT>
 {
   constructor(
@@ -233,10 +234,10 @@ export class RXX<
       this.on_subscribe();
     } else this.getter = getter;
   }
-  get state(): State<RT, WT, any> {
-    return this as State<RT, WT, any>;
+  get state() {
+    return this as State<RT, any, WT>;
   }
-  get read_only(): StateROS<RT, any, WT> {
+  get read_only() {
     return this as StateROS<RT, any, WT>;
   }
 
@@ -269,8 +270,8 @@ export class RXX<
       this.#states.map((s) => s.get!()) as StateCollectedTransVal<IN>,
     );
   }
-  ok(): RT {
-    return (this.get() as ResultOk<RT>).value;
+  ok(): ResultInferOk<RRT> {
+    return (this.get() as ResultOk<ResultInferOk<RRT>>).value;
   }
   related(): OptionNone {
     return none();

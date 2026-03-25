@@ -55,18 +55,14 @@ export { StateEnumHelper, type StateEnumRelated } from "./helpers/enum";
 export { StateNumberHelper, type StateNumberRelated } from "./helpers/number";
 export { StateStringHelper, type StateStringRelated } from "./helpers/string";
 export {
-  type StateDelayedREA,
-  type StateDelayedREAW,
-  type StateDelayedROA,
-  type StateDelayedROAW,
-  type StateLazyRES,
-  type StateLazyRESW,
-  type StateLazyROS,
-  type StateLazyROSW,
-  type StateSyncRES,
-  type StateSyncRESW,
-  type StateSyncROS,
-  type StateSyncROSW,
+  type StateNormalREA,
+  type StateNormalREAW,
+  type StateNormalRES,
+  type StateNormalRESW,
+  type StateNormalROA,
+  type StateNormalROAW,
+  type StateNormalROS,
+  type StateNormalROSW,
 } from "./normal";
 export {
   type StateProxyREA,

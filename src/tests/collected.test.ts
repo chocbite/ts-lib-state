@@ -23,12 +23,12 @@ describe("Collected states", function () {
   //     |_|  \_\\____/|_____/
   describe("ROS", { timeout: 100 }, function () {
     it("ok", async function () {
-      const init = st.c.ros.from((val) => val[0], st.s.ros.ok(1));
-      expect(init).instanceOf(st.c.ros.class);
+      const init = st.c.ros((val) => val[0], st.s.ros.ok(1));
+      expect(init).instanceOf(st.c.class);
     });
     const maker_single: TestStateOkSync = () => {
       const stat1 = st.s.ros.ok(1);
-      const state = st.c.ros.from((val) => val[0], stat1);
+      const state = st.c.ros((val) => val[0], stat1);
       const set = (val: ResultOk<number>) => {
         stat1.set_ok(val.value);
       };
@@ -51,7 +51,7 @@ describe("Collected states", function () {
       const stat2 = st.s.ros.ok(0.25);
       const stat3 = st.s.ros.ok(0.25);
       const stat4 = st.s.ros.ok(0.25);
-      const state = st.c.ros.from(
+      const state = st.c.ros(
         (val) => ok(val[0].value + val[1].value + val[2].value + val[3].value),
         stat1,
         stat2,
@@ -88,12 +88,12 @@ describe("Collected states", function () {
   //     |_|  \_\______|_____/
   describe("RES", { timeout: 100 }, function () {
     it("ok", async function () {
-      const init = st.c.res.from((val) => val[0], st.s.res.ok(1));
-      expect(init).instanceOf(st.c.res.class);
+      const init = st.c.res((val) => val[0], st.s.res.ok(1));
+      expect(init).instanceOf(st.c.class);
     });
     const maker_single: TestStateSync = () => {
       const stat1 = st.s.res.ok(1);
-      const state = st.c.res.from((val) => val[0], stat1);
+      const state = st.c.res((val) => val[0], stat1);
       const set = (val: Result<number, string>) => {
         stat1.set(val.map((v) => v));
       };
@@ -113,7 +113,7 @@ describe("Collected states", function () {
       const stat2 = st.s.res.ok(0.25);
       const stat3 = st.s.res.ok(0.25);
       const stat4 = st.s.res.ok(0.25);
-      const state = st.c.res.from(
+      const state = st.c.res(
         (values) => {
           let sum = 0;
           for (const val of values) {
@@ -154,15 +154,15 @@ describe("Collected states", function () {
   //     |_|  \_\\____/_/    \_\
   describe("ROA", { timeout: 200 }, function () {
     it("ok", async function () {
-      const init = st.c.roa.from(
+      const init = st.c.roa(
         (val) => val[0],
         st.d.roa.ok(() => sleep(1, 1)),
       );
-      expect(init).instanceOf(st.c.roa.class);
+      expect(init).instanceOf(st.c.class);
     });
     const maker_single: TestStateOk = () => {
       const stat1 = st.d.roa.ok(() => sleep(1, 1));
-      const state = st.c.roa.from((val) => val[0], stat1);
+      const state = st.c.roa((val) => val[0], stat1);
       const set = (val: ResultOk<number>) => {
         stat1.set_ok(val.value);
       };
@@ -179,7 +179,7 @@ describe("Collected states", function () {
       const stat2 = st.d.roa.ok(() => sleep(1, 0.25));
       const stat3 = st.d.roa.ok(() => sleep(1, 0.25));
       const stat4 = st.d.roa.ok(() => sleep(1, 0.25));
-      const state = st.c.roa.from(
+      const state = st.c.roa(
         (val) => ok(val[0].value + val[1].value + val[2].value + val[3].value),
         stat1,
         stat2,
@@ -210,15 +210,15 @@ describe("Collected states", function () {
   //     |_|  \_\______/_/    \_\
   describe("REA", { timeout: 200 }, function () {
     it("ok", async function () {
-      const init = st.c.rea.from(
+      const init = st.c.rea(
         (val) => val[0],
         st.d.rea.ok(() => sleep(1, 1)),
       );
-      expect(init).instanceOf(st.c.rea.class);
+      expect(init).instanceOf(st.c.class);
     });
     const maker_single: TestStateAll = () => {
       const stat1 = st.d.rea.ok(() => sleep(1, 1));
-      const state = st.c.rea.from((values) => values[0], stat1);
+      const state = st.c.rea((values) => values[0], stat1);
       const set = (val: Result<number, string>) => {
         stat1.set(val.map((v) => v));
       };
@@ -235,7 +235,7 @@ describe("Collected states", function () {
       const stat2 = st.d.rea.ok(() => sleep(1, 0.25));
       const stat3 = st.d.rea.ok(() => sleep(1, 0.25));
       const stat4 = st.d.rea.ok(() => sleep(1, 0.25));
-      const state = st.c.rea.from(
+      const state = st.c.rea(
         (values) => {
           let sum = 0;
           for (const val of values) {

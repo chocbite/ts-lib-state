@@ -35,7 +35,11 @@ export interface StateNumberRelated extends StateRelatedBase {
 }
 
 export class StateNumberHelper
-  extends StateHelperBase<number, number, OptionSome<StateNumberRelated>>
+  extends StateHelperBase<
+    Result<number, string>,
+    number,
+    OptionSome<StateNumberRelated>
+  >
   implements StateNumberRelated
 {
   readonly min?: State<number>;

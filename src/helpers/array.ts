@@ -251,8 +251,12 @@ export interface StateArrayRelated extends StateRelatedBase {
   length: StateROS<number>;
 }
 
-export class StateArrayHelper
-  extends StateHelperBase<boolean, boolean, OptionSome<StateArrayRelated>>
+export class StateArrayHelper<AT>
+  extends StateHelperBase<
+    Result<AT[], string>,
+    AT[],
+    OptionSome<StateArrayRelated>
+  >
   implements StateArrayRelated
 {
   readonly length = SYNC.ros.ok(0);
@@ -269,11 +273,11 @@ export class StateArrayHelper
     if (max_length) this.max = max_length;
   }
 
-  async limit(value: boolean): Promise<Result<boolean, string>> {
+  async limit(value: AT[]): Promise<Result<AT[], string>> {
     return ok(value);
   }
 
-  async check(value: boolean): Promise<Result<boolean, string>> {
+  async check(value: AT[]): Promise<Result<AT[], string>> {
     if (this.writable !== undefined && !this.writable)
       return err("not writable");
     return ok(value);

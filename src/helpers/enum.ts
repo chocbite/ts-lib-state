@@ -24,7 +24,7 @@ export class StateEnumHelper<
   K extends PropertyKey = keyof L,
   R extends StateRelatedBase = StateEnumRelated<L>,
 >
-  extends StateHelperBase<K, K, OptionSome<R>>
+  extends StateHelperBase<Result<K, string>, K, OptionSome<R>>
   implements StateEnumRelated<L>
 {
   readonly list: State<L>;

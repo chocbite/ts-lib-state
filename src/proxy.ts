@@ -3,10 +3,11 @@ import {
   none,
   ok,
   OptionNone,
+  ResultInferOk,
   ResultOk,
   type Result,
 } from "@chocbite/ts-lib-result";
-import { StateBase } from "./base";
+import { StateBase, StateNoHelper } from "./base";
 import {
   StateInferResult,
   StateRES,
@@ -38,11 +39,11 @@ interface Owner<S extends State<any, any>, WIN, ROUT, WOUT, RROUT> {
     wout_win: (val: WOUT) => WIN,
     win_wout: (val: WIN) => WOUT,
   ): void;
-  readonly state: State<ROUT, WOUT, OptionNone>;
+  readonly state: State<ROUT, OptionNone, WOUT>;
 }
 
 export type StateProxyROA<
-  S extends State<RIN, WIN>,
+  S extends State<RIN, any, WIN>,
   RIN = S extends State<infer RT> ? RT : never,
   WIN = S extends State<any, infer WT> ? WT : any,
   ROUT = RIN,
@@ -50,19 +51,19 @@ export type StateProxyROA<
 > = StateROA<ROUT, OptionNone, WOUT> &
   Owner<S, WIN, ROUT, WOUT, ResultOk<ROUT>> & {
     readonly read_only: StateROA<ROUT, OptionNone, WOUT>;
-    readonly read_write?: StateROAW<ROUT, WOUT, OptionNone>;
+    readonly read_write?: StateROAW<ROUT, OptionNone, WOUT>;
   };
 
 export type StateProxyROAW<
-  S extends StateREAW<RIN, WIN>,
+  S extends StateREAW<RIN, any, WIN>,
   RIN = S extends State<infer RT> ? RT : never,
   WIN = S extends State<any, infer WT> ? WT : never,
   ROUT = RIN,
   WOUT = WIN,
-> = StateROAW<ROUT, WOUT, OptionNone> &
+> = StateROAW<ROUT, OptionNone, WOUT> &
   Owner<S, WIN, ROUT, WOUT, ResultOk<ROUT>> & {
     readonly read_only: StateROA<ROUT, OptionNone, WOUT>;
-    readonly read_write: StateROAW<ROUT, WOUT, OptionNone>;
+    readonly read_write: StateROAW<ROUT, OptionNone, WOUT>;
   };
 
 export type StateProxyROS<
@@ -74,23 +75,23 @@ export type StateProxyROS<
 > = StateROS<ROUT, OptionNone, WOUT> &
   Owner<S, WIN, ROUT, WOUT, ResultOk<ROUT>> & {
     readonly read_only: StateROA<ROUT, OptionNone, WOUT>;
-    readonly read_write?: StateROAW<ROUT, WOUT, OptionNone>;
+    readonly read_write?: StateROAW<ROUT, OptionNone, WOUT>;
   };
 
 export type StateProxyROSW<
-  S extends StateRESW<RIN, WIN>,
+  S extends StateRESW<RIN, any, WIN>,
   RIN = S extends State<infer RT> ? RT : never,
   WIN = S extends State<any, infer WT> ? WT : never,
   ROUT = RIN,
   WOUT = WIN,
-> = StateROSW<ROUT, WOUT, OptionNone> &
+> = StateROSW<ROUT, OptionNone, WOUT> &
   Owner<S, WIN, ROUT, WOUT, ResultOk<ROUT>> & {
     readonly read_only: StateROA<ROUT, OptionNone, WOUT>;
-    readonly read_write: StateROAW<ROUT, WOUT, OptionNone>;
+    readonly read_write: StateROAW<ROUT, OptionNone, WOUT>;
   };
 
 export type StateProxyREA<
-  S extends State<RIN, WIN>,
+  S extends State<RIN, any, WIN>,
   RIN = S extends State<infer RT> ? RT : never,
   WIN = S extends State<any, infer WT> ? WT : any,
   ROUT = RIN,
@@ -98,19 +99,19 @@ export type StateProxyREA<
 > = StateREA<ROUT, OptionNone, WOUT> &
   Owner<S, WIN, ROUT, WOUT, Result<ROUT, string>> & {
     readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
-    readonly read_write?: StateREAW<ROUT, WOUT, OptionNone>;
+    readonly read_write?: StateREAW<ROUT, OptionNone, WOUT>;
   };
 
 export type StateProxyREAW<
-  S extends StateREAW<RIN, WIN>,
+  S extends StateREAW<RIN, any, WIN>,
   RIN = S extends State<infer RT> ? RT : never,
   WIN = S extends State<any, infer WT> ? WT : never,
   ROUT = RIN,
   WOUT = WIN,
-> = StateREAW<ROUT, WOUT, OptionNone> &
+> = StateREAW<ROUT, OptionNone, WOUT> &
   Owner<S, WIN, ROUT, WOUT, Result<ROUT, string>> & {
     readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
-    readonly read_write: StateREAW<ROUT, WOUT, OptionNone>;
+    readonly read_write: StateREAW<ROUT, OptionNone, WOUT>;
   };
 
 export type StateProxyRES<
@@ -122,19 +123,19 @@ export type StateProxyRES<
 > = StateRES<ROUT, OptionNone, WOUT> &
   Owner<S, WIN, ROUT, WOUT, Result<ROUT, string>> & {
     readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
-    readonly read_write?: StateREAW<ROUT, WOUT, OptionNone>;
+    readonly read_write?: StateREAW<ROUT, OptionNone, WOUT>;
   };
 
 export type StateProxyRESW<
-  S extends StateRESW<RIN, WIN>,
+  S extends StateRESW<RIN, any, WIN>,
   RIN = S extends State<infer RT> ? RT : never,
   WIN = S extends State<any, infer WT> ? WT : never,
   ROUT = RIN,
   WOUT = WIN,
-> = StateRESW<ROUT, WOUT, OptionNone> &
+> = StateRESW<ROUT, OptionNone, WOUT> &
   Owner<S, WIN, ROUT, WOUT, Result<ROUT, string>> & {
     readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
-    readonly read_write: StateREAW<ROUT, WOUT, OptionNone>;
+    readonly read_write: StateREAW<ROUT, OptionNone, WOUT>;
   };
 
 //##################################################################################################################################################
@@ -146,14 +147,14 @@ export type StateProxyRESW<
 //      \_____|______/_/    \_\_____/_____/
 
 class RXXX<
-  S extends State<RIN, WIN>,
+  S extends State<RIN, any, WIN>,
   RIN,
   WIN,
   ROUT,
   WOUT,
   RROUT extends Result<ROUT, string>,
 >
-  extends StateBase<ROUT, WOUT, OptionNone, RROUT>
+  extends StateBase<RROUT, WOUT, StateNoHelper>
   implements Owner<S, WIN, ROUT, WOUT, RROUT>
 {
   constructor(
@@ -175,12 +176,12 @@ class RXXX<
 
   #state: S;
   #subscriber = (value: Result<RIN, string>) => {
-    this.#buffer = this.transform_read(value);
+    this.#buffer = this.transform_read(value as StateInferResult<S>);
     this.update_subs(this.#buffer);
   };
   #buffer?: RROUT;
 
-  private transform_read(value: Result<RIN, string>): RROUT {
+  private transform_read(value: StateInferResult<S>): RROUT {
     return value as unknown as RROUT;
   }
   private transform_wout_win?: (value: WOUT) => WIN;
@@ -215,14 +216,14 @@ class RXXX<
     this.transform_wout_win = wout_win;
     this.transform_win_wout = win_wout;
   }
-  get state(): State<ROUT, WOUT, OptionNone> {
-    return this as State<ROUT, WOUT, OptionNone>;
+  get state() {
+    return this as State<ROUT, OptionNone, WOUT>;
   }
-  get read_only(): State<ROUT, WOUT, OptionNone> {
-    return this as State<ROUT, WOUT, OptionNone>;
+  get read_only() {
+    return this as State<ROUT, OptionNone, WOUT>;
   }
-  get read_write(): State<ROUT, WOUT, OptionNone> {
-    return this as State<ROUT, WOUT, OptionNone>;
+  get read_write() {
+    return this as State<ROUT, OptionNone, WOUT>;
   }
 
   //#Reader Context
@@ -236,7 +237,9 @@ class RXXX<
     try {
       if (this.#buffer) return Promise.resolve(func(this.#buffer));
       return Promise.resolve(
-        this.#state.then((v) => func(this.transform_read(v))),
+        this.#state.then((v) =>
+          func(this.transform_read(v as StateInferResult<S>)),
+        ),
       );
     } catch (error) {
       return Promise.reject(error as Error);
@@ -244,10 +247,10 @@ class RXXX<
   }
   get(): RROUT {
     if (this.#buffer) return this.#buffer;
-    return this.transform_read(this.#state.get!());
+    return this.transform_read(this.#state.get!() as StateInferResult<S>);
   }
-  ok(): ROUT {
-    return (this.get() as ResultOk<ROUT>).value;
+  ok(): ResultInferOk<RROUT> {
+    return (this.get() as ResultOk<ResultInferOk<RROUT>>).value;
   }
   related(): OptionNone {
     return none();
@@ -309,7 +312,7 @@ function roa_from<
   S extends StateREA<RIN, any, WIN>,
   RIN = S extends State<infer RT> ? RT : never,
   ROUT = RIN,
-  WIN = S extends State<any, infer RT> ? RT : any,
+  WIN = S extends State<any, any, infer WT> ? WT : any,
   WOUT = WIN,
 >(
   state: S,
@@ -333,7 +336,7 @@ function roa_from<
  * @param state - state to proxy.
  * @param transform_read - Function to transform value of proxy*/
 function roaw_from<
-  S extends StateREAW<RIN, WIN>,
+  S extends StateREAW<RIN, any, WIN>,
   RIN,
   WIN,
   ROUT = RIN,
@@ -367,7 +370,7 @@ function ros_from<
   S extends StateRES<RIN, any, WIN>,
   RIN = S extends State<infer RT> ? RT : never,
   ROUT = RIN,
-  WIN = S extends State<any, infer RT> ? RT : any,
+  WIN = S extends State<any, any, infer WT> ? WT : any,
   WOUT = WIN,
 >(
   state: S,
@@ -390,7 +393,7 @@ function ros_from<
  * @param state - state to proxy.
  * @param transform_read - Function to transform value of proxy*/
 function rosw_from<
-  S extends StateRESW<RIN, WIN>,
+  S extends StateRESW<RIN, any, WIN>,
   RIN,
   WIN,
   ROUT = RIN,
@@ -424,7 +427,7 @@ function rea_from<
   S extends StateREA<RIN, any, WIN>,
   RIN = S extends State<infer RT> ? RT : never,
   ROUT = RIN,
-  WIN = S extends State<any, infer RT> ? RT : any,
+  WIN = S extends State<any, any, infer WT> ? WT : any,
   WOUT = WIN,
 >(
   state: S,
@@ -447,7 +450,7 @@ function rea_from<
  * @param state - state to proxy.
  * @param transform_read - Function to transform value of proxy*/
 function reaw_from<
-  S extends StateREAW<RIN, WIN>,
+  S extends StateREAW<RIN, any, WIN>,
   RIN,
   WIN,
   ROUT = RIN,
@@ -482,7 +485,7 @@ function res_from<
   S extends StateRES<RIN, any, WIN>,
   RIN = S extends State<infer RT> ? RT : never,
   ROUT = RIN,
-  WIN = S extends State<any, infer RT> ? RT : any,
+  WIN = S extends State<any, any, infer WT> ? WT : any,
   WOUT = WIN,
 >(
   state: S,
@@ -506,7 +509,7 @@ function res_from<
  * @param state - state to proxy.
  * @param transform_read - Function to transform value of proxy*/
 function resw_from<
-  S extends StateRESW<RIN, WIN>,
+  S extends StateRESW<RIN, any, WIN>,
   RIN,
   WIN,
   ROUT = RIN,

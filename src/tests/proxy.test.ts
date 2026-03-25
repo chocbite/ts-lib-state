@@ -13,10 +13,10 @@ import {
 describe("Proxy with sync states", function () {
   describe("ROS", { timeout: 100 }, function () {
     it("ok", async function () {
-      st.p.ros(st.s.ros.ok(1));
+      st.p.ros(st.ok(1));
     });
     const maker: TestStateOkSync = () => {
-      const stat = st.s.ros.ok(1);
+      const stat = st.ok(1);
       const state = st.p.ros(stat);
       const set = (val: ResultOk<number>) => stat.set(val);
       return { o: true, s: true, w: false, ws: false, state, set };
@@ -37,7 +37,7 @@ describe("Proxy with sync states", function () {
   //##################################################################################################################################################
   describe("RES", { timeout: 100 }, function () {
     it("ok", async function () {
-      st.p.res(st.s.res.ok(1));
+      st.p.res(st.ok(1));
     });
     const maker: TestStateSync = () => {
       const stat = st.s.res.ok(1);

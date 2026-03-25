@@ -5,7 +5,11 @@ import { State } from "../types";
 export interface StateBoolRelated extends StateRelatedBase {}
 
 export class StateBoolHelper
-  extends StateHelperBase<boolean, boolean, OptionSome<StateBoolRelated>>
+  extends StateHelperBase<
+    Result<boolean, string>,
+    boolean,
+    OptionSome<StateBoolRelated>
+  >
   implements StateBoolRelated
 {
   async limit(value: boolean): Promise<Result<boolean, string>> {

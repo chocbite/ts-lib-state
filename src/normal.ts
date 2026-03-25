@@ -1,24 +1,22 @@
 import {
   err,
-  none,
   ok,
+  OptionNone,
+  ResultInferOk,
   ResultOk,
-  type Option,
   type Result,
 } from "@chocbite/ts-lib-result";
-import { StateBase } from "./base";
-import { StateHelper } from "./helpers";
-import { ArrayOwner, StateArrayMethods } from "./helpers/array";
+import { StateBase, StateNoHelper } from "./base";
 import {
+  StateHelper,
   StateREA,
   StateREAW,
+  StateRES,
   StateRESW,
   StateROA,
   StateROAW,
   StateROSW,
-  type StateRelated as RELATED,
   type State,
-  type StateRES,
   type StateROS,
 } from "./types";
 
@@ -31,164 +29,110 @@ import {
 //        |_|     |_|  |_|    |______|_____/
 
 type Setter<
-  RT,
-  RRT extends Result<RT, string>,
-  REL extends Option<RELATED>,
-  WT = RT,
-  H extends StateHelper<RT, WT, REL, RRT> | undefined = undefined,
+  RRT extends Result<any, string>,
+  HEL extends StateHelper<RRT, WT, any>,
+  WT,
 > = (
   value: WT,
-  state: OwnerWrite<RT, RRT, WT, REL, H>,
+  state: Owner<RRT, HEL, WT>,
   old?: RRT,
 ) => Promise<Result<void, string>>;
 
-interface Owner<
-  RT,
-  RRT extends Result<RT, string>,
+export interface Owner<
+  RRT extends Result<any, string>,
+  HEL extends StateHelper<RRT, WT, any>,
   WT,
-  REL extends Option<RELATED>,
-  H extends StateHelper<RT, WT, REL, RRT> | undefined,
 > {
-  readonly helper: H;
+  readonly helper: HEL;
   set(value: RRT): void;
-  set_ok(value: RT): void;
-  setter?: Setter<RT, RRT, REL, WT, H>;
-  readonly state: State<RT, WT, REL>;
-  readonly array: RT extends any[] ? StateArrayMethods<RT[number]> : never;
-}
-export type StateSyncROS<
-  RT,
-  REL extends Option<RELATED> = Option<{}>,
-  WT = any,
-  H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
-> = StateROS<RT, REL, WT> &
-  Owner<RT, ResultOk<RT>, WT, REL, H> & {
-    readonly read_only: StateROS<RT, REL, WT>;
-    readonly read_write?: StateROSW<RT, WT, REL>;
-  };
-
-export type StateLazyROS<
-  RT,
-  REL extends Option<RELATED> = Option<{}>,
-  WT = any,
-  H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
-> = StateSyncROS<RT, REL, WT, H>;
-
-export type StateSyncRES<
-  RT,
-  REL extends Option<RELATED> = Option<{}>,
-  WT = any,
-  H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-    undefined,
-> = StateRES<RT, REL, WT> &
-  Owner<RT, Result<RT, string>, WT, REL, H> & {
-    set_err(error: string): void;
-    readonly read_only: StateRES<RT, REL, WT>;
-    readonly read_write?: StateRESW<RT, WT, REL>;
-  };
-
-export type StateLazyRES<
-  RT,
-  REL extends Option<RELATED> = Option<{}>,
-  WT = any,
-  H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-    undefined,
-> = StateSyncRES<RT, REL, WT, H>;
-
-export type StateDelayedROA<
-  RT,
-  REL extends Option<RELATED> = Option<{}>,
-  WT = any,
-  H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
-> = StateROA<RT, REL, WT> &
-  Owner<RT, ResultOk<RT>, WT, REL, H> & {
-    readonly read_only: StateROA<RT, REL, WT>;
-    readonly read_write?: StateROAW<RT, WT, REL>;
-  };
-
-export type StateDelayedREA<
-  RT,
-  REL extends Option<RELATED> = Option<{}>,
-  WT = any,
-  H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-    undefined,
-> = StateREA<RT, REL, WT> &
-  Owner<RT, Result<RT, string>, WT, REL, H> & {
-    set_err(error: string): void;
-    readonly read_only: StateREA<RT, REL, WT>;
-    readonly read_write?: StateREAW<RT, WT, REL>;
-  };
-export interface OwnerWrite<
-  RT,
-  RRT extends Result<RT, string>,
-  WT,
-  REL extends Option<RELATED>,
-  H extends StateHelper<RT, WT, REL, RRT> | undefined,
-> extends Owner<RT, RRT, WT, REL, H> {
-  setter: Setter<RT, RRT, REL, WT, H>;
+  set_ok(value: ResultInferOk<RRT>): void;
+  setter?: Setter<RRT, HEL, WT>;
+  readonly state: State<ResultInferOk<RRT>, ReturnType<HEL["related"]>, WT>;
 }
 
-export type StateSyncROSW<
+export type StateNormalROS<
   RT,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
   WT = RT,
-  REL extends Option<RELATED> = Option<{}>,
-  H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
-> = StateROSW<RT, WT, REL> &
-  OwnerWrite<RT, ResultOk<RT>, WT, REL, H> & {
-    readonly read_only: StateROS<RT, REL, WT>;
-    readonly read_write: StateROSW<RT, WT, REL>;
+> = StateROS<RT, ReturnType<HEL["related"]>, WT> &
+  Owner<ResultOk<RT>, HEL, WT> & {
+    readonly read_only: StateROS<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_write?: StateROSW<RT, ReturnType<HEL["related"]>, WT>;
   };
 
-export type StateLazyROSW<
+export type StateNormalRES<
   RT,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
   WT = RT,
-  REL extends Option<RELATED> = Option<{}>,
-  H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
-> = StateSyncROSW<RT, WT, REL, H>;
-
-export type StateSyncRESW<
-  RT,
-  WT = RT,
-  REL extends Option<RELATED> = Option<{}>,
-  H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-    undefined,
-> = StateRESW<RT, WT, REL> &
-  OwnerWrite<RT, Result<RT, string>, WT, REL, H> & {
+> = StateRES<RT, ReturnType<HEL["related"]>, WT> &
+  Owner<Result<RT, string>, HEL, WT> & {
     set_err(error: string): void;
-    readonly read_only: StateRES<RT, REL, WT>;
-    readonly read_write: StateRESW<RT, WT, REL>;
+    readonly read_only: StateRES<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_write?: StateRESW<RT, ReturnType<HEL["related"]>, WT>;
   };
 
-export type StateLazyRESW<
+export type StateNormalROA<
   RT,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
   WT = RT,
-  REL extends Option<RELATED> = Option<{}>,
-  H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-    undefined,
-> = StateSyncRESW<RT, WT, REL, H>;
-
-export type StateDelayedROAW<
-  RT,
-  WT = RT,
-  REL extends Option<RELATED> = Option<{}>,
-  H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
-> = StateROAW<RT, WT, REL> &
-  OwnerWrite<RT, ResultOk<RT>, WT, REL, H> & {
-    readonly read_only: StateROA<RT, REL, WT>;
-    readonly read_write: StateROAW<RT, WT, REL>;
+> = StateROA<RT, ReturnType<HEL["related"]>, WT> &
+  Owner<ResultOk<RT>, HEL, WT> & {
+    readonly read_only: StateROA<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_write?: StateROAW<RT, ReturnType<HEL["related"]>, WT>;
   };
 
-export type StateDelayedREAW<
+export type StateNormalREA<
   RT,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
   WT = RT,
-  REL extends Option<RELATED> = Option<{}>,
-  H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-    undefined,
-> = StateREAW<RT, WT, REL> &
-  OwnerWrite<RT, Result<RT, string>, WT, REL, H> & {
+> = StateREA<RT, ReturnType<HEL["related"]>, WT> &
+  Owner<Result<RT, string>, HEL, WT> & {
     set_err(error: string): void;
-    readonly read_only: StateREA<RT, REL, WT>;
-    readonly read_write: StateREAW<RT, WT, REL>;
+    readonly read_only: StateREA<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_write?: StateREAW<RT, ReturnType<HEL["related"]>, WT>;
+  };
+
+export type StateNormalROSW<
+  RT,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  WT = RT,
+> = StateROSW<RT, ReturnType<HEL["related"]>, WT> &
+  Owner<ResultOk<RT>, HEL, WT> & {
+    setter: Setter<ResultOk<RT>, HEL, WT>;
+    readonly read_only: StateROS<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_write: StateROSW<RT, ReturnType<HEL["related"]>, WT>;
+  };
+
+export type StateNormalRESW<
+  RT,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  WT = RT,
+> = StateRESW<RT, ReturnType<HEL["related"]>, WT> &
+  Owner<Result<RT, string>, HEL, WT> & {
+    set_err(error: string): void;
+    readonly read_only: StateROS<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_write: StateROSW<RT, ReturnType<HEL["related"]>, WT>;
+  };
+
+export type StateNormalROAW<
+  RT,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  WT = RT,
+> = StateROAW<RT, ReturnType<HEL["related"]>, WT> &
+  Owner<ResultOk<RT>, HEL, WT> & {
+    readonly read_only: StateROS<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_write: StateROSW<RT, ReturnType<HEL["related"]>, WT>;
+  };
+
+export type StateNormalREAW<
+  RT,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  WT = RT,
+> = StateREAW<RT, ReturnType<HEL["related"]>, WT> &
+  Owner<Result<RT, string>, HEL, WT> & {
+    set_err(error: string): void;
+    readonly read_only: StateROS<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_write: StateROSW<RT, ReturnType<HEL["related"]>, WT>;
   };
 
 //##################################################################################################################################################
@@ -200,37 +144,35 @@ export type StateDelayedREAW<
 //      \_____|______/_/    \_\_____/_____/
 
 class RXXX<
-  RT,
-  RRT extends Result<RT, string>,
-  REL extends Option<RELATED>,
+  RRT extends Result<any, string>,
+  HEL extends StateHelper<RRT, WT, OptionNone>,
   WT,
-  H extends StateHelper<RT, WT, REL, RRT> | undefined,
 >
-  extends StateBase<RT, WT, REL, RRT, H>
-  implements Owner<RT, RRT, WT, REL, H>
+  extends StateBase<RRT, WT, HEL>
+  implements Owner<RRT, HEL, WT>
 {
   constructor(
     init:
       | [0, boolean, RRT]
       | [1, boolean, () => RRT]
       | [2, boolean, (() => PromiseLike<RRT>) | undefined],
-    helper: H,
-    setter?: Setter<RT, RRT, REL, WT, H> | true,
+    helper?: HEL,
+    setter?: Setter<RRT, HEL, WT> | true,
   ) {
     super(helper);
     this.#rok = init[1];
     if (setter === true)
       this.#setter = (value, state, old) => {
-        if (old && !old.err && (value as unknown as RT) === old.value)
+        if (old && !old.err && value === old.value)
           return Promise.resolve(ok(undefined));
         if (this.helper) {
           return this.helper.limit(value).then((e) => {
             if (e.err) return err(e.error);
-            state.set_ok(e.value as unknown as RT);
+            state.set_ok(e.value as ResultInferOk<RRT>);
             return ok(undefined);
           });
         }
-        return Promise.resolve(ok(state.set_ok(value as unknown as RT)));
+        return Promise.resolve(ok(state.set_ok(value as ResultInferOk<RRT>)));
       };
     else this.#setter = setter;
     if (init[0] === 0) {
@@ -283,46 +225,34 @@ class RXXX<
   }
 
   #value?: RRT;
-  #setter?: Setter<RT, RRT, REL, WT, H>;
+  #setter?: Setter<RRT, HEL, WT>;
 
   //#Owner Context
   set(value: RRT) {
     this.update_subs((this.#value = value));
   }
-  set_ok(value: RT): void {
+  set_ok(value: ResultInferOk<RRT>): void {
     this.set(ok(value) as RRT);
   }
   set_err(error: string): void {
     this.set(err(error) as RRT);
   }
-  set setter(setter: Setter<RT, RRT, REL, WT, H> | undefined) {
+  set setter(setter: Setter<RRT, HEL, WT> | undefined) {
     this.#setter = setter;
   }
-  get setter(): Setter<RT, RRT, REL, WT, H> | undefined {
+  get setter(): Setter<RRT, HEL, WT> | undefined {
     return this.#setter;
   }
-  get state(): State<RT, WT, REL> {
-    return this as State<RT, WT, any>;
+  get state() {
+    return this as State<ResultInferOk<RRT>, ReturnType<HEL["related"]>, WT>;
   }
-  get read_only(): State<RT, WT, REL> {
-    return this as State<RT, WT, any>;
+  get read_only() {
+    return this as State<ResultInferOk<RRT>, ReturnType<HEL["related"]>, WT>;
   }
-  get read_write(): State<RT, WT, REL> | undefined {
-    return this.#setter ? (this as State<RT, WT, any>) : undefined;
-  }
-
-  #array?: ArrayOwner<RT extends any[] ? RT[number] : never>;
-  get array(): RT extends any[] ? ArrayOwner<RT[number]> : never {
-    return (this.#array ??= new ArrayOwner<
-      RT extends any[] ? RT[number] : never
-    >(
-      () =>
-        (this.#value ?? ok([] as RT)) as Result<
-          (RT extends any[] ? RT[number] : never)[],
-          string
-        >,
-      (v) => this.set(v as RRT),
-    )) as RT extends any[] ? ArrayOwner<RT[number]> : never;
+  get read_write() {
+    return this.#setter
+      ? (this as State<ResultInferOk<RRT>, ReturnType<HEL["related"]>, WT>)
+      : undefined;
   }
 
   //#Reader Context
@@ -345,11 +275,9 @@ class RXXX<
   get(): RRT {
     return this.#value!;
   }
-  ok(): RT {
-    return (this.get() as ResultOk<RT>).value;
-  }
-  related(): REL {
-    return this.helper?.related ? this.helper.related() : (none() as REL);
+  ok(): ResultInferOk<RRT> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return (this.get() as ResultOk<ResultInferOk<RRT>>).value;
   }
 
   //#Writer Context
@@ -359,23 +287,9 @@ class RXXX<
   write(value: WT): Promise<Result<void, string>> {
     if (this.#setter)
       return Promise.resolve(
-        this.#setter(
-          value,
-          this as OwnerWrite<RT, RRT, WT, REL, H>,
-          this.#value,
-        ),
+        this.#setter(value, this as Owner<RRT, HEL, WT>, this.#value),
       );
     return Promise.resolve(err("not writable"));
-  }
-  limit(value: WT): Promise<Result<WT, string>> {
-    return this.helper?.limit
-      ? this.helper.limit(value)
-      : Promise.resolve(ok(value));
-  }
-  check(value: WT): Promise<Result<WT, string>> {
-    return this.helper?.check
-      ? this.helper.check(value)
-      : Promise.resolve(ok(value));
   }
 }
 
@@ -393,28 +307,25 @@ const sync_ros = {
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
-  >(this: void, init: RT, helper?: H) {
-    return new RXXX<RT, ResultOk<RT>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(this: void, init: RT, helper?: HEL) {
+    return new RXXX<ResultOk<RT>, HEL, WT>(
       [0, false, ok(init)],
-      helper as H,
-    ) as StateSyncROS<RT, REL, WT>;
+      helper,
+    ) as StateNormalROS<RT, HEL, WT>;
   },
   /**Creates a sync ok state from an initial result.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
-  result<
-    RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
-  >(init: ResultOk<RT>, helper?: H) {
-    return new RXXX<RT, ResultOk<RT>, REL, WT, H>(
+  result<RT, HEL extends StateHelper<ResultOk<RT>, WT, any>, WT = RT>(
+    init: ResultOk<RT>,
+    helper?: HEL,
+  ) {
+    return new RXXX<ResultOk<RT>, HEL, WT>(
       [0, false, init],
-      helper as H,
-    ) as StateSyncROS<RT, REL, WT>;
+      helper,
+    ) as StateNormalROS<RT, HEL, WT>;
   },
 };
 
@@ -424,39 +335,37 @@ const sync_rosw = {
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
   >(
     this: void,
     init: RT,
-    setter: Setter<RT, ResultOk<RT>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<ResultOk<RT>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, ResultOk<RT>, REL, WT, H>(
+    return new RXXX<ResultOk<RT>, HEL, WT>(
       [0, false, ok(init)],
-      helper as H,
+      helper,
       setter,
-    ) as StateSyncROSW<RT, WT, REL, H>;
+    ) as StateNormalROSW<RT, HEL, WT>;
   },
   /**Creates a sync ok state from an initial result.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
   >(
     init: ResultOk<RT>,
-    setter: Setter<RT, ResultOk<RT>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<ResultOk<RT>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, ResultOk<RT>, REL, WT, H>(
+    return new RXXX<ResultOk<RT>, HEL, WT>(
       [0, false, init],
-      helper as H,
+      helper,
       setter,
-    ) as StateSyncROSW<RT, WT, REL, H>;
+    ) as StateNormalROSW<RT, HEL, WT>;
   },
 };
 
@@ -466,45 +375,39 @@ const sync_res = {
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
-  >(this: void, init: RT, helper?: H) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(this: void, init: RT, helper?: HEL) {
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [0, false, ok(init)],
-      helper as H,
-    ) as StateSyncRES<RT, REL, WT, H>;
+      helper,
+    ) as StateNormalRES<RT, HEL, WT>;
   },
   /**Creates a sync state from an initial error.
    * @param init initial error for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   err<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
-  >(this: void, init: string, helper?: H) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(this: void, init: string, helper?: HEL) {
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [0, false, err(init)],
-      helper as H,
-    ) as StateSyncRES<RT, REL, WT, H>;
+      helper,
+    ) as StateNormalRES<RT, HEL, WT>;
   },
   /**Creates a sync state from an initial result.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
-  >(init: Result<RT, string>, helper?: H) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(init: Result<RT, string>, helper?: HEL) {
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [0, false, init],
-      helper as H,
-    ) as StateSyncRES<RT, REL, WT, H>;
+      helper,
+    ) as StateNormalRES<RT, HEL, WT>;
   },
 };
 const sync_resw = {
@@ -513,62 +416,56 @@ const sync_resw = {
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
   >(
     this: void,
     init: RT,
-    setter: Setter<RT, Result<RT, string>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<Result<RT, string>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [0, false, ok(init)],
-      helper as H,
+      helper,
       setter,
-    ) as StateSyncRESW<RT, WT, REL, H>;
+    ) as StateNormalRESW<RT, HEL, WT>;
   },
   /**Creates a writable sync state from an initial error.
    * @param init initial error for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   err<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
   >(
     this: void,
     init: string,
-    setter: Setter<RT, Result<RT, string>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<Result<RT, string>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [0, false, err(init)],
-      helper as H,
+      helper,
       setter,
-    ) as StateSyncRESW<RT, WT, REL, H>;
+    ) as StateNormalRESW<RT, HEL, WT>;
   },
   /**Creates a writable sync state from an initial result.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
   >(
     init: Result<RT, string>,
-    setter: Setter<RT, Result<RT, string>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<Result<RT, string>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [0, false, init],
-      helper as H,
+      helper,
       setter,
-    ) as StateSyncRESW<RT, WT, REL, H>;
+    ) as StateNormalRESW<RT, HEL, WT>;
   },
 };
 
@@ -586,28 +483,26 @@ const lazy_ros = {
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
-  >(init: () => RT, helper?: H) {
-    return new RXXX<RT, ResultOk<RT>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(init: () => RT, helper?: HEL) {
+    return new RXXX<ResultOk<RT>, HEL, WT>(
       [1, false, () => ok(init())],
-      helper as H,
-    ) as StateLazyROS<RT, REL, WT>;
+      helper,
+    ) as StateNormalROS<RT, HEL, WT>;
   },
   /**Creates a lazy ok state from an initial result, lazy meaning the value is only evaluated on first access.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
-  >(init: () => ResultOk<RT>, helper?: H) {
-    return new RXXX<RT, ResultOk<RT>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(init: () => ResultOk<RT>, helper?: HEL) {
+    return new RXXX<ResultOk<RT>, HEL, WT>(
       [1, false, init],
-      helper as H,
-    ) as StateLazyROS<RT, REL, WT>;
+      helper,
+    ) as StateNormalROS<RT, HEL, WT>;
   },
 };
 
@@ -617,38 +512,36 @@ const lazy_rosw = {
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
   >(
     init: () => RT,
-    setter: Setter<RT, ResultOk<RT>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<ResultOk<RT>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, ResultOk<RT>, REL, WT, H>(
+    return new RXXX<ResultOk<RT>, HEL, WT>(
       [1, false, () => ok(init())],
-      helper as H,
+      helper,
       setter,
-    ) as StateLazyROSW<RT, WT, REL, H>;
+    ) as StateNormalROSW<RT, HEL, WT>;
   },
   /**Creates a lazy ok state from an initial result, lazy meaning the value is only evaluated on first access.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
   >(
     init: () => ResultOk<RT>,
-    setter: Setter<RT, ResultOk<RT>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<ResultOk<RT>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, ResultOk<RT>, REL, WT, H>(
+    return new RXXX<ResultOk<RT>, HEL, WT>(
       [1, false, init],
-      helper as H,
+      helper,
       setter,
-    ) as StateLazyROSW<RT, WT, REL, H>;
+    ) as StateNormalROSW<RT, HEL, WT>;
   },
 };
 const lazy_res = {
@@ -657,45 +550,39 @@ const lazy_res = {
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
-  >(init: () => RT, helper?: H) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(init: () => RT, helper?: HEL) {
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [1, false, () => ok(init())],
-      helper as H,
-    ) as StateLazyRES<RT, REL, WT, H>;
+      helper,
+    ) as StateNormalRES<RT, HEL, WT>;
   },
   /**Creates a lazy state from an initial error, lazy meaning the value is only evaluated on first access.
    * @param init initial error for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   err<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
-  >(init: () => string, helper?: H) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(init: () => string, helper?: HEL) {
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [1, false, () => err(init())],
-      helper as H,
-    ) as StateLazyRES<RT, REL, WT, H>;
+      helper,
+    ) as StateNormalRES<RT, HEL, WT>;
   },
   /**Creates a lazy state from an initial result, lazy meaning the value is only evaluated on first access.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
-  >(init: () => Result<RT, string>, helper?: H) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(init: () => Result<RT, string>, helper?: HEL) {
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [1, false, init],
-      helper as H,
-    ) as StateLazyRES<RT, REL, WT, H>;
+      helper,
+    ) as StateNormalRES<RT, HEL, WT>;
   },
 };
 
@@ -705,60 +592,54 @@ const lazy_resw = {
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
   >(
     init: () => RT,
-    setter: Setter<RT, Result<RT, string>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<Result<RT, string>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [1, false, () => ok(init())],
-      helper as H,
+      helper,
       setter,
-    ) as StateLazyRESW<RT, WT, REL, H>;
+    ) as StateNormalRESW<RT, HEL, WT>;
   },
   /**Creates a writable lazy state from an initial error, lazy meaning the value is only evaluated on first access.
    * @param init initial error for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   err<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
   >(
     init: () => string,
-    setter: Setter<RT, Result<RT, string>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<Result<RT, string>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [1, false, () => err(init())],
-      helper as H,
+      helper,
       setter,
-    ) as StateLazyRESW<RT, WT, REL, H>;
+    ) as StateNormalRESW<RT, HEL, WT>;
   },
   /**Creates a writable lazy state from an initial result, lazy meaning the value is only evaluated on first access.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
   >(
     init: () => Result<RT, string>,
-    setter: Setter<RT, Result<RT, string>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<Result<RT, string>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [1, false, init],
-      helper as H,
+      helper,
       setter,
-    ) as StateLazyRESW<RT, WT, REL, H>;
+    ) as StateNormalRESW<RT, HEL, WT>;
   },
 };
 
@@ -776,28 +657,26 @@ const delayed_roa = {
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
-  >(init?: () => PromiseLike<RT>, helper?: H) {
-    return new RXXX<RT, ResultOk<RT>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(init?: () => PromiseLike<RT>, helper?: HEL) {
+    return new RXXX<ResultOk<RT>, HEL, WT>(
       [2, true, init ? async () => ok(await init()) : undefined],
-      helper as H,
-    ) as StateDelayedROA<RT, REL, WT, H>;
+      helper,
+    ) as StateNormalROA<RT, HEL, WT>;
   },
   /**Creates a delayed ok state from an initial result, delayed meaning the value is a promise evaluated on first access.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
-  >(init?: () => PromiseLike<ResultOk<RT>>, helper?: H) {
-    return new RXXX<RT, ResultOk<RT>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(init?: () => PromiseLike<ResultOk<RT>>, helper?: HEL) {
+    return new RXXX<ResultOk<RT>, HEL, WT>(
       [2, true, init],
-      helper as H,
-    ) as StateDelayedROA<RT, REL, WT, H>;
+      helper,
+    ) as StateNormalROA<RT, HEL, WT>;
   },
 };
 
@@ -807,38 +686,36 @@ const delayed_roaw = {
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
   >(
     init?: () => PromiseLike<RT>,
-    setter: Setter<RT, ResultOk<RT>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<ResultOk<RT>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, ResultOk<RT>, REL, WT, H>(
+    return new RXXX<ResultOk<RT>, HEL, WT>(
       [2, true, init ? async () => ok(await init()) : undefined],
-      helper as H,
+      helper,
       setter,
-    ) as StateDelayedROAW<RT, WT, REL, H>;
+    ) as StateNormalROAW<RT, HEL, WT>;
   },
   /**Creates a delayed ok state from an initial result, delayed meaning the value is a promise evaluated on first access.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, ResultOk<RT>> | undefined = undefined,
   >(
     init?: () => PromiseLike<ResultOk<RT>>,
-    setter: Setter<RT, ResultOk<RT>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<ResultOk<RT>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, ResultOk<RT>, REL, WT, H>(
+    return new RXXX<ResultOk<RT>, HEL, WT>(
       [2, true, init],
-      helper as H,
+      helper,
       setter,
-    ) as StateDelayedROAW<RT, WT, REL, H>;
+    ) as StateNormalROAW<RT, HEL, WT>;
   },
 };
 
@@ -848,45 +725,39 @@ const delayed_rea = {
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
-  >(init?: () => PromiseLike<RT>, helper?: H) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(init?: () => PromiseLike<RT>, helper?: HEL) {
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [2, true, init ? async () => ok(await init()) : undefined],
-      helper as H,
-    ) as StateDelayedREA<RT, REL, WT, H>;
+      helper,
+    ) as StateNormalREA<RT, HEL, WT>;
   },
   /**Creates a delayed state from an initial error, delayed meaning the value is a promise evaluated on first access.
    * @param init initial error for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   err<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
-  >(init?: () => PromiseLike<string>, helper?: H) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(init?: () => PromiseLike<string>, helper?: HEL) {
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [2, true, init ? async () => err(await init()) : undefined],
-      helper as H,
-    ) as StateDelayedREA<RT, REL, WT, H>;
+      helper,
+    ) as StateNormalREA<RT, HEL, WT>;
   },
   /**Creates a delayed ok state from an initial result, delayed meaning the value is a promise evaluated on first access.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<
     RT,
-    REL extends Option<RELATED> = Option<{}>,
-    WT = any,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
-  >(init?: () => PromiseLike<Result<RT, string>>, helper?: H) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+    WT = RT,
+  >(init?: () => PromiseLike<Result<RT, string>>, helper?: HEL) {
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [2, true, init],
-      helper as H,
-    ) as StateDelayedREA<RT, REL, WT, H>;
+      helper,
+    ) as StateNormalREA<RT, HEL, WT>;
   },
 };
 
@@ -896,60 +767,54 @@ const delayed_reaw = {
    * @param helper functions to check and limit the value, and to return related states.*/
   ok<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
   >(
     init?: () => PromiseLike<RT>,
-    setter: Setter<RT, Result<RT, string>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<Result<RT, string>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [2, true, init ? async () => ok(await init()) : undefined],
-      helper as H,
+      helper,
       setter,
-    ) as StateDelayedREAW<RT, WT, REL, H>;
+    ) as StateNormalREAW<RT, HEL, WT>;
   },
   /**Creates a writable delayed state from an initial error, delayed meaning the value is a promise evaluated on first access.
    * @param init initial error for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   err<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
   >(
     init?: () => PromiseLike<string>,
-    setter: Setter<RT, Result<RT, string>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<Result<RT, string>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [2, true, init ? async () => err(await init()) : undefined],
-      helper as H,
+      helper,
       setter,
-    ) as StateDelayedREAW<RT, WT, REL, H>;
+    ) as StateNormalREAW<RT, HEL, WT>;
   },
   /**Creates a delayed ok state from an initial result, delayed meaning the value is a promise evaluated on first access.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
   result<
     RT,
+    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
     WT = RT,
-    REL extends Option<RELATED> = Option<{}>,
-    H extends StateHelper<RT, WT, REL, Result<RT, string>> | undefined =
-      undefined,
   >(
     init?: () => PromiseLike<Result<RT, string>>,
-    setter: Setter<RT, Result<RT, string>, REL, WT, H> | true = true,
-    helper?: H,
+    setter: Setter<Result<RT, string>, HEL, WT> | true = true,
+    helper?: HEL,
   ) {
-    return new RXXX<RT, Result<RT, string>, REL, WT, H>(
+    return new RXXX<Result<RT, string>, HEL, WT>(
       [2, true, init],
-      helper as H,
+      helper,
       setter,
-    ) as StateDelayedREAW<RT, WT, REL, H>;
+    ) as StateNormalREAW<RT, HEL, WT>;
   },
 };
 

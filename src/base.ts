@@ -3,6 +3,7 @@ import {
   ok,
   Option,
   OptionNone,
+  ResultInferOk,
   type Result,
 } from "@chocbite/ts-lib-result";
 import {
@@ -15,22 +16,17 @@ import {
 } from "./types";
 
 export abstract class StateBase<
-  RT,
+  RRT extends Result<any, string>,
   WT,
-  RRT extends Result<RT, string>,
-  HEL extends StateHelper<RT, WT, any>,
-> implements Base<RT, WT, ReturnType<HEL["related"]>, RRT> {
+  HEL extends StateHelper<RRT, WT, OptionNone>,
+> implements Base<RRT, ReturnType<HEL["related"]>, WT> {
   get [STATE_KEY](): true {
     return true;
   }
 
   constructor(helper?: HEL) {
-    this.helper = helper;
+    this.helper = helper ?? (new StateNoHelper() as HEL);
   }
-
-  readonly helper?: HEL;
-  #subscribers: Set<StateSub<RRT>> = new Set();
-  #read_promises?: ((val: RRT) => void)[];
 
   //#Reader Context
   abstract then<T = RRT>(
@@ -41,8 +37,14 @@ export abstract class StateBase<
   get?(): RRT;
 
   abstract readonly rok: boolean;
-  ok?(): RT;
+  ok?(): ResultInferOk<RRT>;
 
+  readonly helper: HEL;
+  related(): ReturnType<HEL["related"]> {
+    return this.helper.related() as ReturnType<HEL["related"]>;
+  }
+
+  #subscribers: Set<StateSub<RRT>> = new Set();
   sub<T = StateSub<RRT>>(func: StateSub<RRT>, update?: boolean): T {
     if (this.#subscribers.has(func)) {
       console.error("Function already registered as subscriber", this, func);
@@ -50,7 +52,7 @@ export abstract class StateBase<
     }
     if (this.#subscribers.size === 0) this.on_subscribe();
     this.#subscribers.add(func);
-    if (update) this.then(func as (value: Result<RT, string>) => void);
+    if (update) this.then(func);
     return func as T;
   }
   unsub<T = StateSub<RRT>>(func: T): T {
@@ -59,7 +61,6 @@ export abstract class StateBase<
     } else console.error("Subscriber not found with state", this, func);
     return func;
   }
-  abstract related(): ReturnType<HEL["related"]>;
 
   in_use(): this | undefined {
     return this.#subscribers.size > 0 ? this : undefined;
@@ -74,8 +75,12 @@ export abstract class StateBase<
   //#Writer Context
   abstract readonly writable: boolean;
   write?(value: WT): Promise<Result<void, string>>;
-  limit?(value: WT): Promise<Result<WT, string>>;
-  check?(value: WT): Promise<Result<WT, string>>;
+  limit(value: WT): Promise<Result<WT, string>> {
+    return this.helper.limit(value);
+  }
+  check(value: WT): Promise<Result<WT, string>> {
+    return this.helper.check(value);
+  }
 
   /**Called when subscriber is added*/
   protected on_subscribe(): void {}
@@ -95,16 +100,14 @@ export abstract class StateBase<
   }
 
   //Promises
+  #read_promises?: ((val: RRT) => void)[];
   /**Creates a promise which can be fulfilled later with fulRProm */
-  protected async append_r_prom<
-    T = Result<RT, string>,
-    TResult1 = Result<RT, string>,
-  >(func: (value: T) => TResult1 | PromiseLike<TResult1>): Promise<TResult1> {
+  protected async append_r_prom<TResult1 = RRT>(
+    func: (value: RRT) => TResult1 | PromiseLike<TResult1>,
+  ): Promise<TResult1> {
     return func(
-      await new Promise<T>((a) => {
-        (this.#read_promises ??= []).push(
-          a as (val: Result<RT, string>) => void,
-        );
+      await new Promise<RRT>((a) => {
+        (this.#read_promises ??= []).push(a as (val: RRT) => void);
       }),
     );
   }
@@ -123,11 +126,11 @@ export interface StateRelatedBase extends StateRelated {
 }
 
 export abstract class StateHelperBase<
-  RT,
+  RRT extends Result<any, string>,
   WT,
   REL extends Option<StateRelatedBase>,
 >
-  implements StateHelper<RT, WT, REL>, StateRelatedBase
+  implements StateHelper<RRT, WT, REL>, StateRelatedBase
 {
   readonly writable?: State<boolean>;
 
@@ -136,7 +139,7 @@ export abstract class StateHelperBase<
   }
 
   /**Called by state when value is set */
-  set(_value: Result<RT, string>): void {}
+  set(_value: RRT): void {}
 
   abstract related(): REL;
 
@@ -146,17 +149,17 @@ export abstract class StateHelperBase<
 }
 
 export class StateNoHelper implements StateHelper<any, any, OptionNone> {
-  set(_value: Result<any, string>): void {}
+  set(_value: any): void {}
 
   related(): OptionNone {
     return none();
   }
 
-  limit(value: any): Promise<Result<any, string>> {
+  limit(value: any): Promise<any> {
     return Promise.resolve(ok(value));
   }
 
-  check(value: any): Promise<Result<any, string>> {
+  check(value: any): Promise<any> {
     return Promise.resolve(ok(value));
   }
 }
