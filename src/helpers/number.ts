@@ -1,12 +1,113 @@
-import { ok, ResultOk, type Result } from "@chocbite/ts-lib-result";
-import type { State, StateRES, StateROA, StateROS } from "../types";
+import { number_step_start_decimal } from "@chocbite/ts-lib-math";
+import {
+  err,
+  ok,
+  OptionSome,
+  Result,
+  ResultOk,
+  some,
+} from "@chocbite/ts-lib-result";
+import { StateHelperBase, StateRelatedBase } from "../base";
 import {
   COLLECTED,
   StateCollectedREA,
   StateCollectedRES,
   StateCollectedROA,
-  type StateCollectedROS,
-} from "./collected";
+  StateCollectedROS,
+} from "../collected";
+import { State, StateRES, StateROA, StateROS } from "../types";
+
+//##################################################################################################################################################
+//      _    _ ______ _      _____  ______ _____
+//     | |  | |  ____| |    |  __ \|  ____|  __ \
+//     | |__| | |__  | |    | |__) | |__  | |__) |
+//     |  __  |  __| | |    |  ___/|  __| |  _  /
+//     | |  | | |____| |____| |    | |____| | \ \
+//     |_|  |_|______|______|_|    |______|_|  \_\
+
+export interface StateNumberRelated extends StateRelatedBase {
+  min?: State<number>;
+  max?: State<number>;
+  unit?: State<string>;
+  decimals?: State<number>;
+  step?: State<number>;
+  start?: State<number>;
+}
+
+export class StateNumberHelper
+  extends StateHelperBase<number, number, OptionSome<StateNumberRelated>>
+  implements StateNumberRelated
+{
+  readonly min?: State<number>;
+  readonly max?: State<number>;
+  readonly unit?: State<string>;
+  readonly decimals?: State<number>;
+  readonly step?: State<number>;
+  readonly start?: State<number>;
+
+  constructor(
+    min?: State<number>,
+    max?: State<number>,
+    unit?: State<string>,
+    decimals?: State<number>,
+    step?: State<number>,
+    start?: State<number>,
+    writable?: State<boolean>,
+  ) {
+    super(writable);
+    if (min) this.min = min;
+    if (max) this.max = max;
+    if (unit) this.unit = unit;
+    if (step) this.step = step;
+    if (start) this.start = start;
+    if (decimals) this.decimals = decimals;
+  }
+
+  async limit(value: number): Promise<Result<number, string>> {
+    const [min, max, step, start, decimals] = await Promise.all([
+      this.min,
+      this.max,
+      this.step,
+      this.start,
+      this.decimals,
+    ]);
+    return ok(
+      Math.min(
+        max?.unwrap_or(Infinity) ?? Infinity,
+        Math.max(
+          min?.unwrap_or(-Infinity) ?? -Infinity,
+          number_step_start_decimal(
+            value,
+            step?.unwrap_or(undefined),
+            start?.unwrap_or(undefined),
+            decimals?.unwrap_or(undefined),
+          ),
+        ),
+      ),
+    );
+  }
+
+  async check(value: number): Promise<Result<number, string>> {
+    const [min, max] = await Promise.all([this.min, this.max]);
+    if (max?.ok && value > max.value)
+      return err(value + " is bigger than the limit of " + max.value);
+    if (min?.ok && value < min.value)
+      return err(value + " is smaller than the limit of " + min.value);
+    return ok(value);
+  }
+
+  related(): OptionSome<StateNumberRelated> {
+    return some(this);
+  }
+}
+
+//##################################################################################################################################################
+//       _____ ____  _      _      ______ _____ _______ ______ _____
+//      / ____/ __ \| |    | |    |  ____/ ____|__   __|  ____|  __ \
+//     | |   | |  | | |    | |    | |__ | |       | |  | |__  | |  | |
+//     | |   | |  | | |    | |    |  __|| |       | |  |  __| | |  | |
+//     | |___| |__| | |____| |____| |___| |____   | |  | |____| |__| |
+//      \_____\____/|______|______|______\_____|  |_|  |______|_____/
 
 //##################################################################################################################################################
 //       _____ _    _ __  __
@@ -208,5 +309,42 @@ export const COLLECTS_NUMBER = {
         [S, T]
       >;
     },
+  },
+};
+
+//##################################################################################################################################################
+//      ________   _______   ____  _____ _______ _____
+//     |  ____\ \ / /  __ \ / __ \|  __ \__   __/ ____|
+//     | |__   \ V /| |__) | |  | | |__) | | | | (___
+//     |  __|   > < |  ___/| |  | |  _  /  | |  \___ \
+//     | |____ / . \| |    | |__| | | \ \  | |  ____) |
+//     |______/_/ \_\_|     \____/|_|  \_\ |_| |_____/
+
+export const NUMBER = {
+  /**Number limiter struct
+   * @param min minimum allowed number
+   * @param max maximum allowed number
+   * @param unit unit for number
+   * @param decimals number of suggested decimals to show
+   * @param step allowed step size for number 0.1 allows 0,0.1,0.2,0.3...
+   * @param start start offset for step, 0.5 and step 2 allows 0.5,2.5,4.5,6.5*/
+  helper(
+    min?: State<number>,
+    max?: State<number>,
+    unit?: State<string>,
+    decimals?: State<number>,
+    step?: State<number>,
+    start?: State<number>,
+    writable?: State<boolean>,
+  ) {
+    return new StateNumberHelper(
+      min,
+      max,
+      unit,
+      decimals,
+      step,
+      start,
+      writable,
+    );
   },
 };

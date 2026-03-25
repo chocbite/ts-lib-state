@@ -1,9 +1,8 @@
 import { ok } from "@chocbite/ts-lib-result";
 import state from "..";
-import { HELPERS } from "../helpers";
 
-const zxcv = state.s.ros.ok(5, HELPERS.nums.helper());
-zxcv.helper;
+const zxcv = state.s.ros.ok(5);
+console.warn(zxcv.helper);
 
 const state_inst = state.s.rosw.ok([5]);
 
@@ -11,7 +10,7 @@ state_inst.sub((v) => {
   console.warn(v.value);
 }, true);
 state_inst.sub((v) => {
-  console.warn(state.a.read(v.value));
+  console.warn(state.array.read(v.value));
 }, true);
 state_inst.set_ok([6]);
 //state_inst.write(state.a.write.push(7));
@@ -23,4 +22,4 @@ test.sub((v) => {
   console.warn(v.value);
 }, true);
 
-test.set_transform_read((v) => ok(8));
+test.set_transform_read((v) => ok(9));

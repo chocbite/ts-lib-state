@@ -1,28 +1,34 @@
-import { type Option, type Result } from "@chocbite/ts-lib-result";
-import { StateHelper } from "./helpers";
 import {
+  none,
+  ok,
+  Option,
+  OptionNone,
+  type Result,
+} from "@chocbite/ts-lib-result";
+import {
+  State,
   STATE_KEY,
+  StateHelper,
+  StateRelated,
   type StateBase as Base,
-  type StateRelated,
   type StateSub,
 } from "./types";
 
 export abstract class StateBase<
   RT,
   WT,
-  REL extends Option<StateRelated>,
   RRT extends Result<RT, string>,
-  H extends StateHelper<RT, WT, REL, RRT> | undefined,
-> implements Base<RT, WT, REL, RRT> {
+  HEL extends StateHelper<RT, WT, any>,
+> implements Base<RT, WT, ReturnType<HEL["related"]>, RRT> {
   get [STATE_KEY](): true {
     return true;
   }
 
-  constructor(helper: H) {
+  constructor(helper?: HEL) {
     this.helper = helper;
   }
 
-  readonly helper: H;
+  readonly helper?: HEL;
   #subscribers: Set<StateSub<RRT>> = new Set();
   #read_promises?: ((val: RRT) => void)[];
 
@@ -53,7 +59,7 @@ export abstract class StateBase<
     } else console.error("Subscriber not found with state", this, func);
     return func;
   }
-  abstract related(): REL;
+  abstract related(): ReturnType<HEL["related"]>;
 
   in_use(): this | undefined {
     return this.#subscribers.size > 0 ? this : undefined;
@@ -109,5 +115,48 @@ export abstract class StateBase<
         this.#read_promises[i](value);
     this.#read_promises = [];
     return value;
+  }
+}
+
+export interface StateRelatedBase extends StateRelated {
+  writable?: State<boolean>;
+}
+
+export abstract class StateHelperBase<
+  RT,
+  WT,
+  REL extends Option<StateRelatedBase>,
+>
+  implements StateHelper<RT, WT, REL>, StateRelatedBase
+{
+  readonly writable?: State<boolean>;
+
+  constructor(writable?: State<boolean>) {
+    if (writable) this.writable = writable;
+  }
+
+  /**Called by state when value is set */
+  set(_value: Result<RT, string>): void {}
+
+  abstract related(): REL;
+
+  abstract limit(value: WT): Promise<Result<WT, string>>;
+
+  abstract check(value: WT): Promise<Result<WT, string>>;
+}
+
+export class StateNoHelper implements StateHelper<any, any, OptionNone> {
+  set(_value: Result<any, string>): void {}
+
+  related(): OptionNone {
+    return none();
+  }
+
+  limit(value: any): Promise<Result<any, string>> {
+    return Promise.resolve(ok(value));
+  }
+
+  check(value: any): Promise<Result<any, string>> {
+    return Promise.resolve(ok(value));
   }
 }

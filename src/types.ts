@@ -21,8 +21,15 @@ export type StateInferType<S extends State<any>> =
 
 export type StateInferSub<S extends State<any>> = StateSub<StateInferResult<S>>;
 
+export interface StateRelated {}
+
 /**Map of values or states related to a state */
-export type StateRelated = {};
+export interface StateHelper<RT, WT, REL extends StateRelated> {
+  set(value: Result<RT, string>): void;
+  related(): REL;
+  limit(value: WT): Promise<Result<WT, string>>;
+  check(value: WT): Promise<Result<WT, string>>;
+}
 
 export type StateSetREXW<RT, S, WT = RT> = (
   value: WT,
@@ -87,6 +94,7 @@ export interface StateBase<
   sub<T = StateSub<RRT>>(func: StateSub<RRT>, update?: boolean): T;
   /**This removes a function as a subscriber to the state*/
   unsub<T = StateSub<RRT>>(func: T): T;
+
   /**This returns related states if any*/
   related(): REL;
 

@@ -5,7 +5,7 @@ import {
   Result,
   type ResultOk,
 } from "@chocbite/ts-lib-result";
-import { StateBase } from "../base";
+import { StateBase, StateNoHelper } from "./base";
 import {
   StateInferResult,
   StateREA,
@@ -14,7 +14,7 @@ import {
   type State,
   type StateRES,
   type StateROS,
-} from "../types";
+} from "./types";
 
 //##################################################################################################################################################
 //      _________     _______  ______  _____
@@ -112,7 +112,7 @@ export class RXX<
   WT,
   RRT extends Result<RT, string>,
 >
-  extends StateBase<RT, WT, OptionNone, RRT>
+  extends StateBase<RT, WT, RRT, StateNoHelper>
   implements Owner<RT, IN, WT, RRT>
 {
   constructor(

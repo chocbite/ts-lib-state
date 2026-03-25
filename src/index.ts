@@ -1,41 +1,46 @@
-import { ARRAY } from "./array";
 import { StateBase } from "./base";
-import { COLLECTED } from "./collected/collected";
-import { COLLECTS_NUMBER } from "./collected/number";
+import { COLLECTED } from "./collected";
 import { HELPERS } from "./helpers";
+import { ARRAY } from "./helpers/array";
+import { BOOL } from "./helpers/boolean";
+import { ENUM } from "./helpers/enum";
+import { IS } from "./helpers/is";
+import { NUMBER } from "./helpers/number";
+import { STRING } from "./helpers/string";
 import { DELAYED, LAZY, SYNC } from "./normal";
 import { PROXY } from "./proxy";
 import { RESOURCE } from "./resource";
-import { STATE_KEY, type State } from "./types";
+import { STATE_KEY } from "./types";
 
 export const state = {
-  /**The state key is a symbol used to identify state objects
-   * To implement a custom state, set this key to true on the object */
-  STATE_KEY,
-  a: ARRAY,
-  /**Collected states, collects values from multiple states and reduces it to one */
-  c: {
-    ...COLLECTED,
-    num: COLLECTS_NUMBER,
-  },
-  d: DELAYED,
-  h: HELPERS,
-  l: LAZY,
-  p: PROXY,
-  r: RESOURCE,
-  s: SYNC,
-  /**Returns true if the given object promises to be a state */
-  is(s: any): s is State<any, any> {
-    return Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]);
-  },
-  /**Utility base class for state, with basic state functionality */
-  class: StateBase,
+  //Quick access states
   ok: SYNC.ros.ok,
   err: SYNC.res.err,
   from: SYNC.res.ok,
   ok_ws: SYNC.rosw.ok,
   err_ws: SYNC.resw.err,
   from_ws: SYNC.resw.ok,
+  /**Collected states, collects values from multiple states and reduces it to one */
+  c: COLLECTED,
+  d: DELAYED,
+  h: HELPERS,
+  l: LAZY,
+  p: PROXY,
+  r: RESOURCE,
+  s: SYNC,
+  //Helpers
+  array: ARRAY,
+  number: NUMBER,
+  string: STRING,
+  enum: ENUM,
+  bool: BOOL,
+  /**Functions to determine if a variable is a state*/
+  is: IS,
+  /**The state key is a symbol used to identify state objects
+   * To implement a custom state, set this key to true on the object */
+  STATE_KEY,
+  /**Utility base class for state, with basic state functionality */
+  class: StateBase,
 };
 export default state;
 
@@ -44,15 +49,11 @@ export {
   type StateCollectedRES,
   type StateCollectedROA,
   type StateCollectedROS,
-} from "./collected/collected";
-export {
-  StateEnumHelper,
-  StateNumberHelper,
-  StateStringHelper,
-  type StateEnumRelated,
-  type StateNumberRelated,
-  type StateStringRelated,
-} from "./helpers";
+} from "./collected";
+export { StateBoolHelper, type StateBoolRelated } from "./helpers/boolean";
+export { StateEnumHelper, type StateEnumRelated } from "./helpers/enum";
+export { StateNumberHelper, type StateNumberRelated } from "./helpers/number";
+export { StateStringHelper, type StateStringRelated } from "./helpers/string";
 export {
   type StateDelayedREA,
   type StateDelayedREAW,

@@ -6,9 +6,9 @@ import {
   type Option,
   type Result,
 } from "@chocbite/ts-lib-result";
-import { ArrayOwner, StateArrayMethods } from "./array";
 import { StateBase } from "./base";
 import { StateHelper } from "./helpers";
+import { ArrayOwner, StateArrayMethods } from "./helpers/array";
 import {
   StateREA,
   StateREAW,

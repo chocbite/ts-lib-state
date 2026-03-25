@@ -6,9 +6,9 @@ import {
   ResultOk,
   some,
 } from "@chocbite/ts-lib-result";
-import { StateHelper, StateRelatedBase } from "./helpers";
-import { SYNC } from "./normal";
-import { State, StateROS } from "./types";
+import { StateHelperBase, StateRelatedBase } from "../base";
+import { SYNC } from "../normal";
+import { State, StateROS } from "../types";
 
 export const ARRAY_READ_KEY = Symbol("state_array_read_key");
 
@@ -252,7 +252,7 @@ export interface StateArrayRelated extends StateRelatedBase {
 }
 
 export class StateArrayHelper
-  extends StateHelper<boolean, OptionSome<StateArrayRelated>>
+  extends StateHelperBase<boolean, boolean, OptionSome<StateArrayRelated>>
   implements StateArrayRelated
 {
   readonly length = SYNC.ros.ok(0);
