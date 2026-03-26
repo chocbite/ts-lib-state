@@ -8,6 +8,7 @@ import {
 } from "@chocbite/ts-lib-result";
 import { StateBase, StateNoHelper } from "./base";
 import {
+  HelperRelated as HELToREL,
   StateHelper,
   StateREA,
   StateREAW,
@@ -47,92 +48,92 @@ export interface Owner<
   set(value: RRT): void;
   set_ok(value: ResultInferOk<RRT>): void;
   setter?: Setter<RRT, HEL, WT>;
-  readonly state: State<ResultInferOk<RRT>, ReturnType<HEL["related"]>, WT>;
+  readonly state: State<ResultInferOk<RRT>, HELToREL<HEL>, WT>;
 }
 
 export type StateNormalROS<
   RT,
-  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = any,
   WT = RT,
-> = StateROS<RT, ReturnType<HEL["related"]>, WT> &
+> = StateROS<RT, HELToREL<HEL>, WT> &
   Owner<ResultOk<RT>, HEL, WT> & {
-    readonly read_only: StateROS<RT, ReturnType<HEL["related"]>, WT>;
-    readonly read_write?: StateROSW<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
+    readonly read_write?: StateROSW<RT, HELToREL<HEL>, WT>;
   };
 
 export type StateNormalRES<
   RT,
-  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = any,
   WT = RT,
-> = StateRES<RT, ReturnType<HEL["related"]>, WT> &
+> = StateRES<RT, HELToREL<HEL>, WT> &
   Owner<Result<RT, string>, HEL, WT> & {
     set_err(error: string): void;
-    readonly read_only: StateRES<RT, ReturnType<HEL["related"]>, WT>;
-    readonly read_write?: StateRESW<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_only: StateRES<RT, HELToREL<HEL>, WT>;
+    readonly read_write?: StateRESW<RT, HELToREL<HEL>, WT>;
   };
 
 export type StateNormalROA<
   RT,
-  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = any,
   WT = RT,
-> = StateROA<RT, ReturnType<HEL["related"]>, WT> &
+> = StateROA<RT, HELToREL<HEL>, WT> &
   Owner<ResultOk<RT>, HEL, WT> & {
-    readonly read_only: StateROA<RT, ReturnType<HEL["related"]>, WT>;
-    readonly read_write?: StateROAW<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_only: StateROA<RT, HELToREL<HEL>, WT>;
+    readonly read_write?: StateROAW<RT, HELToREL<HEL>, WT>;
   };
 
 export type StateNormalREA<
   RT,
-  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = any,
   WT = RT,
-> = StateREA<RT, ReturnType<HEL["related"]>, WT> &
+> = StateREA<RT, HELToREL<HEL>, WT> &
   Owner<Result<RT, string>, HEL, WT> & {
     set_err(error: string): void;
-    readonly read_only: StateREA<RT, ReturnType<HEL["related"]>, WT>;
-    readonly read_write?: StateREAW<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_only: StateREA<RT, HELToREL<HEL>, WT>;
+    readonly read_write?: StateREAW<RT, HELToREL<HEL>, WT>;
   };
 
 export type StateNormalROSW<
   RT,
-  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = any,
   WT = RT,
-> = StateROSW<RT, ReturnType<HEL["related"]>, WT> &
+> = StateROSW<RT, HELToREL<HEL>, WT> &
   Owner<ResultOk<RT>, HEL, WT> & {
     setter: Setter<ResultOk<RT>, HEL, WT>;
-    readonly read_only: StateROS<RT, ReturnType<HEL["related"]>, WT>;
-    readonly read_write: StateROSW<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
+    readonly read_write: StateROSW<RT, HELToREL<HEL>, WT>;
   };
 
 export type StateNormalRESW<
   RT,
-  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = any,
   WT = RT,
-> = StateRESW<RT, ReturnType<HEL["related"]>, WT> &
+> = StateRESW<RT, HELToREL<HEL>, WT> &
   Owner<Result<RT, string>, HEL, WT> & {
     set_err(error: string): void;
-    readonly read_only: StateROS<RT, ReturnType<HEL["related"]>, WT>;
-    readonly read_write: StateROSW<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
+    readonly read_write: StateROSW<RT, HELToREL<HEL>, WT>;
   };
 
 export type StateNormalROAW<
   RT,
-  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = any,
   WT = RT,
-> = StateROAW<RT, ReturnType<HEL["related"]>, WT> &
+> = StateROAW<RT, HELToREL<HEL>, WT> &
   Owner<ResultOk<RT>, HEL, WT> & {
-    readonly read_only: StateROS<RT, ReturnType<HEL["related"]>, WT>;
-    readonly read_write: StateROSW<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
+    readonly read_write: StateROSW<RT, HELToREL<HEL>, WT>;
   };
 
 export type StateNormalREAW<
   RT,
-  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  HEL extends StateHelper<ResultOk<RT>, WT, any> = any,
   WT = RT,
-> = StateREAW<RT, ReturnType<HEL["related"]>, WT> &
+> = StateREAW<RT, HELToREL<HEL>, WT> &
   Owner<Result<RT, string>, HEL, WT> & {
     set_err(error: string): void;
-    readonly read_only: StateROS<RT, ReturnType<HEL["related"]>, WT>;
-    readonly read_write: StateROSW<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
+    readonly read_write: StateROSW<RT, HELToREL<HEL>, WT>;
   };
 
 //##################################################################################################################################################
@@ -148,7 +149,7 @@ class RXXX<
   HEL extends StateHelper<RRT, WT, OptionNone>,
   WT,
 >
-  extends StateBase<RRT, WT, HEL>
+  extends StateBase<RRT, WT, HELToREL<HEL>>
   implements Owner<RRT, HEL, WT>
 {
   constructor(
@@ -159,7 +160,8 @@ class RXXX<
     helper?: HEL,
     setter?: Setter<RRT, HEL, WT> | true,
   ) {
-    super(helper);
+    super();
+    this.helper = helper ?? (new StateNoHelper() as HEL);
     this.#rok = init[1];
     if (setter === true)
       this.#setter = (value, state, old) => {
@@ -224,6 +226,7 @@ class RXXX<
     (["then", "get", "set", "write"] as const).forEach((k) => delete this[k]);
   }
 
+  readonly helper: HEL;
   #value?: RRT;
   #setter?: Setter<RRT, HEL, WT>;
 
@@ -244,14 +247,14 @@ class RXXX<
     return this.#setter;
   }
   get state() {
-    return this as State<ResultInferOk<RRT>, ReturnType<HEL["related"]>, WT>;
+    return this as State<ResultInferOk<RRT>, HELToREL<HEL>, WT>;
   }
   get read_only() {
-    return this as State<ResultInferOk<RRT>, ReturnType<HEL["related"]>, WT>;
+    return this as State<ResultInferOk<RRT>, HELToREL<HEL>, WT>;
   }
   get read_write() {
     return this.#setter
-      ? (this as State<ResultInferOk<RRT>, ReturnType<HEL["related"]>, WT>)
+      ? (this as State<ResultInferOk<RRT>, HELToREL<HEL>, WT>)
       : undefined;
   }
 
@@ -279,6 +282,9 @@ class RXXX<
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return (this.get() as ResultOk<ResultInferOk<RRT>>).value;
   }
+  related(): HELToREL<HEL> {
+    return this.helper.related() as HELToREL<HEL>;
+  }
 
   //#Writer Context
   get writable(): boolean {
@@ -290,6 +296,18 @@ class RXXX<
         this.#setter(value, this as Owner<RRT, HEL, WT>, this.#value),
       );
     return Promise.resolve(err("not writable"));
+  }
+  limit(value: WT): Promise<Result<WT, string>> {
+    return this.helper?.limit(value) ?? Promise.resolve(ok(value));
+  }
+  check(value: WT): Promise<Result<WT, string>> {
+    return this.helper?.check(value) ?? Promise.resolve(ok(value));
+  }
+
+  protected update_subs(value: RRT): void {
+    if (this.helper)
+      (this.helper as unknown as { set(value: RRT): void }).set(value);
+    super.update_subs(value);
   }
 }
 
@@ -318,14 +336,16 @@ const sync_ros = {
   /**Creates a sync ok state from an initial result.
    * @param init initial result for state.
    * @param helper functions to check and limit the value, and to return related states.*/
-  result<RT, HEL extends StateHelper<ResultOk<RT>, WT, any>, WT = RT>(
-    init: ResultOk<RT>,
-    helper?: HEL,
-  ) {
-    return new RXXX<ResultOk<RT>, HEL, WT>(
-      [0, false, init],
-      helper,
-    ) as StateNormalROS<RT, HEL, WT>;
+  result<
+    RRT extends Result<any, string>,
+    HEL extends StateHelper<RRT, WT, any>,
+    WT = ResultInferOk<RRT>,
+  >(init: RRT, helper?: HEL) {
+    return new RXXX<RRT, HEL, WT>([0, false, init], helper) as StateNormalROS<
+      ResultInferOk<RRT>,
+      HEL,
+      WT
+    >;
   },
 };
 

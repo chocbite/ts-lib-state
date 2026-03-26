@@ -3,6 +3,7 @@ import {
   ok,
   OptionSome,
   Result,
+  ResultInferOk,
   ResultOk,
   some,
 } from "@chocbite/ts-lib-result";
@@ -128,17 +129,6 @@ const write = {
   },
 };
 
-export const ARRAY = {
-  read<RT>(arr: readonly RT[]): StateArrayRead<RT> {
-    (arr as StateArrayRead<RT>)[ARRAY_READ_KEY] ??= { type: "fresh" };
-    return arr as StateArrayRead<RT>;
-  },
-  write,
-  read_key: ARRAY_READ_KEY,
-  write_key: ARRAY_WRITE_KEY,
-  write_owner<T>(owner: ArrayOwner<T>, write: StateArrayWrite<T>): void {},
-};
-
 export class ArrayOwner<T> implements StateArrayMethods<T> {
   #getter: () => Result<T[], string>;
   #setter: (v: ResultOk<T[] & StateArrayReadTypes<T>>) => void;
@@ -238,46 +228,46 @@ export class ArrayOwner<T> implements StateArrayMethods<T> {
   }
 }
 
+//##################################################################################################################################################
 //      _    _ ______ _      _____  ______ _____
 //     | |  | |  ____| |    |  __ \|  ____|  __ \
 //     | |__| | |__  | |    | |__) | |__  | |__) |
 //     |  __  |  __| | |    |  ___/|  __| |  _  /
 //     | |  | | |____| |____| |    | |____| | \ \
 //     |_|  |_|______|______|_|    |______|_|  \_\
-//
-//
 
 export interface StateArrayRelated extends StateRelatedBase {
   length: StateROS<number>;
 }
 
-export class StateArrayHelper<AT>
+export class StateArrayHelper<RRT extends Result<[], string>>
   extends StateHelperBase<
-    Result<AT[], string>,
-    AT[],
+    RRT,
+    ResultInferOk<RRT>,
     OptionSome<StateArrayRelated>
   >
   implements StateArrayRelated
 {
   readonly length = SYNC.ros.ok(0);
 
-  readonly min?: State<number>;
-  readonly max?: State<number>;
-  readonly unit?: State<string>;
-  readonly decimals?: State<number>;
-  readonly step?: State<number>;
-  readonly start?: State<number>;
-
-  constructor(max_length?: State<number>, writable?: State<boolean>) {
+  constructor(writable?: State<boolean>) {
     super(writable);
-    if (max_length) this.max = max_length;
   }
 
-  async limit(value: AT[]): Promise<Result<AT[], string>> {
+  set(value: RRT): void {
+    if (value.ok) this.length.set_ok(value.value.length);
+    else this.length.set_ok(0);
+  }
+
+  async limit(
+    value: ResultInferOk<RRT>,
+  ): Promise<Result<ResultInferOk<RRT>, string>> {
     return ok(value);
   }
 
-  async check(value: AT[]): Promise<Result<AT[], string>> {
+  async check(
+    value: ResultInferOk<RRT>,
+  ): Promise<Result<ResultInferOk<RRT>, string>> {
     if (this.writable !== undefined && !this.writable)
       return err("not writable");
     return ok(value);
@@ -287,3 +277,26 @@ export class StateArrayHelper<AT>
     return some(this);
   }
 }
+
+//##################################################################################################################################################
+//      ________   _______   ____  _____ _______ _____
+//     |  ____\ \ / /  __ \ / __ \|  __ \__   __/ ____|
+//     | |__   \ V /| |__) | |  | | |__) | | | | (___
+//     |  __|   > < |  ___/| |  | |  _  /  | |  \___ \
+//     | |____ / . \| |    | |__| | | \ \  | |  ____) |
+//     |______/_/ \_\_|     \____/|_|  \_\ |_| |_____/
+
+export const ARRAY = {
+  read<RT>(arr: readonly RT[]): StateArrayRead<RT> {
+    (arr as StateArrayRead<RT>)[ARRAY_READ_KEY] ??= { type: "fresh" };
+    return arr as StateArrayRead<RT>;
+  },
+  write,
+  read_key: ARRAY_READ_KEY,
+  write_key: ARRAY_WRITE_KEY,
+  write_owner<T>(owner: ArrayOwner<T>, write: StateArrayWrite<T>): void {},
+  /***/
+  helper<RRT extends Result<[], string>>(writable?: State<boolean>) {
+    return new StateArrayHelper<RRT>(writable);
+  },
+};

@@ -58,6 +58,7 @@ export default defineConfig(
         {
           selector: "typeLike",
           format: ["PascalCase"],
+          leadingUnderscore: "allow",
         },
       ],
     },
@@ -68,5 +69,5 @@ export default defineConfig(
         projectService: true,
       },
     },
-  }
+  },
 );

@@ -18,14 +18,10 @@ import {
 export abstract class StateBase<
   RRT extends Result<any, string>,
   WT,
-  HEL extends StateHelper<RRT, WT, OptionNone>,
-> implements Base<RRT, ReturnType<HEL["related"]>, WT> {
+  REL extends Option<StateRelated>,
+> implements Base<RRT, REL, WT> {
   get [STATE_KEY](): true {
     return true;
-  }
-
-  constructor(helper?: HEL) {
-    this.helper = helper ?? (new StateNoHelper() as HEL);
   }
 
   //#Reader Context
@@ -39,10 +35,7 @@ export abstract class StateBase<
   abstract readonly rok: boolean;
   ok?(): ResultInferOk<RRT>;
 
-  readonly helper: HEL;
-  related(): ReturnType<HEL["related"]> {
-    return this.helper.related() as ReturnType<HEL["related"]>;
-  }
+  abstract related(): REL;
 
   #subscribers: Set<StateSub<RRT>> = new Set();
   sub<T = StateSub<RRT>>(func: StateSub<RRT>, update?: boolean): T {
@@ -75,12 +68,8 @@ export abstract class StateBase<
   //#Writer Context
   abstract readonly writable: boolean;
   write?(value: WT): Promise<Result<void, string>>;
-  limit(value: WT): Promise<Result<WT, string>> {
-    return this.helper.limit(value);
-  }
-  check(value: WT): Promise<Result<WT, string>> {
-    return this.helper.check(value);
-  }
+  abstract limit(value: WT): Promise<Result<WT, string>>;
+  abstract check(value: WT): Promise<Result<WT, string>>;
 
   /**Called when subscriber is added*/
   protected on_subscribe(): void {}
@@ -89,7 +78,6 @@ export abstract class StateBase<
 
   /**Updates all subscribers with a value */
   protected update_subs(value: RRT): void {
-    if (this.helper) this.helper.set(value);
     for (const subscriber of this.#subscribers) {
       try {
         subscriber(value);
@@ -139,7 +127,7 @@ export abstract class StateHelperBase<
   }
 
   /**Called by state when value is set */
-  set(_value: RRT): void {}
+  protected set(_value: RRT): void {}
 
   abstract related(): REL;
 
@@ -149,8 +137,6 @@ export abstract class StateHelperBase<
 }
 
 export class StateNoHelper implements StateHelper<any, any, OptionNone> {
-  set(_value: any): void {}
-
   related(): OptionNone {
     return none();
   }

@@ -24,8 +24,7 @@ export type StateInferSub<S extends State<any>> = StateSub<StateInferResult<S>>;
 export interface StateRelated {}
 
 /**Map of values or states related to a state */
-export interface StateHelper<RRT, WT, REL extends StateRelated> {
-  set(value: RRT): void;
+export interface StateHelper<_RRT, WT, REL extends StateRelated> {
   related(): REL;
   limit(value: WT): Promise<Result<WT, string>>;
   check(value: WT): Promise<Result<WT, string>>;

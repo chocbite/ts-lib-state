@@ -6,7 +6,7 @@ import {
   ResultInferOk,
   type ResultOk,
 } from "@chocbite/ts-lib-result";
-import { StateBase, StateNoHelper } from "./base";
+import { StateBase } from "./base";
 import {
   StateInferResult,
   StateREA,
@@ -113,7 +113,7 @@ export class RXX<
   WT,
   RRT extends Result<RT, string>,
 >
-  extends StateBase<RRT, WT, StateNoHelper>
+  extends StateBase<RRT, WT, OptionNone>
   implements Owner<RT, IN, WT, RRT>
 {
   constructor(
@@ -280,6 +280,12 @@ export class RXX<
   //#Writer Context
   get writable(): false {
     return false;
+  }
+  limit(_value: WT): Promise<Result<WT, string>> {
+    return Promise.resolve(err("not writable"));
+  }
+  check(_value: WT): Promise<Result<WT, string>> {
+    return Promise.resolve(err("not writable"));
   }
 }
 

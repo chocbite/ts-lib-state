@@ -7,6 +7,7 @@ import {
 } from "@chocbite/ts-lib-result";
 import { StateBase, StateNoHelper } from "./base";
 import {
+  HelperRelated as HELToREL,
   StateHelper,
   StateROA,
   StateROAW,
@@ -34,47 +35,47 @@ export interface StateResourceOwner<
   update_resource(value: RRT): void;
   /**Gets the current buffer value*/
   get buffer(): RRT | undefined;
-  get state(): State<ResultInferOk<RRT>, ReturnType<HEL["related"]>, WT>;
+  get state(): State<ResultInferOk<RRT>, HELToREL<HEL>, WT>;
 }
 
 export type StateResourceFuncROA<
   RT,
   HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
   WT = any,
-> = StateROA<RT, ReturnType<HEL["related"]>, WT> &
-  StateResourceOwner<ResultOk<RT>, WT, ReturnType<HEL["related"]>> & {
-    readonly read_only: StateROA<RT, ReturnType<HEL["related"]>, WT>;
-    readonly read_write?: StateROAW<RT, ReturnType<HEL["related"]>, WT>;
+> = StateROA<RT, HELToREL<HEL>, WT> &
+  StateResourceOwner<ResultOk<RT>, WT, HELToREL<HEL>> & {
+    readonly read_only: StateROA<RT, HELToREL<HEL>, WT>;
+    readonly read_write?: StateROAW<RT, HELToREL<HEL>, WT>;
   };
 
 export type StateResourceFuncREA<
   RT,
   HEL extends StateHelper<Result<RT, string>, WT, any> = StateNoHelper,
   WT = any,
-> = StateREA<RT, ReturnType<HEL["related"]>, WT> &
+> = StateREA<RT, HELToREL<HEL>, WT> &
   StateResourceOwner<Result<RT, string>, WT, HEL> & {
-    readonly read_only: StateREA<RT, ReturnType<HEL["related"]>, WT>;
-    readonly read_write?: StateREAW<RT, ReturnType<HEL["related"]>, WT>;
+    readonly read_only: StateREA<RT, HELToREL<HEL>, WT>;
+    readonly read_write?: StateREAW<RT, HELToREL<HEL>, WT>;
   };
 
 export type StateResourceFuncROAW<
   RT,
   HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
   WT = RT,
-> = StateROAW<RT, ReturnType<HEL["related"]>, WT> &
-  StateResourceOwner<ResultOk<RT>, WT, ReturnType<HEL["related"]>> & {
-    readonly read_only: StateROA<RT, ReturnType<HEL["related"]>, WT>;
-    readonly read_write: StateROAW<RT, ReturnType<HEL["related"]>, WT>;
+> = StateROAW<RT, HELToREL<HEL>, WT> &
+  StateResourceOwner<ResultOk<RT>, WT, HELToREL<HEL>> & {
+    readonly read_only: StateROA<RT, HELToREL<HEL>, WT>;
+    readonly read_write: StateROAW<RT, HELToREL<HEL>, WT>;
   };
 
 export type StateResourceFuncREAW<
   RT,
   HEL extends StateHelper<Result<RT, string>, WT, any> = StateNoHelper,
   WT = RT,
-> = StateREAW<RT, ReturnType<HEL["related"]>, WT> &
-  StateResourceOwner<Result<RT, string>, WT, ReturnType<HEL["related"]>> & {
-    readonly read_only: StateREA<RT, ReturnType<HEL["related"]>, WT>;
-    readonly read_write: StateREAW<RT, ReturnType<HEL["related"]>, WT>;
+> = StateREAW<RT, HELToREL<HEL>, WT> &
+  StateResourceOwner<Result<RT, string>, WT, HELToREL<HEL>> & {
+    readonly read_only: StateREA<RT, HELToREL<HEL>, WT>;
+    readonly read_write: StateREAW<RT, HELToREL<HEL>, WT>;
   };
 
 //##################################################################################################################################################

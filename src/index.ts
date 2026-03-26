@@ -50,6 +50,7 @@ export {
   type StateCollectedROA,
   type StateCollectedROS,
 } from "./collected";
+export { StateArrayHelper, type StateArrayRelated } from "./helpers/array";
 export { StateBoolHelper, type StateBoolRelated } from "./helpers/boolean";
 export { StateEnumHelper, type StateEnumRelated } from "./helpers/enum";
 export { StateNumberHelper, type StateNumberRelated } from "./helpers/number";

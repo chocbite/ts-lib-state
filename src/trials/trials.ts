@@ -1,10 +1,14 @@
 import { ok } from "@chocbite/ts-lib-result";
-import state from "..";
+import state, { StateNormalROS, StateNumberHelper } from "..";
+
+let qwer: StateNormalROS<number, StateNumberHelper>;
+qwer = state.s.ros.ok(5, state.number.helper());
+qwer = state.s.ros.ok(5);
 
 const zxcv = state.s.ros.ok(5);
 console.warn(zxcv.helper);
 
-const state_inst = state.s.rosw.ok([5]);
+const state_inst = state.s.ros.result(ok([5]), state.array.helper());
 
 state_inst.sub((v) => {
   console.warn(v.value);
