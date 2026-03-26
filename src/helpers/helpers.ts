@@ -1,17 +1,79 @@
-import { type Result } from "@chocbite/ts-lib-result";
 import {
-  STATE_KEY,
+  none,
+  ok,
+  Option,
+  OptionNone,
+  type Result,
+} from "@chocbite/ts-lib-result";
+import {
+  StateHelper,
+  StateRelated,
   type State,
-  type StateREA,
-  type StateREAW,
   type StateRES,
-  type StateRESW,
-  type StateROA,
-  type StateROAW,
-  type StateROS,
-  type StateROSW,
   type StateSub,
-} from "./types";
+} from "../types";
+
+export type StateInit<T = any> =
+  | Result<T, string>
+  | (() => Result<T, string>)
+  | (() => Promise<Result<T, string>>)
+  | undefined;
+
+export type StateInitResult<T> = T extends () => Promise<infer R>
+  ? R
+  : T extends () => infer R
+    ? R
+    : T extends Result<any, string>
+      ? T
+      : never;
+
+export interface StateRelatedBase extends StateRelated {
+  writable?: State<boolean>;
+}
+
+export interface StateHelperBaseOptions {
+  writable?: State<boolean>;
+}
+
+export abstract class StateHelperBase<
+  RRT extends Result<any, string>,
+  WT,
+  REL extends Option<StateRelatedBase>,
+>
+  implements StateHelper<RRT, WT, REL>, StateRelatedBase
+{
+  readonly writable?: State<boolean>;
+
+  constructor(options: StateHelperBaseOptions) {
+    if (options.writable) this.writable = options.writable;
+  }
+
+  /**Called by state when value is set */
+  protected set(_value: RRT): void {}
+
+  abstract related(): REL;
+
+  abstract limit(value: WT): Promise<Result<WT, string>>;
+
+  abstract check(value: WT): Promise<Result<WT, string>>;
+}
+
+export class StateNoHelper implements StateHelper<any, any, OptionNone> {
+  /**Called by state when value is set */
+  protected set(_value: any): void {}
+
+  related(): OptionNone {
+    return none();
+  }
+
+  limit(value: any): Promise<any> {
+    return Promise.resolve(ok(value));
+  }
+
+  check(value: any): Promise<any> {
+    return Promise.resolve(ok(value));
+  }
+}
 
 //##################################################################################################################################################
 //      ______ _    _ _   _  _____ _______ _____ ____  _   _  _____
@@ -72,60 +134,6 @@ function compare_sync(state1: StateRES<any>, state2: StateRES<any>): boolean {
 }
 
 //##################################################################################################################################################
-const is = {
-  rea(s: any): s is StateREA<any> {
-    return Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]);
-  },
-  roa(s: any): s is StateROA<any> {
-    return (
-      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
-      (s as State<any>).rok
-    );
-  },
-  res(s: any): s is StateRES<any> {
-    return (
-      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
-      (s as State<any>).rsync
-    );
-  },
-  ros(s: any): s is StateROS<any> {
-    return (
-      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
-      (s as State<any>).rsync &&
-      (s as State<any>).rok
-    );
-  },
-  reaw(s: any): s is StateREAW<any> {
-    return (
-      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
-      (s as State<any>).writable
-    );
-  },
-  roaw(s: any): s is StateROAW<any> {
-    return (
-      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
-      (s as State<any>).writable &&
-      (s as State<any>).rok
-    );
-  },
-  resw(s: any): s is StateRESW<any> {
-    return (
-      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
-      (s as State<any>).writable &&
-      (s as State<any>).rsync
-    );
-  },
-  rosw(s: any): s is StateROSW<any> {
-    return (
-      Boolean(s && (s as { [STATE_KEY]: boolean })[STATE_KEY]) &&
-      (s as State<any>).writable &&
-      (s as State<any>).rsync &&
-      (s as State<any>).rok
-    );
-  },
-};
-
-//##################################################################################################################################################
 //      ________   _______   ____  _____ _______ _____
 //     |  ____\ \ / /  __ \ / __ \|  __ \__   __/ ____|
 //     | |__   \ V /| |__) | |  | | |__) | | | | (___
@@ -135,7 +143,6 @@ const is = {
 
 /**Helper function and types for states */
 export const HELPERS = {
-  is,
   await_value,
   compare,
   compare_sync,

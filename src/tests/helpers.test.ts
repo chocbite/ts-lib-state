@@ -1,4 +1,4 @@
-import { err } from "@chocbite/ts-lib-result";
+import { err, ok } from "@chocbite/ts-lib-result";
 import { describe, expect, it } from "vitest";
 import { state as st } from "..";
 
@@ -11,10 +11,9 @@ import { state as st } from "..";
 //     |_| \_|\____/|_|  |_|____/|______|_|  \_\
 describe("State Number Min Max", async () => {
   it("Checking limiter min max", async () => {
-    const state_inst = st.s.rosw.ok(
-      5,
+    const state_inst = st.rosw(
+      st.n.help(ok(5), { min: st.ok(0), max: st.ok(10) }),
       true,
-      st.number.helper(st.ok(0), st.ok(10)),
     );
     expect((await state_inst).unwrap()).to.equal(5);
     expect((await state_inst.limit(11)).unwrap()).to.equal(10);
@@ -25,10 +24,9 @@ describe("State Number Min Max", async () => {
     expect((await state_inst).unwrap()).to.equal(0);
   });
   it("Checking checker min max", async () => {
-    const state_inst = st.s.rosw.ok(
-      5,
+    const state_inst = st.rosw(
+      st.n.help(ok(5), { min: st.ok(0), max: st.ok(10) }),
       true,
-      st.number.helper(st.ok(0), st.ok(10)),
     );
     expect((await state_inst).unwrap()).to.equal(5);
     expect(await state_inst.check(11)).toEqual(
@@ -39,10 +37,9 @@ describe("State Number Min Max", async () => {
     );
   });
   it("Checking related min max", async () => {
-    const state_inst = st.s.rosw.ok(
-      5,
+    const state_inst = st.rosw(
+      st.n.help(ok(5), { min: st.ok(0), max: st.ok(10) }),
       true,
-      st.number.helper(st.ok(0), st.ok(10)),
     );
     const related = state_inst.related().unwrap();
     expect((await related.min!).unwrap()).to.equal(0);
@@ -51,30 +48,21 @@ describe("State Number Min Max", async () => {
 });
 describe("State Number Unit", async () => {
   it("Checking related unit", async () => {
-    const state_inst = st.s.rosw.ok(
-      5,
-      true,
-      st.number.helper(undefined, undefined, st.ok("test")),
-    );
+    const state_inst = st.rosw(st.n.help(ok(5), { unit: st.ok("test") }), true);
     const related = state_inst.related().unwrap();
     expect((await related.unit!).unwrap()).to.equal("test");
   });
 });
 describe("State Number decimals", async () => {
   it("Checking related decimals", async () => {
-    const state_inst = st.s.rosw.ok(
-      5,
-      true,
-      st.number.helper(undefined, undefined, undefined, st.ok(2)),
-    );
+    const state_inst = st.rosw(st.n.help(ok(5), { decimals: st.ok(2) }), true);
     const related = state_inst.related().unwrap();
     expect((await related.decimals!).unwrap()).to.equal(2);
   });
   it("Checking limiter decimals step", async () => {
-    const state_inst = st.s.rosw.ok(
-      5,
+    const state_inst = st.rosw(
+      st.n.help(ok(5), { decimals: st.ok(1), step: st.ok(0.13) }),
       true,
-      st.number.helper(undefined, undefined, undefined, st.ok(1), st.ok(0.13)),
     );
     expect((await state_inst).unwrap()).to.equal(5);
     expect((await state_inst.limit(11)).unwrap()).to.equal(11.1);
@@ -85,17 +73,13 @@ describe("State Number decimals", async () => {
     expect((await state_inst).unwrap()).to.equal(-11.1);
   });
   it("Checking limiter decimals step start", async () => {
-    const state_inst = st.s.rosw.ok(
-      5,
+    const state_inst = st.rosw(
+      st.n.help(ok(5), {
+        decimals: st.ok(3),
+        step: st.ok(0.003),
+        start: st.ok(0.07),
+      }),
       true,
-      st.number.helper(
-        undefined,
-        undefined,
-        undefined,
-        st.ok(3),
-        st.ok(0.003),
-        st.ok(0.07),
-      ),
     );
     expect((await state_inst).unwrap()).to.equal(5);
     expect((await state_inst.limit(11)).unwrap()).to.equal(10.999);
@@ -108,11 +92,7 @@ describe("State Number decimals", async () => {
 });
 describe("State Number step start", async () => {
   it("Checking limiter step", async () => {
-    const state_inst = st.s.rosw.ok(
-      5,
-      true,
-      st.number.helper(undefined, undefined, undefined, undefined, st.ok(0.13)),
-    );
+    const state_inst = st.rosw(st.n.help(ok(5), { step: st.ok(0.13) }), true);
     expect((await state_inst).unwrap()).to.equal(5);
     expect((await state_inst.limit(11)).unwrap()).to.equal(11.05);
     expect((await state_inst.limit(-11)).unwrap()).to.equal(-11.05);
@@ -122,17 +102,9 @@ describe("State Number step start", async () => {
     expect((await state_inst).unwrap()).to.equal(-11.05);
   });
   it("Checking limiter step start", async () => {
-    const state_inst = st.s.rosw.ok(
-      5,
+    const state_inst = st.rosw(
+      st.n.help(ok(5), { step: st.ok(0.13), start: st.ok(0.02) }),
       true,
-      st.number.helper(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        st.ok(0.13),
-        st.ok(0.02),
-      ),
     );
     expect((await state_inst).unwrap()).to.equal(5);
     expect((await state_inst.limit(11)).unwrap()).to.equal(10.94);
@@ -154,7 +126,10 @@ describe("State Number step start", async () => {
 //     |_____/   |_|  |_|  \_\_____|_| \_|\_____|
 describe("State String Max Len", async () => {
   it("Checking limiter max len", async () => {
-    const state_inst = st.s.rosw.ok("5", true, st.string.helper(st.ok(10)));
+    const state_inst = st.rosw(
+      st.s.help(ok("5"), { max_length: st.ok(10) }),
+      true,
+    );
     expect((await state_inst).unwrap()).to.equal("5");
     expect((await state_inst.limit("12345678901")).unwrap()).to.equal(
       "1234567890",
@@ -163,14 +138,20 @@ describe("State String Max Len", async () => {
     expect((await state_inst).unwrap()).to.equal("1234567890");
   });
   it("Checking checker max len", async () => {
-    const state_inst = st.s.rosw.ok("5", true, st.string.helper(st.ok(10)));
+    const state_inst = st.rosw(
+      st.s.help(ok("5"), { max_length: st.ok(10) }),
+      true,
+    );
     expect((await state_inst).unwrap()).to.equal("5");
     expect(await state_inst.check("123456789012")).toEqual(
       err("the text is longer than the limit of 10 characters"),
     );
   });
   it("Checking related max len", async () => {
-    const state_inst = st.s.rosw.ok("5", true, st.string.helper(st.ok(10)));
+    const state_inst = st.rosw(
+      st.s.help(ok("5"), { max_length: st.ok(10) }),
+      true,
+    );
     const related = state_inst.related().unwrap();
     expect((await related.max_length!).unwrap()).to.equal(10);
   });
@@ -178,10 +159,9 @@ describe("State String Max Len", async () => {
 
 describe("State String Max Byte Len", async () => {
   it("Checking limiter max byte len", async () => {
-    const state_inst = st.s.rosw.ok(
-      "5",
+    const state_inst = st.rosw(
+      st.s.help(ok("5"), { max_length_bytes: st.ok(10) }),
       true,
-      st.string.helper(undefined, st.ok(10)),
     );
     expect((await state_inst).unwrap()).to.equal("5");
     expect((await state_inst.limit("1æøåæ01")).unwrap()).to.equal("1æøåæ0");
@@ -189,10 +169,9 @@ describe("State String Max Byte Len", async () => {
     expect((await state_inst).unwrap()).to.equal("1æøåæ0");
   });
   it("Checking checker max byte len", async () => {
-    const state_inst = st.s.rosw.ok(
-      "5",
+    const state_inst = st.rosw(
+      st.s.help(ok("5"), { max_length_bytes: st.ok(10) }),
       true,
-      st.string.helper(undefined, st.ok(10)),
     );
     expect((await state_inst).unwrap()).to.equal("5");
     expect(await state_inst.check("1æøåæ01")).toEqual(
@@ -200,10 +179,9 @@ describe("State String Max Byte Len", async () => {
     );
   });
   it("Checking related max byte len", async () => {
-    const state_inst = st.s.rosw.ok(
-      "5",
+    const state_inst = st.rosw(
+      st.s.help(ok("5"), { max_length_bytes: st.ok(10) }),
       true,
-      st.string.helper(undefined, st.ok(10)),
     );
     const related = state_inst.related().unwrap();
     expect((await related.max_length_bytes!).unwrap()).to.equal(10);

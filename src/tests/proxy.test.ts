@@ -19,7 +19,7 @@ describe("Proxy with sync states", function () {
       const stat = st.ok(1);
       const state = st.p.ros(stat);
       const set = (val: ResultOk<number>) => stat.set(val);
-      return { o: true, s: true, w: false, ws: false, state, set };
+      return { o: true, s: true, w: false, state, set };
     };
     it("Subscribing And Unsubscribing", async function () {
       await test_state_sub(maker, 0);
@@ -40,10 +40,10 @@ describe("Proxy with sync states", function () {
       st.p.res(st.ok(1));
     });
     const maker: TestStateSync = () => {
-      const stat = st.s.res.ok(1);
+      const stat = st.from(1);
       const state = st.p.res(stat);
       const set = (val: Result<number, string>) => stat.set(val);
-      return { o: false, s: true, w: false, ws: false, state, set };
+      return { o: false, s: true, w: false, state, set };
     };
     it("Subscribing And Unsubscribing", async function () {
       await test_state_sub(maker, 0);

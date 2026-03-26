@@ -1,9 +1,21 @@
 import { err, ok, OptionSome, Result, some } from "@chocbite/ts-lib-result";
-import { StateHelperBase, StateRelatedBase } from "../base";
 import { State } from "../types";
+import {
+  StateInit as Init,
+  StateHelperBase,
+  StateHelperBaseOptions,
+  StateRelatedBase,
+} from "./helpers";
 
 export interface StateStringRelated extends StateRelatedBase {
   max_length?: State<number>;
+  max_length_bytes?: State<number>;
+}
+
+export interface StateStringHelperOptions extends StateHelperBaseOptions {
+  /**max length for string */
+  max_length?: State<number>;
+  /**max byte length for string */
   max_length_bytes?: State<number>;
 }
 
@@ -17,14 +29,11 @@ export class StateStringHelper
 {
   max_length?: State<number>;
   max_length_bytes?: State<number>;
-  constructor(
-    max_length?: State<number>,
-    max_length_bytes?: State<number>,
-    writable?: State<boolean>,
-  ) {
-    super(writable);
-    if (max_length) this.max_length = max_length;
-    if (max_length_bytes) this.max_length_bytes = max_length_bytes;
+  constructor(options: StateStringHelperOptions) {
+    super(options);
+    if (options.max_length) this.max_length = options.max_length;
+    if (options.max_length_bytes)
+      this.max_length_bytes = options.max_length_bytes;
   }
 
   async limit(value: string): Promise<Result<string, string>> {
@@ -70,14 +79,11 @@ export class StateStringHelper
 }
 
 export const STRING = {
-  /**String limiter struct
-   * @param max_length max length for string
-   * @param max_length_bytes max byte length for string*/
-  helper(
-    max_length?: State<number>,
-    max_length_bytes?: State<number>,
-    writable?: State<boolean>,
-  ) {
-    return new StateStringHelper(max_length, max_length_bytes, writable);
+  /**String helper*/
+  help<I extends Init<string>>(
+    init: I,
+    options: StateStringHelperOptions,
+  ): [I, StateStringHelper] {
+    return [init, new StateStringHelper(options)];
   },
 };

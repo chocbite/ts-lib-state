@@ -7,9 +7,15 @@ import {
   ResultOk,
   some,
 } from "@chocbite/ts-lib-result";
-import { StateHelperBase, StateRelatedBase } from "../base";
-import { SYNC } from "../normal";
-import { State, StateROS } from "../types";
+import { ros } from "../normal";
+import { StateROS } from "../types";
+import {
+  StateHelperBase,
+  StateHelperBaseOptions,
+  StateInit,
+  StateInitResult,
+  StateRelatedBase,
+} from "./helpers";
 
 export const ARRAY_READ_KEY = Symbol("state_array_read_key");
 
@@ -240,34 +246,28 @@ export interface StateArrayRelated extends StateRelatedBase {
   length: StateROS<number>;
 }
 
-export class StateArrayHelper<RRT extends Result<[], string>>
-  extends StateHelperBase<
-    RRT,
-    ResultInferOk<RRT>,
-    OptionSome<StateArrayRelated>
-  >
+export interface StateArrayHelperOptions extends StateHelperBaseOptions {}
+
+export class StateArrayHelper<RT extends any[]>
+  extends StateHelperBase<Result<RT, string>, RT, OptionSome<StateArrayRelated>>
   implements StateArrayRelated
 {
-  readonly length = SYNC.ros.ok(0);
+  readonly length = ros(ok(0));
 
-  constructor(writable?: State<boolean>) {
-    super(writable);
+  constructor(options: StateArrayHelperOptions) {
+    super(options);
   }
 
-  set(value: RRT): void {
+  protected set(value: Result<RT, string>): void {
     if (value.ok) this.length.set_ok(value.value.length);
     else this.length.set_ok(0);
   }
 
-  async limit(
-    value: ResultInferOk<RRT>,
-  ): Promise<Result<ResultInferOk<RRT>, string>> {
+  async limit(value: RT): Promise<Result<RT, string>> {
     return ok(value);
   }
 
-  async check(
-    value: ResultInferOk<RRT>,
-  ): Promise<Result<ResultInferOk<RRT>, string>> {
+  async check(value: RT): Promise<Result<RT, string>> {
     if (this.writable !== undefined && !this.writable)
       return err("not writable");
     return ok(value);
@@ -295,8 +295,14 @@ export const ARRAY = {
   read_key: ARRAY_READ_KEY,
   write_key: ARRAY_WRITE_KEY,
   write_owner<T>(owner: ArrayOwner<T>, write: StateArrayWrite<T>): void {},
-  /***/
-  helper<RRT extends Result<[], string>>(writable?: State<boolean>) {
-    return new StateArrayHelper<RRT>(writable);
+  /**Array helper*/
+  help<
+    RRRT extends StateInit<any[]>,
+    RRT extends Result<any, string> = StateInitResult<RRRT>,
+  >(
+    init: RRRT,
+    options: StateArrayHelperOptions,
+  ): [RRRT, StateArrayHelper<ResultInferOk<RRT>>] {
+    return [init, new StateArrayHelper<ResultInferOk<RRT>>(options)];
   },
 };

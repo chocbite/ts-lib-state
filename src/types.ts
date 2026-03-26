@@ -5,6 +5,8 @@ import {
   type ResultOk,
 } from "@chocbite/ts-lib-result";
 
+export type StateResult<T> = Result<T, string>;
+
 /**Function used to subscribe to state changes
  * @template RT - The type of the state’s value when read.*/
 export type StateSub<RRT extends Result<any, string>> = (value: RRT) => void;

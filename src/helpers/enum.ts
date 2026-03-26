@@ -1,7 +1,12 @@
 import { err, ok, OptionSome, Result, some } from "@chocbite/ts-lib-result";
 import { SVGFunc } from "@chocbite/ts-lib-svg";
-import { StateHelperBase, StateRelatedBase } from "../base";
 import { State } from "../types";
+import {
+  StateInit as Init,
+  StateHelperBase,
+  StateHelperBaseOptions,
+  StateRelatedBase,
+} from "./helpers";
 
 type EnumHelperEntry = {
   name: string;
@@ -19,6 +24,12 @@ export interface StateEnumRelated<
   list: State<L>;
 }
 
+export interface StateEnumHelperOptions<
+  L extends StateEnumHelperList<PropertyKey> = StateEnumHelperList<PropertyKey>,
+> extends StateHelperBaseOptions {
+  list: State<L>;
+}
+
 export class StateEnumHelper<
   L extends StateEnumHelperList<PropertyKey> = StateEnumHelperList<PropertyKey>,
   K extends PropertyKey = keyof L,
@@ -29,9 +40,9 @@ export class StateEnumHelper<
 {
   readonly list: State<L>;
 
-  constructor(list: State<L>, writable?: State<boolean>) {
-    super(writable);
-    this.list = list;
+  constructor(options: StateEnumHelperOptions<L>) {
+    super(options);
+    this.list = options.list;
   }
 
   async limit(value: K): Promise<Result<K, string>> {
@@ -52,12 +63,16 @@ export class StateEnumHelper<
 
 export const ENUM = {
   /**Creates an enum helper struct, use list method to make a list with correct typing*/
-  helper<
+  help<
+    I extends Init<boolean>,
     L extends StateEnumHelperList<PropertyKey>,
     K extends PropertyKey = keyof L,
     R extends StateRelatedBase = StateEnumRelated<L>,
-  >(list: State<L>, writable?: State<boolean>) {
-    return new StateEnumHelper<L, K, R>(list, writable);
+  >(
+    init: I,
+    options: StateEnumHelperOptions<L>,
+  ): [I, StateEnumHelper<L, K, R>] {
+    return [init, new StateEnumHelper<L, K, R>(options)];
   },
   /**Creates an enum description list, passing the enum as a generic type to this function makes things look a bit nicer */
   list<K extends PropertyKey>(list: StateEnumHelperList<K>): typeof list {

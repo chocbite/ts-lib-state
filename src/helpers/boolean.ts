@@ -1,8 +1,14 @@
 import { err, ok, OptionSome, Result, some } from "@chocbite/ts-lib-result";
-import { StateHelperBase, StateRelatedBase } from "../base";
-import { State } from "../types";
+import {
+  StateInit as Init,
+  StateHelperBase,
+  StateHelperBaseOptions,
+  StateRelatedBase,
+} from "./helpers";
 
 export interface StateBoolRelated extends StateRelatedBase {}
+
+export interface StateBoolHelperOptions extends StateHelperBaseOptions {}
 
 export class StateBoolHelper
   extends StateHelperBase<
@@ -29,7 +35,10 @@ export class StateBoolHelper
 
 export const BOOL = {
   /**Boolean helper*/
-  helper(writable?: State<boolean>) {
-    return new StateBoolHelper(writable);
+  help<I extends Init<boolean>>(
+    init: I,
+    options: StateBoolHelperOptions,
+  ): [I, StateBoolHelper] {
+    return [init, new StateBoolHelper(options)];
   },
 };

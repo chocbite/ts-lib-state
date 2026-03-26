@@ -21,6 +21,7 @@ type StateType<O, SY, W, ST, R> = {
   o: O;
   s: SY;
   w: W;
+  ws?: number;
   state: ST;
   set: (val: R) => void;
 };

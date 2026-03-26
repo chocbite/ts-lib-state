@@ -1,38 +1,79 @@
+import { err, ok, Result } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
 import { COLLECTED } from "./collected";
-import { HELPERS } from "./helpers";
 import { ARRAY } from "./helpers/array";
 import { BOOL } from "./helpers/boolean";
 import { ENUM } from "./helpers/enum";
+import { HELPERS } from "./helpers/helpers";
 import { IS } from "./helpers/is";
 import { NUMBER } from "./helpers/number";
 import { STRING } from "./helpers/string";
-import { DELAYED, LAZY, SYNC } from "./normal";
+import { rea, reaw, res, resw, roa, roaw, ros, rosw } from "./normal";
 import { PROXY } from "./proxy";
 import { RESOURCE } from "./resource";
 import { STATE_KEY } from "./types";
 
 export const state = {
   //Quick access states
-  ok: SYNC.ros.ok,
-  err: SYNC.res.err,
-  from: SYNC.res.ok,
-  ok_ws: SYNC.rosw.ok,
-  err_ws: SYNC.resw.err,
-  from_ws: SYNC.resw.ok,
+  /**Creates an ok state with the given initial value */
+  ok<RT>(init: RT) {
+    return ros(ok(init));
+  },
+  /**Creates an error state with the given initial error message */
+  err<RT>(init: string) {
+    return res(err(init) as Result<RT, string>);
+  },
+  /**Creates an errorable state with the given initial value */
+  from<RT>(init: RT) {
+    return res(ok(init) as Result<RT, string>);
+  },
+  /**Creates a writable ok state with the given initial value */
+  ok_w<RT>(init: RT) {
+    return rosw(ok(init));
+  },
+  /**Creates a writable error state with the given initial error message */
+  err_w<RT>(init: string) {
+    return resw(err(init) as Result<RT, string>);
+  },
+  /**Creates a writable errorable state with the given initial value */
+  from_w<RT>(init: RT) {
+    return resw(ok(init) as Result<RT, string>);
+  },
+  //Normal
+  ros,
+  rosw,
+  res,
+  resw,
+  roa,
+  roaw,
+  rea,
+  reaw,
+  /**Proxy states, allows for creating states that proxy other states */
+  p: PROXY,
+  proxy: PROXY,
   /**Collected states, collects values from multiple states and reduces it to one */
   c: COLLECTED,
-  d: DELAYED,
-  h: HELPERS,
-  l: LAZY,
-  p: PROXY,
+  collected: COLLECTED,
+  /**Resource states, allows for creating states representing remote resources */
   r: RESOURCE,
-  s: SYNC,
+  resource: RESOURCE,
   //Helpers
+  h: HELPERS,
+  helpers: HELPERS,
+  /**Helper functionality for arrays */
+  a: ARRAY,
   array: ARRAY,
+  /**Helper functionality for numbers */
+  n: NUMBER,
   number: NUMBER,
+  /**Helper functionality for strings */
+  s: STRING,
   string: STRING,
+  /**Helper functionality for enums */
+  e: ENUM,
   enum: ENUM,
+  /**Helper functionality for booleans */
+  b: BOOL,
   bool: BOOL,
   /**Functions to determine if a variable is a state*/
   is: IS,

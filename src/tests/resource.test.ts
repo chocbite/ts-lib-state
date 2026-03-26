@@ -84,7 +84,7 @@ describe("Resource states", function () {
         val = v;
         state.update_resource(v);
       };
-      return { o: false, s: false, w: false, ws: false, state, set };
+      return { o: false, s: false, w: false, state, set };
     };
     it("Subscribing And Unsubscribing", async function () {
       await test_state_sub(maker, 50);

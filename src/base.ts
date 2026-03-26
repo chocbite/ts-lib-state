@@ -1,15 +1,6 @@
+import { Option, ResultInferOk, type Result } from "@chocbite/ts-lib-result";
 import {
-  none,
-  ok,
-  Option,
-  OptionNone,
-  ResultInferOk,
-  type Result,
-} from "@chocbite/ts-lib-result";
-import {
-  State,
   STATE_KEY,
-  StateHelper,
   StateRelated,
   type StateBase as Base,
   type StateSub,
@@ -106,46 +97,5 @@ export abstract class StateBase<
         this.#read_promises[i](value);
     this.#read_promises = [];
     return value;
-  }
-}
-
-export interface StateRelatedBase extends StateRelated {
-  writable?: State<boolean>;
-}
-
-export abstract class StateHelperBase<
-  RRT extends Result<any, string>,
-  WT,
-  REL extends Option<StateRelatedBase>,
->
-  implements StateHelper<RRT, WT, REL>, StateRelatedBase
-{
-  readonly writable?: State<boolean>;
-
-  constructor(writable?: State<boolean>) {
-    if (writable) this.writable = writable;
-  }
-
-  /**Called by state when value is set */
-  protected set(_value: RRT): void {}
-
-  abstract related(): REL;
-
-  abstract limit(value: WT): Promise<Result<WT, string>>;
-
-  abstract check(value: WT): Promise<Result<WT, string>>;
-}
-
-export class StateNoHelper implements StateHelper<any, any, OptionNone> {
-  related(): OptionNone {
-    return none();
-  }
-
-  limit(value: any): Promise<any> {
-    return Promise.resolve(ok(value));
-  }
-
-  check(value: any): Promise<any> {
-    return Promise.resolve(ok(value));
   }
 }

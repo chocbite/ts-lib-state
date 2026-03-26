@@ -1,20 +1,23 @@
 import { ok } from "@chocbite/ts-lib-result";
 import state, { StateNormalROS, StateNumberHelper } from "..";
+import { ros } from "../normal";
 
 let qwer: StateNormalROS<number, StateNumberHelper>;
-qwer = state.s.ros.ok(5, state.number.helper());
-qwer = state.s.ros.ok(5);
+qwer = state.ros(state.n.help(ok(5)));
+qwer = state.ros(ok(5));
 
-const zxcv = state.s.ros.ok(5);
+const zxcv = state.ros(ok(5));
 console.warn(zxcv.helper);
 
-const state_inst = state.s.ros.result(ok([5]), state.array.helper());
+const state_inst = state.ros(state.a.help(ok([5])));
+
+const jkl = ros(state.a.help(ok([5])));
 
 state_inst.sub((v) => {
   console.warn(v.value);
 }, true);
 state_inst.sub((v) => {
-  console.warn(state.array.read(v.value));
+  console.warn(state.a.read(v.value));
 }, true);
 state_inst.set_ok([6]);
 //state_inst.write(state.a.write.push(7));
