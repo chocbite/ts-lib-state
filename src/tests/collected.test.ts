@@ -1,7 +1,7 @@
 import { sleep } from "@chocbite/ts-lib-common";
-import { ok, ResultOk, type Result } from "@chocbite/ts-lib-result";
+import { ok, ResultOk } from "@chocbite/ts-lib-result";
 import { describe, expect, it } from "vitest";
-import { state as st } from "..";
+import { state as st, StateResult } from "..";
 import {
   test_state_get,
   test_state_get_ok,
@@ -94,7 +94,7 @@ describe("Collected states", function () {
     const maker_single: TestStateSync = () => {
       const stat1 = st.from(1);
       const state = st.c.res((val) => val[0], stat1);
-      const set = (val: Result<number, string>) => {
+      const set = (val: StateResult<number>) => {
         stat1.set(val.map((v) => v));
       };
       return { o: false, s: true, w: false, state, set };
@@ -127,7 +127,7 @@ describe("Collected states", function () {
         stat3,
         stat4,
       );
-      const set = (val: Result<number, string>) => {
+      const set = (val: StateResult<number>) => {
         stat1.set(val.map((v) => v / 4));
         stat2.set(val.map((v) => v / 4));
         stat3.set(val.map((v) => v / 4));
@@ -219,7 +219,7 @@ describe("Collected states", function () {
     const maker_single: TestStateAll = () => {
       const stat1 = st.rea(() => sleep(1, ok(1)));
       const state = st.c.rea((values) => values[0], stat1);
-      const set = (val: Result<number, string>) => {
+      const set = (val: StateResult<number>) => {
         stat1.set(val.map((v) => v));
       };
       return { o: false, s: false, w: false, state, set };
@@ -249,7 +249,7 @@ describe("Collected states", function () {
         stat3,
         stat4,
       );
-      const set = (val: Result<number, string>) => {
+      const set = (val: StateResult<number>) => {
         stat1.set(val.map((v) => v / 4));
         stat2.set(val.map((v) => v / 4));
         stat3.set(val.map((v) => v / 4));

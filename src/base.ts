@@ -1,5 +1,6 @@
-import { Option, ResultInferOk, type Result } from "@chocbite/ts-lib-result";
+import { Option, ResultInferOk } from "@chocbite/ts-lib-result";
 import {
+  StateResult as SR,
   STATE_KEY,
   StateRelated,
   type StateBase as Base,
@@ -7,7 +8,7 @@ import {
 } from "./types";
 
 export abstract class StateBase<
-  RRT extends Result<any, string>,
+  RRT extends SR<any>,
   WT,
   REL extends Option<StateRelated>,
 > implements Base<RRT, REL, WT> {
@@ -58,9 +59,9 @@ export abstract class StateBase<
 
   //#Writer Context
   abstract readonly writable: boolean;
-  write?(value: WT): Promise<Result<void, string>>;
-  abstract limit(value: WT): Promise<Result<WT, string>>;
-  abstract check(value: WT): Promise<Result<WT, string>>;
+  write?(value: WT): Promise<SR<void>>;
+  abstract limit(value: WT): Promise<SR<WT>>;
+  abstract check(value: WT): Promise<SR<WT>>;
 
   /**Called when subscriber is added*/
   protected on_subscribe(): void {}

@@ -1,7 +1,8 @@
 import { sleep } from "@chocbite/ts-lib-common";
-import { err, ok, ResultOk, type Result } from "@chocbite/ts-lib-result";
+import { err, ok, ResultOk } from "@chocbite/ts-lib-result";
 import { expect, it } from "vitest";
 import type {
+  StateResult as SR,
   StateREA,
   StateREAW,
   StateRES,
@@ -25,7 +26,7 @@ type StateType<O, SY, W, ST, R> = {
   state: ST;
   set: (val: R) => void;
 };
-type RERR = Result<number, string>;
+type RERR = SR<number>;
 type ROK = ResultOk<number>;
 
 export type TestStateAll = (
@@ -86,7 +87,7 @@ export async function test_state_sub(
     count++;
   }, true);
   expect(state.in_use()).equal(state);
-  expect(state.has(sub1 as StateSub<Result<number, string>>)).equal(state);
+  expect(state.has(sub1 as StateSub<SR<number>>)).equal(state);
   expect(state.amount()).equal(1);
   await sleep(wait ?? 1);
   expect(count).equal(1);
@@ -94,7 +95,7 @@ export async function test_state_sub(
     count += 10;
   });
   expect(state.in_use()).equal(state);
-  expect(state.has(sub2 as StateSub<Result<number, string>>)).equal(state);
+  expect(state.has(sub2 as StateSub<SR<number>>)).equal(state);
   expect(state.amount()).equal(2);
   expect(count).equal(1);
   set(ok(8));
@@ -105,7 +106,7 @@ export async function test_state_sub(
     throw new Error("Gaurded against crash");
   });
   expect(state.in_use()).equal(state);
-  expect(state.has(sub3 as StateSub<Result<number, string>>)).equal(state);
+  expect(state.has(sub3 as StateSub<SR<number>>)).equal(state);
   expect(state.amount()).equal(3);
   set(ok(12));
   await sleep(1);
@@ -113,7 +114,7 @@ export async function test_state_sub(
   state.unsub(sub1);
   state.unsub(sub2);
   expect(state.in_use()).equal(state);
-  expect(state.has(sub3 as StateSub<Result<number, string>>)).equal(state);
+  expect(state.has(sub3 as StateSub<SR<number>>)).equal(state);
   expect(state.amount()).equal(1);
   set(ok(13));
   await sleep(1);
@@ -121,9 +122,7 @@ export async function test_state_sub(
   state.unsub(sub3);
   expect(state.in_use()).equal(undefined);
   expect(state.amount()).equal(0);
-  const [sub4, val] = await new Promise<
-    [StateSub<any>, Result<number, string>]
-  >((a) => {
+  const [sub4, val] = await new Promise<[StateSub<any>, SR<number>]>((a) => {
     const sub4 = state.sub((val) => {
       count += 1000;
       a([sub4, val]);
@@ -135,9 +134,7 @@ export async function test_state_sub(
   expect(count).equal(200001223);
   state.unsub(sub4);
   if (!made.o) {
-    const [sub5, val2] = await new Promise<
-      [StateSub<any>, Result<number, string>]
-    >((a) => {
+    const [sub5, val2] = await new Promise<[StateSub<any>, SR<number>]>((a) => {
       const sub5 = state.sub((val) => {
         count += 10000;
         a([sub5, val]);

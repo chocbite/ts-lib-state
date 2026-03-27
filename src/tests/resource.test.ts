@@ -1,4 +1,4 @@
-import { ok, ResultOk, type Result } from "@chocbite/ts-lib-result";
+import { ok, ResultOk } from "@chocbite/ts-lib-result";
 import { assertType, describe, it } from "vitest";
 import {
   state as st,
@@ -7,6 +7,7 @@ import {
   StateResourceFuncREAW,
   StateResourceFuncROA,
   StateResourceFuncROAW,
+  StateResult,
   StateROA,
   StateROAW,
 } from "..";
@@ -45,7 +46,7 @@ describe("Resource states", function () {
       );
       const set = (v: ResultOk<number>) => {
         val = v;
-        state.update_resource(v);
+        state.update_value(v);
       };
       return { o: true, s: false, w: false, state, set };
     };
@@ -74,15 +75,15 @@ describe("Resource states", function () {
       assertType<StateResourceFuncREA<number>>(init);
     });
     const maker: TestStateAll = () => {
-      let val: Result<number, string> = ok(1);
+      let val: StateResult<number> = ok(1);
       const state = st.r.rea.from<number>(
         async (state) => state.update_single(val),
         () => {},
         () => {},
       );
-      const set = (v: Result<number, string>) => {
+      const set = (v: StateResult<number>) => {
         val = v;
-        state.update_resource(v);
+        state.update_value(v);
       };
       return { o: false, s: false, w: false, state, set };
     };
@@ -120,7 +121,7 @@ describe("Resource states", function () {
       );
       const set = (v: ResultOk<number>) => {
         val = v;
-        state.update_resource(v);
+        state.update_value(v);
       };
       return { o: true, s: false, w: true, state, set };
     };
@@ -150,15 +151,15 @@ describe("Resource states", function () {
       assertType<StateResourceFuncREAW<number>>(init);
     });
     const maker: TestStateWrite = () => {
-      let val: Result<number, string> = ok(1);
+      let val: StateResult<number> = ok(1);
       const state = st.r.reaw.from<number>(
         async (state) => state.update_single(val),
         () => {},
         () => {},
       );
-      const set = (v: Result<number, string>) => {
+      const set = (v: StateResult<number>) => {
         val = v;
-        state.update_resource(v);
+        state.update_value(v);
       };
       return { o: false, s: false, w: true, state, set };
     };

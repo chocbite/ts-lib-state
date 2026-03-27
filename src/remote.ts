@@ -1,14 +1,16 @@
 import {
   err,
+  ok,
   OptionNone,
   ResultInferOk,
   ResultOk,
-  type Result,
 } from "@chocbite/ts-lib-result";
-import { StateBase, StateNoHelper } from "./base";
+import { StateBase } from "./base";
+import { StateNoHelper as NoHelper } from "./helpers/helpers";
 import {
+  StateHelper as Helper,
   HelperRelated as HELToREL,
-  StateHelper,
+  StateResult as SR,
   StateROA,
   StateROAW,
   type State,
@@ -23,57 +25,57 @@ import {
 //        | |    \   / |  ___/|  __|  \___ \
 //        | |     | |  | |    | |____ ____) |
 //        |_|     |_|  |_|    |______|_____/
-export interface StateResourceOwner<
-  RRT extends Result<any, string>,
+export interface StateRemoteOwner<
+  RRT extends SR<any>,
   WT,
-  HEL extends StateHelper<RRT, WT, any>,
+  HEL extends Helper<RRT, WT, any>,
 > {
-  /**Updates the resource and fulfills all promises for value
+  /**Updates the value and fulfills all promises for value
    * @param update if true, also updates the buffer and notifies subscribers, otherwise only fulfills the promises for single gets*/
   update_single(value: RRT, update?: boolean): void;
-  /**Updates the resource subscribers and buffer with the given value*/
-  update_resource(value: RRT): void;
+  /**Updates the value subscribers and buffer with the given value*/
+  update_value(value: RRT): void;
   /**Gets the current buffer value*/
   get buffer(): RRT | undefined;
   get state(): State<ResultInferOk<RRT>, HELToREL<HEL>, WT>;
 }
 
-export type StateResourceFuncROA<
+export type StateRemoteFuncROA<
   RT,
-  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  HEL extends Helper<ResultOk<RT>, WT, any> = NoHelper,
   WT = any,
 > = StateROA<RT, HELToREL<HEL>, WT> &
-  StateResourceOwner<ResultOk<RT>, WT, HELToREL<HEL>> & {
+  StateRemoteOwner<ResultOk<RT>, WT, HELToREL<HEL>> & {
     readonly read_only: StateROA<RT, HELToREL<HEL>, WT>;
     readonly read_write?: StateROAW<RT, HELToREL<HEL>, WT>;
   };
 
-export type StateResourceFuncREA<
+export type StateRemoteFuncREA<
   RT,
-  HEL extends StateHelper<Result<RT, string>, WT, any> = StateNoHelper,
+  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
   WT = any,
 > = StateREA<RT, HELToREL<HEL>, WT> &
-  StateResourceOwner<Result<RT, string>, WT, HEL> & {
+  StateRemoteOwner<SR<RT>, WT, HEL> & {
     readonly read_only: StateREA<RT, HELToREL<HEL>, WT>;
     readonly read_write?: StateREAW<RT, HELToREL<HEL>, WT>;
   };
 
-export type StateResourceFuncROAW<
+export type StateRemoteFuncROAW<
   RT,
-  HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
+  HEL extends Helper<ResultOk<RT>, WT, any> = NoHelper,
   WT = RT,
 > = StateROAW<RT, HELToREL<HEL>, WT> &
-  StateResourceOwner<ResultOk<RT>, WT, HELToREL<HEL>> & {
+  StateRemoteOwner<ResultOk<RT>, WT, HELToREL<HEL>> & {
     readonly read_only: StateROA<RT, HELToREL<HEL>, WT>;
     readonly read_write: StateROAW<RT, HELToREL<HEL>, WT>;
   };
 
-export type StateResourceFuncREAW<
+export type StateRemoteFuncREAW<
   RT,
-  HEL extends StateHelper<Result<RT, string>, WT, any> = StateNoHelper,
+  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
   WT = RT,
 > = StateREAW<RT, HELToREL<HEL>, WT> &
-  StateResourceOwner<Result<RT, string>, WT, HELToREL<HEL>> & {
+  StateRemoteOwner<SR<RT>, WT, HELToREL<HEL>> & {
     readonly read_only: StateREA<RT, HELToREL<HEL>, WT>;
     readonly read_write: StateREAW<RT, HELToREL<HEL>, WT>;
   };
@@ -86,7 +88,7 @@ export type StateResourceFuncREAW<
 //     | |_) / ____ \ ____) | |____  | |____| |____ / ____ \ ____) |___) |
 //     |____/_/    \_\_____/|______|  \_____|______/_/    \_\_____/_____/
 
-/**State Resource
+/**State Remote
  * state for representing a remote resource
  *
  * Debounce and Timout
@@ -102,13 +104,13 @@ export type StateResourceFuncREAW<
  * @template RT - The type of the state’s value when read.
  * @template RRT - The type of the state’s result
  * @template REL - The type of related states, defaults to an empty object.*/
-export abstract class StateResource<
-  RRT extends Result<any, string>,
+export abstract class StateRemote<
+  RRT extends SR<any>,
   WT,
-  HEL extends StateHelper<RRT, WT, OptionNone>,
+  HEL extends Helper<RRT, WT, OptionNone>,
 >
-  extends StateBase<RRT, WT, HEL>
-  implements StateResourceOwner<RRT, WT, HEL>
+  extends StateBase<RRT, WT, HELToREL<HEL>>
+  implements StateRemoteOwner<RRT, WT, HEL>
 {
   #valid: number | true = 0;
   #fetching: boolean = false;
@@ -118,9 +120,9 @@ export abstract class StateResource<
   #timeout_timout: number = 0;
   #write_buffer?: WT;
   #write_debounce_timout: number = 0;
-  #write_promises: ((val: Result<void, string>) => void)[] = [];
+  #write_promises: ((val: SR<void>) => void)[] = [];
 
-  /**Timeout before giving generic error, if update_resource is not called*/
+  /**Timeout before giving generic error, if update_value is not called*/
   abstract get timeout(): number;
 
   /**Debounce delaying one time value retrival*/
@@ -129,7 +131,7 @@ export abstract class StateResource<
   /**Timeout for validity of last buffered value*/
   abstract get validity(): number | true;
 
-  /**Retention delay before resource performs teardown of connection is performed*/
+  /**Retention delay before remote performs teardown of connection is performed*/
   abstract get retention(): number;
 
   /**How long to debounce write calls, before the last write call is used*/
@@ -167,23 +169,23 @@ export abstract class StateResource<
   }
 
   /**Called if the state is awaited, returns the value once*/
-  protected abstract single_get(state: StateResourceOwner<RRT, WT, HEL>): void;
+  protected abstract single_get(state: StateRemoteOwner<RRT, WT, HEL>): void;
 
   /**Called when state is subscribed to to setup connection to remote resource*/
   protected abstract setup_connection(
-    state: StateResourceOwner<RRT, WT, HEL>,
+    state: StateRemoteOwner<RRT, WT, HEL>,
   ): void;
 
   /**Called when state is no longer subscribed to to cleanup connection to remote resource*/
   protected abstract teardown_connection(
-    state: StateResourceOwner<RRT, WT, HEL>,
+    state: StateRemoteOwner<RRT, WT, HEL>,
   ): void;
 
   /**Called after write debounce finished with the last written value*/
   protected abstract write_action(
     value: WT,
-    state: StateResourceOwner<RRT, WT, HEL>,
-  ): Promise<Result<void, string>>;
+    state: StateRemoteOwner<RRT, WT, HEL>,
+  ): Promise<SR<void>>;
 
   update_single(value: RRT, update: boolean = false) {
     this.#fetching = false;
@@ -197,7 +199,7 @@ export abstract class StateResource<
     }
   }
 
-  update_resource(value: RRT) {
+  update_value(value: RRT) {
     if (!this.#buffer?.compare(value)) this.update_subs(value);
     this.#buffer = value;
     this.#valid =
@@ -248,7 +250,7 @@ export abstract class StateResource<
   //#Writer Context
   abstract get writable(): boolean;
 
-  async write(value: WT): Promise<Result<void, string>> {
+  async write(value: WT): Promise<SR<void>> {
     this.#write_buffer = value;
     if (this.write_debounce === 0) return this.write_action(value, this);
     else if (this.#write_debounce_timout === 0)
@@ -261,7 +263,7 @@ export abstract class StateResource<
         const res = await this.write_action(write_buffer!, this);
         for (let i = 0; i < promises.length; i++) promises[i](res);
       }, this.write_debounce);
-    return new Promise<Result<void, string>>((a) => {
+    return new Promise<SR<void>>((a) => {
       this.#write_promises.push(a);
     });
   }
@@ -280,15 +282,15 @@ export abstract class StateResource<
  * @template WT - The type which can be written to the state.
  * @template REL - The type of related states, defaults to an empty object.*/
 class Func<
-  RRT extends Result<any, string>,
+  RRT extends SR<any>,
   WT,
-  HEL extends StateHelper<RRT, WT, OptionNone>,
-> extends StateResource<RRT, WT, HEL> {
+  HEL extends Helper<RRT, WT, OptionNone>,
+> extends StateRemote<RRT, WT, HEL> {
   constructor(
     read_ok: boolean,
-    once: (state: StateResourceOwner<RRT, WT, HEL>) => void,
-    setup: (state: StateResourceOwner<RRT, WT, HEL>) => void,
-    teardown: (state: StateResourceOwner<RRT, WT, HEL>) => void,
+    once: (state: StateRemoteOwner<RRT, WT, HEL>) => void,
+    setup: (state: StateRemoteOwner<RRT, WT, HEL>) => void,
+    teardown: (state: StateRemoteOwner<RRT, WT, HEL>) => void,
     timeout: number,
     debounce: number,
     validity: number | true,
@@ -296,11 +298,12 @@ class Func<
     write_debounce?: number,
     write_action?: (
       value: WT,
-      state: StateResourceOwner<RRT, WT, HEL>,
-    ) => Promise<Result<void, string>>,
+      state: StateRemoteOwner<RRT, WT, HEL>,
+    ) => Promise<SR<void>>,
     helper?: HEL,
   ) {
-    super(helper);
+    super();
+    this.helper = helper ?? (new NoHelper() as unknown as HEL);
     this.#rok = read_ok;
     this.single_get = once;
     this.setup_connection = setup;
@@ -313,6 +316,8 @@ class Func<
     this.write_debounce = write_debounce || 0;
   }
 
+  readonly helper: HEL;
+
   readonly timeout: number;
   readonly debounce: number;
   readonly validity: number | true;
@@ -322,23 +327,21 @@ class Func<
   #rok: boolean;
   #write_action?: (
     value: WT,
-    state: StateResourceOwner<RRT, WT, HEL>,
-  ) => Promise<Result<void, string>>;
+    state: StateRemoteOwner<RRT, WT, HEL>,
+  ) => Promise<SR<void>>;
 
   get rok(): boolean {
     return this.#rok;
   }
 
   /**Called if the state is awaited, returns the value once*/
-  protected single_get(_state: StateResourceOwner<RRT, WT, HEL>): void {}
+  protected single_get(_state: StateRemoteOwner<RRT, WT, HEL>): void {}
 
   /**Called when state is subscribed to to setup connection to remote resource*/
-  protected setup_connection(_state: StateResourceOwner<RRT, WT, HEL>): void {}
+  protected setup_connection(_state: StateRemoteOwner<RRT, WT, HEL>): void {}
 
   /**Called when state is no longer subscribed to to cleanup connection to remote resource*/
-  protected teardown_connection(
-    _state: StateResourceOwner<RRT, WT, HEL>,
-  ): void {}
+  protected teardown_connection(_state: StateRemoteOwner<RRT, WT, HEL>): void {}
 
   get writable(): boolean {
     return Boolean(this.#write_action);
@@ -346,10 +349,20 @@ class Func<
 
   protected write_action(
     value: WT,
-    state: StateResourceOwner<RRT, WT, HEL>,
-  ): Promise<Result<void, string>> {
+    state: StateRemoteOwner<RRT, WT, HEL>,
+  ): Promise<SR<void>> {
     if (this.#write_action) return this.#write_action(value, state);
     else return Promise.resolve(err("not writable"));
+  }
+
+  related(): HELToREL<HEL> {
+    return this.helper.related() as HELToREL<HEL>;
+  }
+  limit(value: WT): Promise<SR<WT>> {
+    return this.helper?.limit(value) ?? Promise.resolve(ok(value));
+  }
+  check(value: WT): Promise<SR<WT>> {
+    return this.helper?.check(value) ?? Promise.resolve(ok(value));
   }
 }
 
@@ -372,14 +385,10 @@ const rea = {
    * @param validity how long the last retrived value is considered valid
    * @param retention delay after last subscriber unsubscribes before teardown is called, to allow quick resubscribe without teardown
    * */
-  from<
-    RT,
-    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
-    WT = any,
-  >(
-    once: (state: StateResourceOwner<Result<RT, string>, WT, HEL>) => void,
-    setup: (state: StateResourceOwner<Result<RT, string>, WT, HEL>) => void,
-    teardown: (state: StateResourceOwner<Result<RT, string>, WT, HEL>) => void,
+  from<RT, HEL extends Helper<ResultOk<RT>, WT, any> = NoHelper, WT = any>(
+    once: (state: StateRemoteOwner<SR<RT>, WT, HEL>) => void,
+    setup: (state: StateRemoteOwner<SR<RT>, WT, HEL>) => void,
+    teardown: (state: StateRemoteOwner<SR<RT>, WT, HEL>) => void,
     times?: {
       timeout?: number;
       debounce?: number;
@@ -388,7 +397,7 @@ const rea = {
     },
     helper?: HEL,
   ) {
-    return new Func<Result<RT, string>, WT, HEL>(
+    return new Func<SR<RT>, WT, HEL>(
       false,
       once,
       setup,
@@ -400,7 +409,7 @@ const rea = {
       undefined,
       undefined,
       helper,
-    ) as StateResourceFuncREA<RT, HEL, WT>;
+    ) as StateRemoteFuncREA<RT, HEL, WT>;
   },
 };
 
@@ -415,14 +424,10 @@ const roa = {
    * @param validity how long the last retrived value is considered valid, if true, value is valid until all unsubscribes
    * @param retention delay after last subscriber unsubscribes before teardown is called, to allow quick resubscribe without teardown
    * */
-  from<
-    RT,
-    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
-    WT = any,
-  >(
-    once: (state: StateResourceOwner<ResultOk<RT>, WT, HEL>) => void,
-    setup: (state: StateResourceOwner<ResultOk<RT>, WT, HEL>) => void,
-    teardown: (state: StateResourceOwner<ResultOk<RT>, WT, HEL>) => void,
+  from<RT, HEL extends Helper<ResultOk<RT>, WT, any> = NoHelper, WT = any>(
+    once: (state: StateRemoteOwner<ResultOk<RT>, WT, HEL>) => void,
+    setup: (state: StateRemoteOwner<ResultOk<RT>, WT, HEL>) => void,
+    teardown: (state: StateRemoteOwner<ResultOk<RT>, WT, HEL>) => void,
     times?: {
       timeout?: number;
       debounce?: number;
@@ -443,7 +448,7 @@ const roa = {
       undefined,
       undefined,
       helper,
-    ) as StateResourceFuncROA<RT, HEL, WT>;
+    ) as StateRemoteFuncROA<RT, HEL, WT>;
   },
 };
 
@@ -461,18 +466,14 @@ const reaw = {
    * @param retention delay after last subscriber unsubscribes before teardown is called, to allow quick resubscribe without teardown
    * @param write_debounce debounce delay for write calls, only the last write within the delay is used
    * */
-  from<
-    RT,
-    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
-    WT = RT,
-  >(
-    once: (state: StateResourceOwner<Result<RT, string>, WT, HEL>) => void,
-    setup: (state: StateResourceOwner<Result<RT, string>, WT, HEL>) => void,
-    teardown: (state: StateResourceOwner<Result<RT, string>, WT, HEL>) => void,
+  from<RT, HEL extends Helper<ResultOk<RT>, WT, any> = NoHelper, WT = RT>(
+    once: (state: StateRemoteOwner<SR<RT>, WT, HEL>) => void,
+    setup: (state: StateRemoteOwner<SR<RT>, WT, HEL>) => void,
+    teardown: (state: StateRemoteOwner<SR<RT>, WT, HEL>) => void,
     write_action?: (
       value: WT,
-      state: StateResourceOwner<Result<RT, string>, WT, HEL>,
-    ) => Promise<Result<void, string>>,
+      state: StateRemoteOwner<SR<RT>, WT, HEL>,
+    ) => Promise<SR<void>>,
     times?: {
       timeout?: number;
       debounce?: number;
@@ -482,7 +483,7 @@ const reaw = {
     },
     helper?: HEL,
   ) {
-    return new Func<Result<RT, string>, WT, HEL>(
+    return new Func<SR<RT>, WT, HEL>(
       false,
       once,
       setup,
@@ -494,7 +495,7 @@ const reaw = {
       times?.write_debounce ?? 0,
       write_action,
       helper,
-    ) as StateResourceFuncREAW<RT, HEL, WT>;
+    ) as StateRemoteFuncREAW<RT, HEL, WT>;
   },
 };
 
@@ -512,18 +513,14 @@ const roaw = {
    * @param retention delay after last subscriber unsubscribes before teardown is called, to allow quick resubscribe without teardown
    * @param write_debounce debounce delay for write calls, only the last write within the delay is used
    * */
-  from<
-    RT,
-    HEL extends StateHelper<ResultOk<RT>, WT, any> = StateNoHelper,
-    WT = RT,
-  >(
-    once: (state: StateResourceOwner<ResultOk<RT>, WT, HEL>) => void,
-    setup: (state: StateResourceOwner<ResultOk<RT>, WT, HEL>) => void,
-    teardown: (state: StateResourceOwner<ResultOk<RT>, WT, HEL>) => void,
+  from<RT, HEL extends Helper<ResultOk<RT>, WT, any> = NoHelper, WT = RT>(
+    once: (state: StateRemoteOwner<ResultOk<RT>, WT, HEL>) => void,
+    setup: (state: StateRemoteOwner<ResultOk<RT>, WT, HEL>) => void,
+    teardown: (state: StateRemoteOwner<ResultOk<RT>, WT, HEL>) => void,
     write_action?: (
       value: WT,
-      state: StateResourceOwner<ResultOk<RT>, WT, HEL>,
-    ) => Promise<Result<void, string>>,
+      state: StateRemoteOwner<ResultOk<RT>, WT, HEL>,
+    ) => Promise<SR<void>>,
     times?: {
       timeout?: number;
       debounce?: number;
@@ -545,7 +542,7 @@ const roaw = {
       times?.write_debounce ?? 0,
       write_action,
       helper,
-    ) as StateResourceFuncROAW<RT, HEL, WT>;
+    ) as StateRemoteFuncROAW<RT, HEL, WT>;
   },
 };
 
@@ -560,7 +557,7 @@ const roaw = {
 /**State that represent a remote resource*/
 export const RESOURCE = {
   /**Extension class for making custom state resources */
-  class: StateResource,
+  class: StateRemote,
   /**Remote resource */
   rea,
   /**Remote resource, guarenteed ok */

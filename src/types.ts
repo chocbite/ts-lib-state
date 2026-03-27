@@ -9,13 +9,13 @@ export type StateResult<T> = Result<T, string>;
 
 /**Function used to subscribe to state changes
  * @template RT - The type of the state’s value when read.*/
-export type StateSub<RRT extends Result<any, string>> = (value: RRT) => void;
+export type StateSub<RRT extends StateResult<any>> = (value: RRT) => void;
 
 export type StateInferResult<S extends State<any>> =
   S extends StateROA<infer RT>
     ? ResultOk<RT>
     : S extends StateREA<infer RT>
-      ? Result<RT, string>
+      ? StateResult<RT>
       : never;
 
 export type StateInferType<S extends State<any>> =
@@ -28,8 +28,8 @@ export interface StateRelated {}
 /**Map of values or states related to a state */
 export interface StateHelper<_RRT, WT, REL extends StateRelated> {
   related(): REL;
-  limit(value: WT): Promise<Result<WT, string>>;
-  check(value: WT): Promise<Result<WT, string>>;
+  limit(value: WT): Promise<StateResult<WT>>;
+  check(value: WT): Promise<StateResult<WT>>;
 }
 
 export type HelperRelated<HEL extends StateHelper<any, any, any>> = ReturnType<
@@ -39,26 +39,26 @@ export type HelperRelated<HEL extends StateHelper<any, any, any>> = ReturnType<
 export type StateSetREXW<RT, S, WT = RT> = (
   value: WT,
   state: S,
-  old?: Result<RT, string>,
-) => Promise<Result<void, string>>;
+  old?: StateResult<RT>,
+) => Promise<StateResult<void>>;
 
 export type StateSetROXW<RT, S, WT = RT> = (
   value: WT,
   state: S,
   old?: ResultOk<RT>,
-) => Promise<Result<void, string>>;
+) => Promise<StateResult<void>>;
 
 export type StateSetREXWS<RT, S, WT = RT> = (
   value: WT,
   state: S,
-  old?: Result<RT, string>,
-) => Result<void, string>;
+  old?: StateResult<RT>,
+) => StateResult<void>;
 
 export type StateSetROXWS<RT, S, WT = RT> = (
   value: WT,
   state: S,
   old?: ResultOk<RT>,
-) => Result<void, string>;
+) => StateResult<void>;
 
 //###########################################################################################################################################################
 //###########################################################################################################################################################
@@ -69,10 +69,10 @@ export type StateSetROXWS<RT, S, WT = RT> = (
 //     | | \ \| |____ / ____ \| |__| | |____| | \ \  | |___| |__| | |\  |  | |  | |____ / . \   | |
 //     |_|  \_\______/_/    \_\_____/|______|_|  \_\  \_____\____/|_| \_|  |_|  |______/_/ \_\  |_|
 
-export const STATE_KEY = Symbol("is_state");
+export const STATE_KEY = Symbol("state");
 
 export interface StateBase<
-  RRT extends Result<any, string>,
+  RRT extends StateResult<any>,
   REL extends Option<StateRelated>,
   WT,
 > {
@@ -114,11 +114,11 @@ export interface StateBase<
   readonly writable: boolean;
   /** This attempts a write to the state, write is not guaranteed to succeed
    * @returns promise of result with error for the write*/
-  write?(value: WT): Promise<Result<void, string>>;
+  write?(value: WT): Promise<StateResult<void>>;
   /**Limits given value to valid range if possible returns None if not possible */
-  limit?(value: WT): Promise<Result<WT, string>>;
+  limit?(value: WT): Promise<StateResult<WT>>;
   /**Checks if the value is valid and returns reason for invalidity */
-  check?(value: WT): Promise<Result<WT, string>>;
+  check?(value: WT): Promise<StateResult<WT>>;
 }
 
 interface REA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
@@ -142,12 +142,12 @@ interface ROA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface RES<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  Result<RT, string>,
+  StateResult<RT>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): Result<RT, string>;
+  get(): StateResult<RT>;
   readonly rok: false;
   readonly writable: false;
 }
@@ -172,9 +172,9 @@ interface REAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
   readonly rsync: false;
   readonly rok: false;
   readonly writable: true;
-  write(value: WT): Promise<Result<void, string>>;
-  limit(value: WT): Promise<Result<WT, string>>;
-  check(value: WT): Promise<Result<WT, string>>;
+  write(value: WT): Promise<StateResult<void>>;
+  limit(value: WT): Promise<StateResult<WT>>;
+  check(value: WT): Promise<StateResult<WT>>;
 }
 
 interface ROAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
@@ -185,23 +185,23 @@ interface ROAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
   readonly rsync: false;
   readonly rok: true;
   readonly writable: true;
-  write(value: WT): Promise<Result<void, string>>;
-  limit(value: WT): Promise<Result<WT, string>>;
-  check(value: WT): Promise<Result<WT, string>>;
+  write(value: WT): Promise<StateResult<void>>;
+  limit(value: WT): Promise<StateResult<WT>>;
+  check(value: WT): Promise<StateResult<WT>>;
 }
 
 interface RESW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  Result<RT, string>,
+  StateResult<RT>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): Result<RT, string>;
+  get(): StateResult<RT>;
   readonly rok: false;
   readonly writable: true;
-  write(value: WT): Promise<Result<void, string>>;
-  limit(value: WT): Promise<Result<WT, string>>;
-  check(value: WT): Promise<Result<WT, string>>;
+  write(value: WT): Promise<StateResult<void>>;
+  limit(value: WT): Promise<StateResult<WT>>;
+  check(value: WT): Promise<StateResult<WT>>;
 }
 
 interface ROSW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
@@ -214,9 +214,9 @@ interface ROSW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
   readonly rok: true;
   ok(): RT;
   readonly writable: true;
-  write(value: WT): Promise<Result<void, string>>;
-  limit(value: WT): Promise<Result<WT, string>>;
-  check(value: WT): Promise<Result<WT, string>>;
+  write(value: WT): Promise<StateResult<void>>;
+  limit(value: WT): Promise<StateResult<WT>>;
+  check(value: WT): Promise<StateResult<WT>>;
 }
 
 //###########################################################################################################################################################

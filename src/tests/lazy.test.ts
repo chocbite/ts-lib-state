@@ -1,6 +1,6 @@
-import { err, ok, ResultOk, type Result } from "@chocbite/ts-lib-result";
+import { err, ok, ResultOk } from "@chocbite/ts-lib-result";
 import { describe, expect, it } from "vitest";
-import { state as st } from "..";
+import { state as st, StateResult } from "..";
 import {
   test_state_get,
   test_state_get_ok,
@@ -65,7 +65,7 @@ describe("Initialize lazy states", function () {
     });
     const maker: TestStateSync = () => {
       const state = st.res(() => ok(1));
-      const set = (val: Result<number, string>) => state.set(val);
+      const set = (val: StateResult<number>) => state.set(val);
       return { o: false, s: true, w: false, state, set };
     };
     it("Subscribing And Unsubscribing", async function () {
@@ -141,7 +141,7 @@ describe("Initialize lazy states", function () {
     });
     const maker: TestStateSync = () => {
       const state = st.resw(() => ok(1));
-      const set = (val: Result<number, string>) => state.set(val);
+      const set = (val: StateResult<number>) => state.set(val);
       return { o: false, s: true, w: true, state, set };
     };
     it("Subscribing And Unsubscribing", async function () {
@@ -155,7 +155,7 @@ describe("Initialize lazy states", function () {
     });
     const maker_write: TestStateWrite = () => {
       const state = st.resw(() => ok(1), true);
-      const set = (val: Result<number, string>) => state.set(val);
+      const set = (val: StateResult<number>) => state.set(val);
       return { o: false, s: true, w: true, state, set };
     };
     it("Write", async function () {

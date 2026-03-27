@@ -1,5 +1,5 @@
-import { err, ok, OptionSome, Result, some } from "@chocbite/ts-lib-result";
-import { State } from "../types";
+import { err, ok, OptionSome, some } from "@chocbite/ts-lib-result";
+import { StateResult as SR, State } from "../types";
 import {
   StateInit as Init,
   StateHelperBase,
@@ -7,7 +7,11 @@ import {
   StateRelatedBase,
 } from "./helpers";
 
+export const STATE_STRING_RELATED_KEY = Symbol("state_string_related");
+export const STATE_STRING_HELPER_KEY = Symbol("state_string_helper");
+
 export interface StateStringRelated extends StateRelatedBase {
+  readonly [STATE_STRING_RELATED_KEY]: true;
   max_length?: State<number>;
   max_length_bytes?: State<number>;
 }
@@ -20,13 +24,16 @@ export interface StateStringHelperOptions extends StateHelperBaseOptions {
 }
 
 export class StateStringHelper
-  extends StateHelperBase<
-    Result<string, string>,
-    string,
-    OptionSome<StateStringRelated>
-  >
+  extends StateHelperBase<SR<string>, string, OptionSome<StateStringRelated>>
   implements StateStringRelated
 {
+  get [STATE_STRING_RELATED_KEY](): true {
+    return true;
+  }
+  get [STATE_STRING_HELPER_KEY](): true {
+    return true;
+  }
+
   max_length?: State<number>;
   max_length_bytes?: State<number>;
   constructor(options: StateStringHelperOptions) {
@@ -36,7 +43,7 @@ export class StateStringHelper
       this.max_length_bytes = options.max_length_bytes;
   }
 
-  async limit(value: string): Promise<Result<string, string>> {
+  async limit(value: string): Promise<SR<string>> {
     const [max_length, max_length_bytes] = await Promise.all([
       this.max_length,
       this.max_length_bytes,
@@ -51,7 +58,7 @@ export class StateStringHelper
     }
     return ok(value);
   }
-  async check(value: string): Promise<Result<string, string>> {
+  async check(value: string): Promise<SR<string>> {
     const [max_length, max_length_bytes] = await Promise.all([
       this.max_length,
       this.max_length_bytes,
@@ -79,6 +86,25 @@ export class StateStringHelper
 }
 
 export const STRING = {
+  /**Unique key to check if object is a string related */
+  RELATED_KEY: STATE_STRING_RELATED_KEY,
+  /**Returns true if object is a string related */
+  is_related(r: any): r is StateStringRelated {
+    return Boolean(
+      r &&
+      (r as { [STATE_STRING_RELATED_KEY]: boolean })[STATE_STRING_RELATED_KEY],
+    );
+  },
+  /**Unique key to check if object is a string helper */
+  HELPER_KEY: STATE_STRING_HELPER_KEY,
+  /**Returns true if object is a string helper */
+  is_helper(h: any): h is StateStringHelper {
+    return Boolean(
+      h &&
+      (h as { [STATE_STRING_HELPER_KEY]: boolean })[STATE_STRING_HELPER_KEY],
+    );
+  },
+
   /**String helper*/
   help<I extends Init<string>>(
     init: I,

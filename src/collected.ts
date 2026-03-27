@@ -2,12 +2,12 @@ import {
   err,
   none,
   OptionNone,
-  Result,
   ResultInferOk,
   type ResultOk,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
 import {
+  StateResult as SR,
   StateInferResult,
   StateREA,
   StateROA,
@@ -32,7 +32,7 @@ export type StateCollectedTransValUnk<IN extends State<any>[]> = {
   [I in keyof IN]: IN[I] extends StateROA<infer RT>
     ? ResultOk<RT>
     : IN[I] extends StateREA<infer RT>
-      ? Result<RT, string>
+      ? SR<RT>
       : unknown;
 };
 
@@ -48,12 +48,7 @@ export type StateCollectedStates<IN extends State<any>[]> = {
       : never;
 };
 
-interface Owner<
-  RT,
-  IN extends State<any>[],
-  WT,
-  RRT extends Result<RT, string>,
-> {
+interface Owner<RT, IN extends State<any>[], WT, RRT extends SR<RT>> {
   /**The `setStates` method is used to update the states used by the `StateDerived` class.
    * @param states - The new states. This function should accept an array of states and return the derived state.*/
   set_states(...states: StateCollectedStates<IN>): void;
@@ -86,7 +81,7 @@ export type StateCollectedRES<
   IN extends StateRES<any>[],
   WT = any,
 > = StateRES<RT, OptionNone, WT> &
-  Owner<RT, IN, WT, Result<RT, string>> & {
+  Owner<RT, IN, WT, SR<RT>> & {
     get read_only(): StateRES<RT, any, WT>;
   };
 
@@ -95,7 +90,7 @@ export type StateCollectedREA<RT, IN extends State<any>[], WT = any> = StateREA<
   OptionNone,
   WT
 > &
-  Owner<RT, IN, WT, Result<RT, string>> & {
+  Owner<RT, IN, WT, SR<RT>> & {
     get read_only(): StateREA<RT, any, WT>;
   };
 
@@ -107,12 +102,7 @@ export type StateCollectedREA<RT, IN extends State<any>[], WT = any> = StateREA<
 //     | |____| |____ / ____ \ ____) |___) |
 //      \_____|______/_/    \_\_____/_____/
 
-export class RXX<
-  RT,
-  IN extends State<any>[],
-  WT,
-  RRT extends Result<RT, string>,
->
+export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
   extends StateBase<RRT, WT, OptionNone>
   implements Owner<RT, IN, WT, RRT>
 {
@@ -281,10 +271,10 @@ export class RXX<
   get writable(): false {
     return false;
   }
-  limit(_value: WT): Promise<Result<WT, string>> {
+  limit(_value: WT): Promise<SR<WT>> {
     return Promise.resolve(err("not writable"));
   }
-  check(_value: WT): Promise<Result<WT, string>> {
+  check(_value: WT): Promise<SR<WT>> {
     return Promise.resolve(err("not writable"));
   }
 }
@@ -322,12 +312,10 @@ export const COLLECTED = {
    * @param transform - Function to translate value of collected states, false means first states values is used.
    * @param states - The states to collect.*/
   res<RT, IN extends StateRES<any>[], WT = any>(
-    transform:
-      | ((values: StateCollectedTransVal<IN>) => Result<RT, string>)
-      | false,
+    transform: ((values: StateCollectedTransVal<IN>) => SR<RT>) | false,
     ...states: IN
   ) {
-    return new RXX<RT, IN, WT, Result<RT, string>>(
+    return new RXX<RT, IN, WT, SR<RT>>(
       false,
       true,
       transform,
@@ -338,12 +326,10 @@ export const COLLECTED = {
    * @param transform - Function to translate value of collected states, false means first states values is used.
    * @param states - The states to collect.*/
   rea<RT, IN extends State<any>[], WT = any>(
-    transform:
-      | ((values: StateCollectedTransVal<IN>) => Result<RT, string>)
-      | false,
+    transform: ((values: StateCollectedTransVal<IN>) => SR<RT>) | false,
     ...states: IN
   ) {
-    return new RXX<RT, IN, WT, Result<RT, string>>(
+    return new RXX<RT, IN, WT, SR<RT>>(
       false,
       false,
       transform,

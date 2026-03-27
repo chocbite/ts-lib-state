@@ -1,4 +1,4 @@
-import { err, ok, ResultOk, type Result } from "@chocbite/ts-lib-result";
+import { err, ok, ResultOk } from "@chocbite/ts-lib-result";
 import { assertType, describe, it } from "vitest";
 import { state as st, StateROS } from "..";
 import {
@@ -46,7 +46,7 @@ describe("Sync states", function () {
     });
     const maker: TestStateSync = () => {
       const state = st.res(ok(1));
-      const set = (val: Result<number, string>) => state.set(val);
+      const set = (val: StateResult<number>) => state.set(val);
       return { o: false, s: true, w: false, state, set };
     };
     it("Subscribing And Unsubscribing", async function () {
@@ -100,7 +100,7 @@ describe("Sync states", function () {
     });
     const maker: TestStateSync = () => {
       const state = st.resw(ok(1), true);
-      const set = (val: Result<number, string>) => state.set(val);
+      const set = (val: StateResult<number>) => state.set(val);
       return { o: false, s: true, w: true, state, set };
     };
     it("Test Subscribing And Unsubscribing", async function () {
@@ -114,7 +114,7 @@ describe("Sync states", function () {
     });
     const maker_write: TestStateWrite = () => {
       const state = st.resw(ok(1), true);
-      const set = (val: Result<number, string>) => state.set(val);
+      const set = (val: StateResult<number>) => state.set(val);
       return { o: false, s: true, w: true, state, set };
     };
     it("Write", async function () {

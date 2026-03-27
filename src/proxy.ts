@@ -97,7 +97,7 @@ export type StateProxyREA<
   ROUT = RIN,
   WOUT = WIN,
 > = StateREA<ROUT, OptionNone, WOUT> &
-  Owner<S, WIN, ROUT, WOUT, Result<ROUT, string>> & {
+  Owner<S, WIN, ROUT, WOUT, StateResult<ROUT>> & {
     readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
     readonly read_write?: StateREAW<ROUT, OptionNone, WOUT>;
   };
@@ -109,7 +109,7 @@ export type StateProxyREAW<
   ROUT = RIN,
   WOUT = WIN,
 > = StateREAW<ROUT, OptionNone, WOUT> &
-  Owner<S, WIN, ROUT, WOUT, Result<ROUT, string>> & {
+  Owner<S, WIN, ROUT, WOUT, StateResult<ROUT>> & {
     readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
     readonly read_write: StateREAW<ROUT, OptionNone, WOUT>;
   };
@@ -121,7 +121,7 @@ export type StateProxyRES<
   ROUT = RIN,
   WOUT = WIN,
 > = StateRES<ROUT, OptionNone, WOUT> &
-  Owner<S, WIN, ROUT, WOUT, Result<ROUT, string>> & {
+  Owner<S, WIN, ROUT, WOUT, StateResult<ROUT>> & {
     readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
     readonly read_write?: StateREAW<ROUT, OptionNone, WOUT>;
   };
@@ -133,7 +133,7 @@ export type StateProxyRESW<
   ROUT = RIN,
   WOUT = WIN,
 > = StateRESW<ROUT, OptionNone, WOUT> &
-  Owner<S, WIN, ROUT, WOUT, Result<ROUT, string>> & {
+  Owner<S, WIN, ROUT, WOUT, StateResult<ROUT>> & {
     readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
     readonly read_write: StateREAW<ROUT, OptionNone, WOUT>;
   };
@@ -152,7 +152,7 @@ class RXXX<
   WIN,
   ROUT,
   WOUT,
-  RROUT extends Result<ROUT, string>,
+  RROUT extends StateResult<ROUT>,
 >
   extends StateBase<RROUT, WOUT, OptionNone>
   implements Owner<S, WIN, ROUT, WOUT, RROUT>
@@ -175,7 +175,7 @@ class RXXX<
   }
 
   #state: S;
-  #subscriber = (value: Result<RIN, string>) => {
+  #subscriber = (value: StateResult<RIN>) => {
     this.#buffer = this.transform_read(value as StateInferResult<S>);
     this.update_subs(this.#buffer);
   };
@@ -260,14 +260,14 @@ class RXXX<
   get writable(): boolean {
     return this.#state.writable;
   }
-  write(value: WOUT): Promise<Result<void, string>> {
+  write(value: WOUT): Promise<StateResult<void>> {
     if (!this.#state.write) return Promise.resolve(err("not writable"));
     if (!this.transform_wout_win) return Promise.resolve(err("not writable"));
     return this.#state.write(this.transform_wout_win(value));
   }
 
   //@ts-expect-error typescript workaround
-  get limit(): ((value: WOUT) => Promise<Result<WOUT, string>>) | undefined {
+  get limit(): ((value: WOUT) => Promise<StateResult<WOUT>>) | undefined {
     const limit = this.#state.limit;
     return limit
       ? (value) => {
@@ -282,7 +282,7 @@ class RXXX<
       : undefined;
   }
   //@ts-expect-error typescript workaround
-  get check(): ((value: WOUT) => Promise<Result<WOUT, string>>) | undefined {
+  get check(): ((value: WOUT) => Promise<StateResult<WOUT>>) | undefined {
     const check = this.#state.check;
     return check
       ? (value) => {
@@ -431,9 +431,9 @@ function rea_from<
   WOUT = WIN,
 >(
   state: S,
-  transform?: (value: StateInferResult<S>) => Result<ROUT, string>,
+  transform?: (value: StateInferStateResult<S>) => Result<ROUT>,
 ): StateProxyREA<S, RIN, WIN, ROUT, WOUT> {
-  return new RXXX<S, RIN, WIN, ROUT, WOUT, Result<ROUT, string>>(
+  return new RXXX<S, RIN, WIN, ROUT, WOUT, StateResult<ROUT>>(
     state,
     transform,
   ) as StateProxyREA<S, RIN, WIN, ROUT, WOUT>;
@@ -457,13 +457,13 @@ function reaw_from<
   WOUT = WIN,
 >(
   state: S,
-  transform_read?: (value: StateInferResult<S>) => Result<ROUT, string>,
+  transform_read?: (value: StateInferStateResult<S>) => Result<ROUT>,
   transform_write?: {
     wout_win: (val: WOUT) => WIN;
     win_wout: (val: WIN) => WOUT;
   },
 ): StateProxyREAW<S, RIN, WIN, ROUT, WOUT> {
-  return new RXXX<S, RIN, WIN, ROUT, WOUT, Result<ROUT, string>>(
+  return new RXXX<S, RIN, WIN, ROUT, WOUT, StateResult<ROUT>>(
     state,
     transform_read,
     transform_write,
@@ -489,9 +489,9 @@ function res_from<
   WOUT = WIN,
 >(
   state: S,
-  transform?: (value: StateInferResult<S>) => Result<ROUT, string>,
+  transform?: (value: StateInferStateResult<S>) => Result<ROUT>,
 ): StateProxyRES<S, RIN, WIN, ROUT, WOUT> {
-  return new RXXX<S, RIN, WIN, ROUT, WOUT, Result<ROUT, string>>(
+  return new RXXX<S, RIN, WIN, ROUT, WOUT, StateResult<ROUT>>(
     state,
     transform,
   ) as StateProxyRES<S, RIN, WIN, ROUT, WOUT>;
@@ -516,13 +516,13 @@ function resw_from<
   WOUT = WIN,
 >(
   state: S,
-  transform_read?: (value: StateInferResult<S>) => Result<ROUT, string>,
+  transform_read?: (value: StateInferStateResult<S>) => Result<ROUT>,
   transform_write?: {
     wout_win: (val: WOUT) => WIN;
     win_wout: (val: WIN) => WOUT;
   },
 ): StateProxyRESW<S, RIN, WIN, ROUT, WOUT> {
-  return new RXXX<S, RIN, WIN, ROUT, WOUT, Result<ROUT, string>>(
+  return new RXXX<S, RIN, WIN, ROUT, WOUT, StateResult<ROUT>>(
     state,
     transform_read,
     transform_write,

@@ -1,6 +1,6 @@
-import { ResultOk, type Result } from "@chocbite/ts-lib-result";
+import { ResultOk } from "@chocbite/ts-lib-result";
 import { describe, it } from "vitest";
-import { state as st } from "..";
+import { state as st, StateResult } from "..";
 import {
   test_state_get,
   test_state_get_ok,
@@ -42,7 +42,7 @@ describe("Proxy with sync states", function () {
     const maker: TestStateSync = () => {
       const stat = st.from(1);
       const state = st.p.res(stat);
-      const set = (val: Result<number, string>) => stat.set(val);
+      const set = (val: StateResult<number>) => stat.set(val);
       return { o: false, s: true, w: false, state, set };
     };
     it("Subscribing And Unsubscribing", async function () {

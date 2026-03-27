@@ -1,17 +1,17 @@
-import { err, ok, Result } from "@chocbite/ts-lib-result";
+import { err, ok } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
 import { COLLECTED } from "./collected";
 import { ARRAY } from "./helpers/array";
 import { BOOL } from "./helpers/boolean";
 import { ENUM } from "./helpers/enum";
-import { HELPERS } from "./helpers/helpers";
 import { IS } from "./helpers/is";
 import { NUMBER } from "./helpers/number";
 import { STRING } from "./helpers/string";
+import { UTIL } from "./helpers/util";
 import { rea, reaw, res, resw, roa, roaw, ros, rosw } from "./normal";
 import { PROXY } from "./proxy";
-import { RESOURCE } from "./resource";
-import { STATE_KEY } from "./types";
+import { RESOURCE } from "./remote";
+import { StateResult as SR, STATE_KEY } from "./types";
 
 export const state = {
   //Quick access states
@@ -21,11 +21,11 @@ export const state = {
   },
   /**Creates an error state with the given initial error message */
   err<RT>(init: string) {
-    return res(err(init) as Result<RT, string>);
+    return res(err(init) as SR<RT>);
   },
   /**Creates an errorable state with the given initial value */
   from<RT>(init: RT) {
-    return res(ok(init) as Result<RT, string>);
+    return res(ok(init) as SR<RT>);
   },
   /**Creates a writable ok state with the given initial value */
   ok_w<RT>(init: RT) {
@@ -33,11 +33,11 @@ export const state = {
   },
   /**Creates a writable error state with the given initial error message */
   err_w<RT>(init: string) {
-    return resw(err(init) as Result<RT, string>);
+    return resw(err(init) as SR<RT>);
   },
   /**Creates a writable errorable state with the given initial value */
   from_w<RT>(init: RT) {
-    return resw(ok(init) as Result<RT, string>);
+    return resw(ok(init) as SR<RT>);
   },
   //Normal
   ros,
@@ -54,12 +54,9 @@ export const state = {
   /**Collected states, collects values from multiple states and reduces it to one */
   c: COLLECTED,
   collected: COLLECTED,
-  /**Resource states, allows for creating states representing remote resources */
+  /**Remote states, allows for creating states representing remote resources */
   r: RESOURCE,
-  resource: RESOURCE,
-  //Helpers
-  h: HELPERS,
-  helpers: HELPERS,
+  remote: RESOURCE,
   /**Helper functionality for arrays */
   a: ARRAY,
   array: ARRAY,
@@ -75,6 +72,9 @@ export const state = {
   /**Helper functionality for booleans */
   b: BOOL,
   bool: BOOL,
+  /**Utility functions for states */
+  u: UTIL,
+  util: UTIL,
   /**Functions to determine if a variable is a state*/
   is: IS,
   /**The state key is a symbol used to identify state objects
@@ -91,11 +91,39 @@ export {
   type StateCollectedROA,
   type StateCollectedROS,
 } from "./collected";
-export { StateArrayHelper, type StateArrayRelated } from "./helpers/array";
-export { StateBoolHelper, type StateBoolRelated } from "./helpers/boolean";
-export { StateEnumHelper, type StateEnumRelated } from "./helpers/enum";
-export { StateNumberHelper, type StateNumberRelated } from "./helpers/number";
-export { StateStringHelper, type StateStringRelated } from "./helpers/string";
+export {
+  STATE_ARRAY_HELPER_KEY,
+  STATE_ARRAY_READ_KEY,
+  STATE_ARRAY_RELATED_KEY,
+  STATE_ARRAY_WRITE_KEY,
+  StateArrayHelper,
+  type StateArrayRead,
+  type StateArrayRelated,
+} from "./helpers/array";
+export {
+  STATE_BOOL_HELPER_KEY,
+  STATE_BOOL_RELATED_KEY,
+  StateBoolHelper,
+  type StateBoolRelated,
+} from "./helpers/boolean";
+export {
+  STATE_ENUM_HELPER_KEY,
+  STATE_ENUM_RELATED_KEY,
+  StateEnumHelper,
+  type StateEnumRelated,
+} from "./helpers/enum";
+export {
+  STATE_NUMBER_HELPER_KEY,
+  STATE_NUMBER_RELATED_KEY,
+  StateNumberHelper,
+  type StateNumberRelated,
+} from "./helpers/number";
+export {
+  STATE_STRING_HELPER_KEY,
+  STATE_STRING_RELATED_KEY,
+  StateStringHelper,
+  type StateStringRelated,
+} from "./helpers/string";
 export {
   type StateNormalREA,
   type StateNormalREAW,
@@ -117,12 +145,12 @@ export {
   type StateProxyROSW,
 } from "./proxy";
 export {
-  type StateResource,
-  type StateResourceFuncREA,
-  type StateResourceFuncREAW,
-  type StateResourceFuncROA,
-  type StateResourceFuncROAW,
-} from "./resource";
+  type StateRemote as StateResource,
+  type StateRemoteFuncREA as StateResourceFuncREA,
+  type StateRemoteFuncREAW as StateResourceFuncREAW,
+  type StateRemoteFuncROA as StateResourceFuncROA,
+  type StateRemoteFuncROAW as StateResourceFuncROAW,
+} from "./remote";
 
 //       _____ _______    _______ ______   _________     _______  ______  _____
 //      / ____|__   __|/\|__   __|  ____| |__   __\ \   / /  __ \|  ____|/ ____|
@@ -132,12 +160,14 @@ export {
 //     |_____/   |_/_/    \_\_|  |______|    |_|     |_|  |_|    |______|_____/
 export type {
   State,
+  STATE_KEY,
   StateInferResult,
   StateInferSub,
   StateInferType,
   StateREA,
   StateREAW,
   StateRES,
+  StateResult,
   StateRESW,
   StateROA,
   StateROAW,

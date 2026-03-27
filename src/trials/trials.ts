@@ -1,5 +1,6 @@
 import { ok } from "@chocbite/ts-lib-result";
 import state, { StateNormalROS, StateNumberHelper } from "..";
+import { STATE_ENUM_RELATED_KEY } from "../helpers/enum";
 import { ros } from "../normal";
 
 let qwer: StateNormalROS<number, StateNumberHelper>;
@@ -30,3 +31,26 @@ test.sub((v) => {
 }, true);
 
 test.set_transform_read((v) => ok(9));
+
+export const Themes = {
+  Light: "light",
+  Dark: "dark",
+} as const;
+export type Themes = (typeof Themes)[keyof typeof Themes];
+
+const THEMES = state.enum.list<Themes>({
+  [Themes.Light]: {
+    name: "Light",
+    description: "Theme optimized for daylight",
+  },
+  [Themes.Dark]: {
+    name: "Dark",
+    description: "Theme optimized for night time",
+  },
+});
+
+const jkl2 = ros(
+  state.enum.help(ok(Themes.Light as Themes), { list: state.ok(THEMES) }),
+);
+
+jkl2.related().value[STATE_ENUM_RELATED_KEY];

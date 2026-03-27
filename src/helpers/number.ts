@@ -1,12 +1,5 @@
 import { number_step_start_decimal } from "@chocbite/ts-lib-math";
-import {
-  err,
-  ok,
-  OptionSome,
-  Result,
-  ResultOk,
-  some,
-} from "@chocbite/ts-lib-result";
+import { err, ok, OptionSome, ResultOk, some } from "@chocbite/ts-lib-result";
 import {
   COLLECTED,
   StateCollectedREA,
@@ -14,7 +7,13 @@ import {
   StateCollectedROA,
   StateCollectedROS,
 } from "../collected";
-import { State, StateRES, StateROA, StateROS } from "../types";
+import {
+  StateResult as SR,
+  State,
+  StateRES,
+  StateROA,
+  StateROS,
+} from "../types";
 import {
   StateInit as Init,
   StateHelperBase,
@@ -41,12 +40,12 @@ class NumberSumREA<S extends State<number>[]> extends COLLECTED.class<
   number,
   S,
   number,
-  Result<number, string>
+  SR<number>
 > {
   constructor(...states: S) {
     super(false, false, false, ...states);
   }
-  protected getter(values: Result<number, string>[]): Result<number, string> {
+  protected getter(values: SR<number>[]): SR<number> {
     let sum = 0;
     for (const val of values) {
       if (val.err) return val;
@@ -73,12 +72,12 @@ class NumberSumRES<S extends StateRES<number>[]> extends COLLECTED.class<
   number,
   S,
   number,
-  Result<number, string>
+  SR<number>
 > {
   constructor(...states: S) {
     super(false, true, false, ...states);
   }
-  protected getter(values: Result<number, string>[]): Result<number, string> {
+  protected getter(values: SR<number>[]): SR<number> {
     let sum = 0;
     for (const val of values) {
       if (val.err) return val;
@@ -111,13 +110,11 @@ class NumberSumROS<
 class NumberPercentageREA<
   S extends State<number>,
   T extends State<number>,
-> extends COLLECTED.class<number, [S, T], number, Result<number, string>> {
+> extends COLLECTED.class<number, [S, T], number, SR<number>> {
   constructor(st1: S, st2: T) {
     super(false, false, false, st1, st2);
   }
-  protected getter(
-    values: [Result<number, string>, Result<number, string>],
-  ): Result<number, string> {
+  protected getter(values: [SR<number>, SR<number>]): SR<number> {
     if (values[0].err) return values[0];
     if (values[1].err) return values[1];
     return ok(
@@ -147,13 +144,11 @@ class NumberPercentageROA<
 class NumberPercentageRES<
   S extends StateRES<number>,
   T extends StateRES<number>,
-> extends COLLECTED.class<number, [S, T], number, Result<number, string>> {
+> extends COLLECTED.class<number, [S, T], number, SR<number>> {
   constructor(st1: S, st2: T) {
     super(false, true, false, st1, st2);
   }
-  protected getter(
-    values: [Result<number, string>, Result<number, string>],
-  ): Result<number, string> {
+  protected getter(values: [SR<number>, SR<number>]): SR<number> {
     if (values[0].err) return values[0];
     if (values[1].err) return values[1];
     return ok(
@@ -241,7 +236,11 @@ export const COLLECTS_NUMBER = {
 //     | |  | | |____| |____| |    | |____| | \ \
 //     |_|  |_|______|______|_|    |______|_|  \_\
 
+export const STATE_NUMBER_RELATED_KEY = Symbol("state_number_related");
+export const STATE_NUMBER_HELPER_KEY = Symbol("state_number_helper");
+
 export interface StateNumberRelated extends StateRelatedBase {
+  readonly [STATE_NUMBER_RELATED_KEY]: true;
   min?: State<number>;
   max?: State<number>;
   unit?: State<string>;
@@ -266,13 +265,16 @@ export interface StateNumberHelperOptions extends StateHelperBaseOptions {
 }
 
 export class StateNumberHelper
-  extends StateHelperBase<
-    Result<number, string>,
-    number,
-    OptionSome<StateNumberRelated>
-  >
+  extends StateHelperBase<SR<number>, number, OptionSome<StateNumberRelated>>
   implements StateNumberRelated
 {
+  get [STATE_NUMBER_RELATED_KEY](): true {
+    return true;
+  }
+  get [STATE_NUMBER_HELPER_KEY](): true {
+    return true;
+  }
+
   readonly min?: State<number>;
   readonly max?: State<number>;
   readonly unit?: State<string>;
@@ -290,7 +292,7 @@ export class StateNumberHelper
     if (options.decimals) this.decimals = options.decimals;
   }
 
-  async limit(value: number): Promise<Result<number, string>> {
+  async limit(value: number): Promise<SR<number>> {
     const [min, max, step, start, decimals] = await Promise.all([
       this.min,
       this.max,
@@ -314,7 +316,7 @@ export class StateNumberHelper
     );
   }
 
-  async check(value: number): Promise<Result<number, string>> {
+  async check(value: number): Promise<SR<number>> {
     const [min, max] = await Promise.all([this.min, this.max]);
     if (max?.ok && value > max.value)
       return err(value + " is bigger than the limit of " + max.value);
@@ -337,6 +339,24 @@ export class StateNumberHelper
 //     |______/_/ \_\_|     \____/|_|  \_\ |_| |_____/
 
 export const NUMBER = {
+  /**Unique key to check if object is a number related */
+  RELATED_KEY: STATE_NUMBER_RELATED_KEY,
+  /**Returns true if object is a number related */
+  is_related(r: any): r is StateNumberRelated {
+    return Boolean(
+      r &&
+      (r as { [STATE_NUMBER_RELATED_KEY]: boolean })[STATE_NUMBER_RELATED_KEY],
+    );
+  },
+  /**Unique key to check if object is a number helper */
+  HELPER_KEY: STATE_NUMBER_HELPER_KEY,
+  /**Returns true if object is a number helper */
+  is_helper(h: any): h is StateNumberHelper {
+    return Boolean(
+      h &&
+      (h as { [STATE_NUMBER_HELPER_KEY]: boolean })[STATE_NUMBER_HELPER_KEY],
+    );
+  },
   /**Number helper*/
   help<I extends Init<number>>(
     init: I,

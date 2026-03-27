@@ -1,5 +1,5 @@
 import { sleep } from "@chocbite/ts-lib-common";
-import { err, ok, ResultOk, type Result } from "@chocbite/ts-lib-result";
+import { err, ok, ResultOk } from "@chocbite/ts-lib-result";
 import { assertType, describe, expect, it } from "vitest";
 import {
   state as st,
@@ -9,6 +9,7 @@ import {
   StateNormalROAW,
   StateREA,
   StateREAW,
+  StateResult,
   StateROA,
   StateROAW,
 } from "..";
@@ -107,7 +108,7 @@ describe("Initialize delayed states", function () {
     //# Standard Tests
     const maker: TestStateAll = () => {
       const state = st.rea(() => sleep(1, ok(1)));
-      const set = (val: Result<number, string>) => state.set(val);
+      const set = (val: StateResult<number>) => state.set(val);
       return { o: false, s: false, w: false, state, set };
     };
     it("Subscribing And Unsubscribing", async function () {
@@ -118,7 +119,7 @@ describe("Initialize delayed states", function () {
     });
     const maker_delay: TestStateAll = () => {
       const state = st.rea(() => sleep(10, ok(1)));
-      const set = (val: Result<number, string>) => state.set(val);
+      const set = (val: StateResult<number>) => state.set(val);
       return { o: false, s: false, w: false, state, set };
     };
     it("Subscribing And Unsubscribing With Actual Delay", async function () {
@@ -222,7 +223,7 @@ describe("Initialize delayed states", function () {
     //# Standard Tests
     const maker: TestStateAll = () => {
       const state = st.reaw(() => sleep(1, ok(1)));
-      const set = (val: Result<number, string>) => state.set(val);
+      const set = (val: StateResult<number>) => state.set(val);
       return { o: false, s: false, w: true, state, set };
     };
     it("Subscribing And Unsubscribing", async function () {
@@ -233,7 +234,7 @@ describe("Initialize delayed states", function () {
     });
     const maker_delay: TestStateAll = () => {
       const state = st.reaw(() => sleep(10, ok(1)));
-      const set = (val: Result<number, string>) => state.set(val);
+      const set = (val: StateResult<number>) => state.set(val);
       return { o: false, s: false, w: true, state, set };
     };
     it("Subscribing And Unsubscribing With Actual Delay", async function () {
@@ -244,7 +245,7 @@ describe("Initialize delayed states", function () {
     });
     const maker_write: TestStateWrite = () => {
       const state = st.reaw(() => sleep(10, ok(1)), true);
-      const set = (val: Result<number, string>) => state.set(val);
+      const set = (val: StateResult<number>) => state.set(val);
       return { o: false, s: false, w: true, state, set };
     };
     it("Write", async function () {

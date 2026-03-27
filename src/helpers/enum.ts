@@ -1,12 +1,15 @@
-import { err, ok, OptionSome, Result, some } from "@chocbite/ts-lib-result";
+import { err, ok, OptionSome, some } from "@chocbite/ts-lib-result";
 import { SVGFunc } from "@chocbite/ts-lib-svg";
-import { State } from "../types";
+import { StateResult as SR, State } from "../types";
 import {
   StateInit as Init,
   StateHelperBase,
   StateHelperBaseOptions,
   StateRelatedBase,
 } from "./helpers";
+
+export const STATE_ENUM_RELATED_KEY = Symbol("state_enum_related");
+export const STATE_ENUM_HELPER_KEY = Symbol("state_enum_helper");
 
 type EnumHelperEntry = {
   name: string;
@@ -21,6 +24,7 @@ type StateEnumHelperList<K extends PropertyKey> = {
 export interface StateEnumRelated<
   L extends StateEnumHelperList<PropertyKey> = StateEnumHelperList<PropertyKey>,
 > extends StateRelatedBase {
+  readonly [STATE_ENUM_RELATED_KEY]: true;
   list: State<L>;
 }
 
@@ -35,9 +39,16 @@ export class StateEnumHelper<
   K extends PropertyKey = keyof L,
   R extends StateRelatedBase = StateEnumRelated<L>,
 >
-  extends StateHelperBase<Result<K, string>, K, OptionSome<R>>
+  extends StateHelperBase<SR<K>, K, OptionSome<R>>
   implements StateEnumRelated<L>
 {
+  get [STATE_ENUM_RELATED_KEY](): true {
+    return true;
+  }
+  get [STATE_ENUM_HELPER_KEY](): true {
+    return true;
+  }
+
   readonly list: State<L>;
 
   constructor(options: StateEnumHelperOptions<L>) {
@@ -45,11 +56,11 @@ export class StateEnumHelper<
     this.list = options.list;
   }
 
-  async limit(value: K): Promise<Result<K, string>> {
+  async limit(value: K): Promise<SR<K>> {
     return ok(value);
   }
 
-  async check(value: K): Promise<Result<K, string>> {
+  async check(value: K): Promise<SR<K>> {
     const list = await this.list;
     if (list.err) return err("list is not available");
     if (value in list.value) return ok(value);
@@ -62,9 +73,25 @@ export class StateEnumHelper<
 }
 
 export const ENUM = {
+  /**Unique key to check if object is a enum related */
+  RELATED_KEY: STATE_ENUM_RELATED_KEY,
+  /**Returns true if object is a enum related */
+  is_related(r: any): r is StateEnumRelated {
+    return Boolean(
+      r && (r as { [STATE_ENUM_RELATED_KEY]: boolean })[STATE_ENUM_RELATED_KEY],
+    );
+  },
+  /**Unique key to check if object is a enum helper */
+  HELPER_KEY: STATE_ENUM_HELPER_KEY,
+  /**Returns true if object is a enum helper */
+  is_helper(h: any): h is StateEnumHelper {
+    return Boolean(
+      h && (h as { [STATE_ENUM_HELPER_KEY]: boolean })[STATE_ENUM_HELPER_KEY],
+    );
+  },
   /**Creates an enum helper struct, use list method to make a list with correct typing*/
   help<
-    I extends Init<boolean>,
+    I extends Init<K>,
     L extends StateEnumHelperList<PropertyKey>,
     K extends PropertyKey = keyof L,
     R extends StateRelatedBase = StateEnumRelated<L>,
