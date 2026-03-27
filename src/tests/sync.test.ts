@@ -1,6 +1,6 @@
 import { err, ok, ResultOk } from "@chocbite/ts-lib-result";
 import { assertType, describe, it } from "vitest";
-import { state as st, StateROS } from "..";
+import { state as st, StateResult, StateROS } from "..";
 import {
   test_state_get,
   test_state_get_ok,

@@ -6,7 +6,7 @@ import {
   ResultOk,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
-import { StateNoHelper as NoHelper } from "./helpers/helpers";
+import { NoHelper } from "./helpers/helpers";
 import {
   StateHelper as Helper,
   HelperRelated as HELToREL,
@@ -137,7 +137,7 @@ export abstract class StateRemote<
   /**How long to debounce write calls, before the last write call is used*/
   abstract get write_debounce(): number;
 
-  protected on_subscribe(): void {
+  protected on_sub(): void {
     if (this.#retention_timout) {
       clearTimeout(this.#retention_timout);
       this.#retention_timout = 0;
@@ -151,7 +151,7 @@ export abstract class StateRemote<
     }
   }
 
-  protected on_unsubscribe(): void {
+  protected on_unsub(): void {
     if (this.#debounce_timout) {
       clearTimeout(this.#debounce_timout);
       this.#debounce_timout = 0;

@@ -7,7 +7,7 @@ import {
   type Result as R,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
-import { StateNoHelper as NoHelper } from "./helpers/helpers";
+import { StateNoHelper as NoHelper, StateHelperBase } from "./helpers/helpers";
 import {
   StateHelper as Helper,
   HelperRelated as HELToREL,
@@ -47,10 +47,18 @@ export interface Owner<
   WT,
 > {
   readonly helper: HEL;
+  /**Changes state value */
   set(value: RRT): void;
+  /**Changes state value to a ResultOk value */
   set_ok(value: RIOK<RRT>): void;
+  /**Changes state setter function, if done on a none writable state, it will become writable */
   setter?: Setter<RRT, HEL, WT>;
+  /**Gets normal state as a simple state type */
   readonly state: State<RIOK<RRT>, HELToREL<HEL>, WT>;
+  /**Sets a function to be called when the state is initially subscribed to */
+  set_onsub(func: () => void): void;
+  /**Sets a function to be called when the state is terminally unsubscribed from */
+  set_onunsub(func: () => void): void;
 }
 
 export type StateNormalROS<
@@ -163,14 +171,18 @@ class RXXX<
     setter?: Setter<RRT, HEL, WT> | true,
   ) {
     super();
-    this.helper = helper ?? (new NoHelper() as unknown as HEL);
+    this.#helper = (helper ?? new NoHelper()) as unknown as StateHelperBase<
+      any,
+      any,
+      any
+    >;
     this.#rok = init[1];
     if (setter === true)
       this.#setter = (value, state, old) => {
         if (old && !old.err && value === old.value)
           return Promise.resolve(ok(undefined));
-        if (this.helper) {
-          return this.helper.limit(value).then((e) => {
+        if (this.#helper) {
+          return this.#helper.limit(value).then((e) => {
             if (e.err) return err(e.error);
             state.set_ok(e.value as RIOK<RRT>);
             return ok(undefined);
@@ -228,7 +240,11 @@ class RXXX<
     (["then", "get", "set", "write"] as const).forEach((k) => delete this[k]);
   }
 
-  readonly helper: HEL;
+  #helper: StateHelperBase<any, any, any>;
+  get helper(): HEL {
+    return this.#helper as unknown as HEL;
+  }
+
   #value?: RRT;
   #setter?: Setter<RRT, HEL, WT>;
 
@@ -259,6 +275,12 @@ class RXXX<
       ? (this as State<RIOK<RRT>, HELToREL<HEL>, WT>)
       : undefined;
   }
+  set_onsub(func: () => void): void {
+    this.on_sub = func;
+  }
+  set_onunsub(func: () => void): void {
+    this.on_unsub = func;
+  }
 
   //#Reader Context
   #rok: boolean;
@@ -285,7 +307,7 @@ class RXXX<
     return (this.get() as RO<RIOK<RRT>>).value;
   }
   related(): HELToREL<HEL> {
-    return this.helper.related() as HELToREL<HEL>;
+    return this.#helper.related() as HELToREL<HEL>;
   }
 
   //#Writer Context
@@ -300,14 +322,14 @@ class RXXX<
     return Promise.resolve(err("not writable"));
   }
   limit(value: WT): Promise<R<WT, string>> {
-    return this.helper?.limit(value) ?? Promise.resolve(ok(value));
+    return this.#helper?.limit(value) ?? Promise.resolve(ok(value));
   }
   check(value: WT): Promise<R<WT, string>> {
-    return this.helper?.check(value) ?? Promise.resolve(ok(value));
+    return this.#helper?.check(value) ?? Promise.resolve(ok(value));
   }
 
   protected update_subs(value: RRT): void {
-    (this.helper as unknown as { set(value: RRT): void }).set(value);
+    this.#helper.on_update_subs(value);
     super.update_subs(value);
   }
 }

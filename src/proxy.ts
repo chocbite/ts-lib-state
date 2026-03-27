@@ -186,10 +186,10 @@ class RXXX<
   }
   private transform_wout_win?: (value: WOUT) => WIN;
   private transform_win_wout?: (value: WIN) => WOUT;
-  protected on_subscribe(run: boolean = false): void {
+  protected on_sub(run: boolean = false): void {
     this.#state.sub(this.#subscriber, run);
   }
-  protected on_unsubscribe(): void {
+  protected on_unsub(): void {
     this.#state.unsub(this.#subscriber);
     this.#buffer = undefined;
   }
@@ -197,16 +197,16 @@ class RXXX<
   //#Owner Context
   set_state(state: S) {
     if (this.in_use()) {
-      this.on_unsubscribe();
+      this.on_unsub();
       this.#state = state;
-      this.on_subscribe(true);
+      this.on_sub(true);
     } else this.#state = state;
   }
   set_transform_read(transform: (value: StateInferResult<S>) => RROUT) {
     if (this.in_use()) {
-      this.on_unsubscribe();
+      this.on_unsub();
       this.transform_read = transform;
-      this.on_subscribe(true);
+      this.on_sub(true);
     } else this.transform_read = transform;
   }
   set_transform_write(

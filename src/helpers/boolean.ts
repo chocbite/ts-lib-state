@@ -16,7 +16,13 @@ export interface StateBoolRelated extends StateRelatedBase {
 
 export interface StateBoolHelperOptions extends StateHelperBaseOptions {}
 
-export class StateBoolHelper
+export interface StateBoolHelper extends StateHelperBase<
+  SR<boolean>,
+  boolean,
+  OptionSome<StateBoolRelated>
+> {}
+
+export class StateBoolHelperBase
   extends StateHelperBase<SR<boolean>, boolean, OptionSome<StateBoolRelated>>
   implements StateBoolRelated
 {
@@ -54,7 +60,7 @@ export const BOOL = {
   /**Unique key to check if object is a boolean helper */
   HELPER_KEY: STATE_BOOL_HELPER_KEY,
   /**Returns true if object is a boolean helper */
-  is_helper(h: any): h is StateBoolHelper {
+  is_helper(h: any): h is StateBoolHelperBase {
     return Boolean(
       h && (h as { [STATE_BOOL_HELPER_KEY]: boolean })[STATE_BOOL_HELPER_KEY],
     );
@@ -62,8 +68,8 @@ export const BOOL = {
   /**Boolean helper*/
   help<I extends Init<boolean>>(
     init: I,
-    options: StateBoolHelperOptions,
+    options?: StateBoolHelperOptions,
   ): [I, StateBoolHelper] {
-    return [init, new StateBoolHelper(options)];
+    return [init, new StateBoolHelperBase(options)];
   },
 };

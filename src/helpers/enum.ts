@@ -34,7 +34,13 @@ export interface StateEnumHelperOptions<
   list: State<L>;
 }
 
-export class StateEnumHelper<
+export interface StateEnumHelper<
+  L extends StateEnumHelperList<PropertyKey> = StateEnumHelperList<PropertyKey>,
+  K extends PropertyKey = keyof L,
+  R extends StateRelatedBase = StateEnumRelated<L>,
+> extends StateHelperBase<SR<K>, K, OptionSome<R>> {}
+
+export class StateEnumHelperBase<
   L extends StateEnumHelperList<PropertyKey> = StateEnumHelperList<PropertyKey>,
   K extends PropertyKey = keyof L,
   R extends StateRelatedBase = StateEnumRelated<L>,
@@ -84,7 +90,7 @@ export const ENUM = {
   /**Unique key to check if object is a enum helper */
   HELPER_KEY: STATE_ENUM_HELPER_KEY,
   /**Returns true if object is a enum helper */
-  is_helper(h: any): h is StateEnumHelper {
+  is_helper(h: any): h is StateEnumHelperBase {
     return Boolean(
       h && (h as { [STATE_ENUM_HELPER_KEY]: boolean })[STATE_ENUM_HELPER_KEY],
     );
@@ -99,7 +105,7 @@ export const ENUM = {
     init: I,
     options: StateEnumHelperOptions<L>,
   ): [I, StateEnumHelper<L, K, R>] {
-    return [init, new StateEnumHelper<L, K, R>(options)];
+    return [init, new StateEnumHelperBase<L, K, R>(options)];
   },
   /**Creates an enum description list, passing the enum as a generic type to this function makes things look a bit nicer */
   list<K extends PropertyKey>(list: StateEnumHelperList<K>): typeof list {

@@ -7,7 +7,7 @@ import {
   some,
 } from "@chocbite/ts-lib-result";
 import { ros } from "../normal";
-import { StateResult as SR, StateROS } from "../types";
+import { StateResult as SR, StateHelper, StateROS } from "../types";
 import {
   StateInitResult as SIR,
   StateHelperBase,
@@ -278,7 +278,13 @@ export interface StateArrayRelated extends StateRelatedBase {
 
 export interface StateArrayHelperOptions extends StateHelperBaseOptions {}
 
-export class StateArrayHelper<RT extends any[]>
+export interface StateArrayHelper<RT extends any[]> extends StateHelper<
+  SR<RT>,
+  RT,
+  OptionSome<StateArrayRelated>
+> {}
+
+export class StateArrayHelperBase<RT extends any[]>
   extends StateHelperBase<SR<RT>, RT, OptionSome<StateArrayRelated>>
   implements StateArrayRelated
 {
@@ -291,11 +297,11 @@ export class StateArrayHelper<RT extends any[]>
 
   readonly length = ros(ok(0));
 
-  constructor(options: StateArrayHelperOptions) {
+  constructor(options?: StateArrayHelperOptions) {
     super(options);
   }
 
-  protected set(value: SR<RT>): void {
+  on_update_subs(value: SR<RT>): void {
     if (value.ok) this.length.set_ok(value.value.length);
     else this.length.set_ok(0);
   }
@@ -336,7 +342,7 @@ export const ARRAY = {
   /**Unique key to check if object is a array helper */
   HELPER_KEY: STATE_ARRAY_HELPER_KEY,
   /**Returns true if object is a array helper */
-  is_helper(h: any): h is StateArrayHelper<any> {
+  is_helper(h: any): h is StateArrayHelperBase<any> {
     return Boolean(
       h && (h as { [STATE_ARRAY_HELPER_KEY]: boolean })[STATE_ARRAY_HELPER_KEY],
     );
@@ -344,9 +350,9 @@ export const ARRAY = {
   /**Array helper*/
   help<I extends StateInit<any[]>, RRT extends SR<any> = SIR<I>>(
     init: I,
-    options: StateArrayHelperOptions,
+    options?: StateArrayHelperOptions,
   ): [I, StateArrayHelper<RIO<RRT>>] {
-    return [init, new StateArrayHelper<RIO<RRT>>(options)];
+    return [init, new StateArrayHelperBase<RIO<RRT>>(options)];
   },
   /**Unique key to check if an array contains an array read object */
   read_key: STATE_ARRAY_READ_KEY,
@@ -369,5 +375,4 @@ export const ARRAY = {
   },
   write,
   write_key: STATE_ARRAY_WRITE_KEY,
-  write_owner<T>(owner: ArrayOwner<T>, write: StateArrayWrite<T>): void {},
 };

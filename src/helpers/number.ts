@@ -264,7 +264,13 @@ export interface StateNumberHelperOptions extends StateHelperBaseOptions {
   start?: State<number>;
 }
 
-export class StateNumberHelper
+export interface StateNumberHelper extends StateHelperBase<
+  SR<number>,
+  number,
+  OptionSome<StateNumberRelated>
+> {}
+
+export class StateNumberHelperBase
   extends StateHelperBase<SR<number>, number, OptionSome<StateNumberRelated>>
   implements StateNumberRelated
 {
@@ -351,7 +357,7 @@ export const NUMBER = {
   /**Unique key to check if object is a number helper */
   HELPER_KEY: STATE_NUMBER_HELPER_KEY,
   /**Returns true if object is a number helper */
-  is_helper(h: any): h is StateNumberHelper {
+  is_helper(h: any): h is StateNumberHelperBase {
     return Boolean(
       h &&
       (h as { [STATE_NUMBER_HELPER_KEY]: boolean })[STATE_NUMBER_HELPER_KEY],
@@ -362,6 +368,6 @@ export const NUMBER = {
     init: I,
     options: StateNumberHelperOptions,
   ): [I, StateNumberHelper] {
-    return [init, new StateNumberHelper(options)];
+    return [init, new StateNumberHelperBase(options)];
   },
 };

@@ -37,12 +37,12 @@ export abstract class StateHelperBase<
 {
   readonly writable?: State<boolean>;
 
-  constructor(options: StateHelperBaseOptions) {
-    if (options.writable) this.writable = options.writable;
+  constructor(options?: StateHelperBaseOptions) {
+    if (options?.writable) this.writable = options.writable;
   }
 
   /**Called by state when value is set */
-  protected set(_value: RRT): void {}
+  on_update_subs(_value: RRT): void {}
 
   abstract related(): REL;
 

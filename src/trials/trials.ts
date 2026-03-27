@@ -1,18 +1,18 @@
 import { ok } from "@chocbite/ts-lib-result";
 import state, { StateNormalROS, StateNumberHelper } from "..";
-import { STATE_ENUM_RELATED_KEY } from "../helpers/enum";
 import { ros } from "../normal";
 
 let qwer: StateNormalROS<number, StateNumberHelper>;
-qwer = state.ros(state.n.help(ok(5)));
+qwer = state.ros(state.n.help(ok(5), { min: state.ok(0), max: state.ok(10) }));
 qwer = state.ros(ok(5));
 
 const zxcv = state.ros(ok(5));
 console.warn(zxcv.helper);
 
-const state_inst = state.ros(state.a.help(ok([5])));
+const state_inst = state.ros(state.a.help(ok([5]), {}));
 
-const jkl = ros(state.a.help(ok([5])));
+const jkl = ros(state.a.help(ok([5]), {}));
+jkl.helper.related();
 
 state_inst.sub((v) => {
   console.warn(v.value);
@@ -52,5 +52,3 @@ const THEMES = state.enum.list<Themes>({
 const jkl2 = ros(
   state.enum.help(ok(Themes.Light as Themes), { list: state.ok(THEMES) }),
 );
-
-jkl2.related().value[STATE_ENUM_RELATED_KEY];

@@ -23,7 +23,13 @@ export interface StateStringHelperOptions extends StateHelperBaseOptions {
   max_length_bytes?: State<number>;
 }
 
-export class StateStringHelper
+export interface StateStringHelper extends StateHelperBase<
+  SR<string>,
+  string,
+  OptionSome<StateStringRelated>
+> {}
+
+export class StateStringHelperBase
   extends StateHelperBase<SR<string>, string, OptionSome<StateStringRelated>>
   implements StateStringRelated
 {
@@ -98,18 +104,17 @@ export const STRING = {
   /**Unique key to check if object is a string helper */
   HELPER_KEY: STATE_STRING_HELPER_KEY,
   /**Returns true if object is a string helper */
-  is_helper(h: any): h is StateStringHelper {
+  is_helper(h: any): h is StateStringHelperBase {
     return Boolean(
       h &&
       (h as { [STATE_STRING_HELPER_KEY]: boolean })[STATE_STRING_HELPER_KEY],
     );
   },
-
   /**String helper*/
   help<I extends Init<string>>(
     init: I,
     options: StateStringHelperOptions,
   ): [I, StateStringHelper] {
-    return [init, new StateStringHelper(options)];
+    return [init, new StateStringHelperBase(options)];
   },
 };

@@ -132,7 +132,7 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
   }
 
   /**Called when subscriber is added*/
-  protected on_subscribe() {
+  protected on_sub() {
     if (!this.#states.length) {
       this.#buffer = err("No states registered") as RRT;
       return;
@@ -201,7 +201,7 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
   }
 
   /**Called when subscriber is removed*/
-  protected on_unsubscribe() {
+  protected on_unsub() {
     for (let i = 0; i < this.#states.length; i++)
       this.#states[i].unsub(this.#state_subscribers[i] as any);
     this.#state_subscribers = [];
@@ -212,16 +212,16 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
   //#Owner
   set_states(...states: StateCollectedStates<IN>) {
     if (this.in_use()) {
-      this.on_unsubscribe();
+      this.on_unsub();
       this.#states = [...states] as unknown as IN;
-      this.on_subscribe();
+      this.on_sub();
     } else this.#states = [...states] as unknown as IN;
   }
   set_getter(getter: (values: StateCollectedTransVal<IN>) => RRT) {
     if (this.in_use()) {
-      this.on_unsubscribe();
+      this.on_unsub();
       this.getter = getter;
-      this.on_subscribe();
+      this.on_sub();
     } else this.getter = getter;
   }
   get state() {

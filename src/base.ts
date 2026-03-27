@@ -35,14 +35,14 @@ export abstract class StateBase<
       console.error("Function already registered as subscriber", this, func);
       return func as T;
     }
-    if (this.#subscribers.size === 0) this.on_subscribe();
+    if (this.#subscribers.size === 0) this.on_sub();
     this.#subscribers.add(func);
     if (update) this.then(func);
     return func as T;
   }
   unsub<T = StateSub<RRT>>(func: T): T {
     if (this.#subscribers.delete(func as StateSub<RRT>)) {
-      if (this.#subscribers.size == 0) this.on_unsubscribe();
+      if (this.#subscribers.size == 0) this.on_unsub();
     } else console.error("Subscriber not found with state", this, func);
     return func;
   }
@@ -63,10 +63,10 @@ export abstract class StateBase<
   abstract limit(value: WT): Promise<SR<WT>>;
   abstract check(value: WT): Promise<SR<WT>>;
 
-  /**Called when subscriber is added*/
-  protected on_subscribe(): void {}
-  /**Called when subscriber is removed*/
-  protected on_unsubscribe(): void {}
+  /**Called when first subscriber is added*/
+  protected on_sub(): void {}
+  /**Called when last subscriber is removed*/
+  protected on_unsub(): void {}
 
   /**Updates all subscribers with a value */
   protected update_subs(value: RRT): void {
