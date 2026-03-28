@@ -8,7 +8,7 @@ import { IS } from "./helpers/is";
 import { NUMBER } from "./helpers/number";
 import { STRING } from "./helpers/string";
 import { UTIL } from "./helpers/util";
-import { rea, reaw, res, resw, roa, roaw, ros, rosw } from "./normal";
+import { rea, reaw, res, resw, roa, roaw, ros, rosw } from "./local";
 import { PROXY } from "./proxy";
 import { RESOURCE } from "./remote";
 import { StateResult as SR, STATE_KEY } from "./types";
@@ -39,7 +39,7 @@ export const state = {
   from_w<RT>(init: RT) {
     return resw(ok(init) as SR<RT>);
   },
-  //Normal
+  //Local
   ros,
   rosw,
   res,
@@ -98,7 +98,7 @@ export {
   STATE_ARRAY_WRITE_KEY,
   type StateArrayHelper,
   type StateArrayRead,
-  type StateArrayOperations as StateArrayReadTypes,
+  type StateArrayReadTypes,
   type StateArrayRelated,
 } from "./helpers/array";
 export {
@@ -126,15 +126,15 @@ export {
   type StateStringRelated,
 } from "./helpers/string";
 export {
-  type StateNormalREA,
-  type StateNormalREAW,
-  type StateNormalRES,
-  type StateNormalRESW,
-  type StateNormalROA,
-  type StateNormalROAW,
-  type StateNormalROS,
-  type StateNormalROSW,
-} from "./normal";
+  type StateLocalREA,
+  type StateLocalREAW,
+  type StateLocalRES,
+  type StateLocalRESW,
+  type StateLocalROA,
+  type StateLocalROAW,
+  type StateLocalROS,
+  type StateLocalROSW,
+} from "./local";
 export {
   type StateProxyREA,
   type StateProxyREAW,
