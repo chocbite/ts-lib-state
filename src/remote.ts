@@ -6,7 +6,7 @@ import {
   ResultOk,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
-import { NoHelper } from "./helpers/helpers";
+import { StateNoHelper as NoHelper } from "./helpers/helpers";
 import {
   StateHelper as Helper,
   HelperRelated as HELToREL,

@@ -1,5 +1,6 @@
 import {
   err,
+  none,
   ok,
   OptionNone,
   ResultInferOk as RIOK,
@@ -7,7 +8,9 @@ import {
   type Result as R,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
+import { StateArrayWrite } from "./helpers/array";
 import { StateNoHelper as NoHelper, StateHelperBase } from "./helpers/helpers";
+import { StateObjectWrite } from "./helpers/object";
 import {
   StateHelper as Helper,
   HelperRelated as HELToREL,
@@ -31,12 +34,18 @@ import {
 //        | |     | |  | |    | |____ ____) |
 //        |_|     |_|  |_|    |______|_____/
 
+type WriteType<WT> = WT extends any[]
+  ? StateArrayWrite<WT[number]>
+  : WT extends object
+    ? StateObjectWrite<WT>
+    : WT;
+
 type Setter<
   RRT extends R<any, string>,
   HEL extends Helper<RRT, WT, any>,
   WT,
 > = (
-  value: WT,
+  value: WriteType<WT>,
   state: Owner<RRT, HEL, WT>,
   old?: RRT,
 ) => Promise<R<void, string>>;
@@ -159,7 +168,7 @@ class RXXX<
   HEL extends Helper<RRT, WT, OptionNone>,
   WT,
 >
-  extends StateBase<RRT, WT, HELToREL<HEL>>
+  extends StateBase<RRT, WriteType<WT>, HELToREL<HEL>>
   implements Owner<RRT, HEL, WT>
 {
   constructor(
@@ -171,11 +180,8 @@ class RXXX<
     setter?: Setter<RRT, HEL, WT> | true,
   ) {
     super();
-    this.#helper = (helper ?? new NoHelper()) as unknown as StateHelperBase<
-      any,
-      any,
-      any
-    >;
+    if (helper)
+      this.#helper = helper as unknown as StateHelperBase<any, any, any>;
     this.#rok = init[1];
     if (setter === true)
       this.#setter = (value, state, old) => {
@@ -240,7 +246,7 @@ class RXXX<
     (["then", "get", "set", "write"] as const).forEach((k) => delete this[k]);
   }
 
-  #helper: StateHelperBase<any, any, any>;
+  #helper?: StateHelperBase<any, any, any>;
   get helper(): HEL {
     return this.#helper as unknown as HEL;
   }
@@ -307,29 +313,30 @@ class RXXX<
     return (this.get() as RO<RIOK<RRT>>).value;
   }
   related(): HELToREL<HEL> {
-    return this.#helper.related() as HELToREL<HEL>;
+    return (this.#helper?.related() ?? none()) as HELToREL<HEL>;
   }
 
   //#Writer Context
   get writable(): boolean {
     return this.#setter !== undefined;
   }
-  write(value: WT): Promise<R<void, string>> {
-    if (this.#setter)
+  write(value: WriteType<WT>): Promise<R<void, string>> {
+    if (this.#setter) {
       return Promise.resolve(
         this.#setter(value, this as Owner<RRT, HEL, WT>, this.#value),
       );
+    }
     return Promise.resolve(err("not writable"));
   }
-  limit(value: WT): Promise<R<WT, string>> {
+  limit(value: WriteType<WT>): Promise<R<WriteType<WT>, string>> {
     return this.#helper?.limit(value) ?? Promise.resolve(ok(value));
   }
-  check(value: WT): Promise<R<WT, string>> {
+  check(value: WriteType<WT>): Promise<R<WriteType<WT>, string>> {
     return this.#helper?.check(value) ?? Promise.resolve(ok(value));
   }
 
   protected update_subs(value: RRT): void {
-    this.#helper.on_update_subs(value);
+    this.#helper?.on_update_subs(value);
     super.update_subs(value);
   }
 }

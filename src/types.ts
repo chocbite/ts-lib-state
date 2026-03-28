@@ -27,8 +27,11 @@ export interface StateRelated {}
 
 /**Map of values or states related to a state */
 export interface StateHelper<_RRT, WT, REL extends StateRelated> {
+  /**Returns data related to the state */
   related(): REL;
+  /**Limits given value to valid range if possible or error reason if not possible */
   limit(value: WT): Promise<StateResult<WT>>;
+  /**Checks if the value is valid and returns reason for invalidity */
   check(value: WT): Promise<StateResult<WT>>;
 }
 

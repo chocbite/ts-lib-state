@@ -25,29 +25,89 @@ import {
 //     |_|  \_\______/_/    \_\_____/
 export const STATE_ARRAY_READ_KEY = Symbol("state_array_read_key");
 
-export type StateArrayReadTypes<TYPE> = {
-  [STATE_ARRAY_READ_KEY]?:
-    | {
-        type: "added";
-        index: number;
-        items: readonly TYPE[];
-      }
-    | {
-        type: "removed";
-        index: number;
-        items: readonly TYPE[];
-      }
-    | {
-        type: "changed";
-        index: number;
-        items: readonly TYPE[];
-      }
-    | {
-        type: "fresh";
-        items: readonly TYPE[];
-      };
+export type StateArrayReadTypes<RT> =
+  | {
+      type: "added";
+      index: number;
+      items: readonly RT[];
+    }
+  | {
+      type: "removed";
+      index: number;
+      items: readonly RT[];
+    }
+  | {
+      type: "changed";
+      index: number;
+      items: readonly RT[];
+    }
+  | {
+      type: "fresh";
+      items: readonly RT[];
+    };
+
+export type StateArrayRead<RT> = readonly RT[] & {
+  [STATE_ARRAY_READ_KEY]?: StateArrayReadTypes<RT>[];
 };
-export type StateArrayRead<TYPE> = readonly TYPE[] & StateArrayReadTypes<TYPE>;
+
+/**Returns the state array granular read object for an array, or a fake one if the array is not a state array read object */
+function read<RT>(arr: readonly RT[]): StateArrayReadTypes<RT>[] {
+  return (
+    (arr as StateArrayRead<RT>)[STATE_ARRAY_READ_KEY] ?? [
+      { type: "fresh", items: arr },
+    ]
+  );
+}
+
+/**Applies the state array read object to an array, returning the modified array or a new array
+ * If a transform function is provided, elements will be transformed before being added to the array*/
+function read_apply<T, U>(
+  read: StateArrayRead<T>,
+  array: U[],
+  transform: (item: T) => U,
+): U[];
+// 2. Overload for when transform is NOT provided
+function read_apply<T>(
+  read: StateArrayRead<T>,
+  array: T[],
+  transform?: undefined,
+): T[];
+function read_apply<T, U>(
+  read: StateArrayRead<T>,
+  array: U[] | T[],
+  transform?: (item: T) => U,
+): U[] | T[] {
+  if (transform) {
+    if (read[STATE_ARRAY_READ_KEY]) {
+      for (const r of read[STATE_ARRAY_READ_KEY]) {
+        if (r.type === "added")
+          array.splice(r.index, 0, ...r.items.map(transform));
+        else if (r.type === "removed") array.splice(r.index, r.items.length);
+        else if (r.type === "changed")
+          for (let i = 0; i < r.items.length; i++)
+            array[r.index + i] = transform(r.items[i]);
+        else if (r.type === "fresh") return read.map(transform);
+      }
+      return array;
+    } else {
+      return read.map(transform);
+    }
+  } else {
+    if (read[STATE_ARRAY_READ_KEY]) {
+      for (const r of read[STATE_ARRAY_READ_KEY]) {
+        if (r.type === "added") array.splice(r.index, 0, ...r.items);
+        else if (r.type === "removed") array.splice(r.index, r.items.length);
+        else if (r.type === "changed")
+          for (let i = 0; i < r.items.length; i++)
+            array[r.index + i] = r.items[i];
+        else if (r.type === "fresh") return read as T[];
+      }
+      return array;
+    } else {
+      return read as T[];
+    }
+  }
+}
 
 //##################################################################################################################################################
 //     __          _______  _____ _______ ______
@@ -59,37 +119,130 @@ export type StateArrayRead<TYPE> = readonly TYPE[] & StateArrayReadTypes<TYPE>;
 
 export const STATE_ARRAY_WRITE_KEY = Symbol("state_array_write_key");
 
-export type StateArrayWrite<TYPE> = TYPE[] & {
-  [STATE_ARRAY_WRITE_KEY]?:
-    | {
-        type: "fresh";
-      }
-    | {
-        type: "change";
-        index: number;
-        item: TYPE;
-      }
-    | {
-        type: "push";
-        items: TYPE[];
-      }
-    | {
-        type: "unshift";
-        items: TYPE[];
-      }
-    | { type: "pop" }
-    | { type: "shift" }
-    | {
-        type: "delete";
-        item: TYPE;
-      }
-    | {
-        type: "splice";
-        index: number;
-        delete_count: number;
-        items?: TYPE[];
-      };
+export type StateArrayWriteTypes<WT> =
+  | { type: "fresh"; items: WT[] }
+  | { type: "push"; items: WT[] }
+  | { type: "unshift"; items: WT[] }
+  | { type: "pop" }
+  | { type: "shift" }
+  | { type: "delete"; delete: WT }
+  | { type: "change"; index: number; items: WT[] }
+  | { type: "splice"; index: number; delete_count: number; items: WT[] };
+
+export type StateArrayWrite<WT> = WT[] & {
+  [STATE_ARRAY_WRITE_KEY]?: StateArrayWriteTypes<WT>;
 };
+
+const write = {
+  fresh<T>(items: T[]): StateArrayWrite<T> {
+    (items as StateArrayWrite<T>)[STATE_ARRAY_WRITE_KEY] = {
+      type: "fresh",
+      items,
+    };
+    return items;
+  },
+  push<T>(...items: T[]): StateArrayWrite<T> {
+    const array: StateArrayWrite<T> = [];
+    array[STATE_ARRAY_WRITE_KEY] = { type: "push", items };
+    return array;
+  },
+  unshift<T>(...items: T[]): StateArrayWrite<T> {
+    const array: StateArrayWrite<T> = [];
+    array[STATE_ARRAY_WRITE_KEY] = { type: "unshift", items };
+    return array;
+  },
+  pop<T>(): StateArrayWrite<T> {
+    const array: StateArrayWrite<T> = [];
+    array[STATE_ARRAY_WRITE_KEY] = { type: "pop" };
+    return array;
+  },
+  shift<T>(): StateArrayWrite<T> {
+    const array: StateArrayWrite<T> = [];
+    array[STATE_ARRAY_WRITE_KEY] = { type: "shift" };
+    return array;
+  },
+  delete<T>(val: T): StateArrayWrite<T> {
+    const array: StateArrayWrite<T> = [];
+    array[STATE_ARRAY_WRITE_KEY] = { type: "delete", delete: val };
+    return array;
+  },
+  change<T>(index: number, ...items: T[]): StateArrayWrite<T> {
+    const array: StateArrayWrite<T> = [];
+    array[STATE_ARRAY_WRITE_KEY] = { type: "change", index, items };
+    return array;
+  },
+  splice<T>(
+    start: number,
+    delete_count: number = 0,
+    ...items: T[]
+  ): StateArrayWrite<T> {
+    const array: StateArrayWrite<T> = [];
+    array[STATE_ARRAY_WRITE_KEY] = {
+      type: "splice",
+      index: start,
+      delete_count: delete_count,
+      items,
+    };
+    return array;
+  },
+};
+
+/**Modifies an array based on a StateArrayWrite instruction and returns the modified array and state array read types*/
+function write_apply<T>(
+  write: StateArrayWrite<T>,
+  array: T[],
+): [T[], StateArrayReadTypes<T>[] | undefined] {
+  if (write[STATE_ARRAY_WRITE_KEY]) {
+    const w = write[STATE_ARRAY_WRITE_KEY];
+    if (w.type === "fresh") return [write, [{ type: "fresh", items: write }]];
+    else if (w.type === "push") {
+      const index = array.length;
+      array.push(...w.items);
+      return [array, [{ type: "added", index, items: w.items }]];
+    } else if (w.type === "unshift") {
+      array.unshift(...w.items);
+      return [array, [{ type: "added", index: 0, items: w.items }]];
+    } else if (w.type === "pop") {
+      const items = [array.pop()!];
+      if (items[0])
+        return [array, [{ type: "removed", index: array.length, items }]];
+      else return [[], undefined];
+    } else if (w.type === "shift") {
+      const items = [array.shift()!];
+      if (items[0]) return [array, [{ type: "removed", index: 0, items }]];
+      else return [[], undefined];
+    } else if (w.type === "delete") {
+      const operations = [] as StateArrayReadTypes<T>[];
+      for (let i = 0; i < array.length; i++) {
+        if ((array[i] = w.delete)) {
+          array.splice(i, 1);
+          operations.push({ type: "removed", index: i, items: [w.delete] });
+          i--;
+        }
+      }
+      return [array, operations];
+    } else if (w.type === "change") {
+      for (let i = 0; i < w.items.length; i++) array[w.index + i] = w.items[i];
+      return [array, [{ type: "changed", index: w.index, items: w.items }]];
+    } else if (w.type === "splice") {
+      const removed = array.splice(w.index, w.delete_count, ...w.items);
+      const operations = [] as StateArrayReadTypes<T>[];
+      if (removed.length > 0)
+        operations.push({ type: "removed", index: w.index, items: removed });
+      if (w.items.length > 0)
+        operations.push({ type: "added", index: w.index, items: w.items });
+      return [array, operations];
+    } else return [array, undefined];
+  } else return [write, undefined];
+}
+
+//##################################################################################################################################################
+//      ___ ___
+//     |__ \__ \
+//        ) | ) |
+//       / / / /
+//      |_| |_|
+//      (_) (_)
 
 export interface StateArrayMethods<T> {
   get array(): readonly T[];
@@ -103,60 +256,6 @@ export interface StateArrayMethods<T> {
   splice(start: number, delete_count?: number, ...items: T[]): T[];
   delete(val: T): void;
 }
-
-const write = {
-  fresh<T>(array: T[]): StateArrayWrite<T> {
-    (array as StateArrayWrite<T>)[STATE_ARRAY_WRITE_KEY] = { type: "fresh" };
-    return array;
-  },
-  index<T>(index: number, value: T): StateArrayWrite<T> {
-    const array: StateArrayWrite<T> = [];
-    array[STATE_ARRAY_WRITE_KEY] = { type: "change", index, item: value };
-    return array;
-  },
-  push<T>(...items: T[]): StateArrayWrite<T> {
-    const array: StateArrayWrite<T> = [];
-    array[STATE_ARRAY_WRITE_KEY] = { type: "push", items };
-    return array;
-  },
-  pop<T>(): StateArrayWrite<T> {
-    const array: StateArrayWrite<T> = [];
-    array[STATE_ARRAY_WRITE_KEY] = { type: "pop" };
-    return array;
-  },
-  unshift<T>(...items: T[]): StateArrayWrite<T> {
-    const array: StateArrayWrite<T> = [];
-    array[STATE_ARRAY_WRITE_KEY] = { type: "unshift", items };
-    return array;
-  },
-  shift<T>(): StateArrayWrite<T> {
-    const array: StateArrayWrite<T> = [];
-    array[STATE_ARRAY_WRITE_KEY] = { type: "shift" };
-    return array;
-  },
-  splice<T>(
-    start: number,
-    delete_count?: number,
-    ...items: T[]
-  ): StateArrayWrite<T> {
-    const array: StateArrayWrite<T> = [];
-    array[STATE_ARRAY_WRITE_KEY] = {
-      type: "splice",
-      index: start,
-      delete_count: delete_count ?? 0,
-      items,
-    };
-    return array;
-  },
-};
-
-//##################################################################################################################################################
-//      ___ ___
-//     |__ \__ \
-//        ) | ) |
-//       / / / /
-//      |_| |_|
-//      (_) (_)
 
 export class ArrayOwner<T> implements StateArrayMethods<T> {
   #getter: () => SR<T[]>;
@@ -354,6 +453,7 @@ export const ARRAY = {
   ): [I, StateArrayHelper<RIO<RRT>>] {
     return [init, new StateArrayHelperBase<RIO<RRT>>(options)];
   },
+  //### Read
   /**Unique key to check if an array contains an array read object */
   read_key: STATE_ARRAY_READ_KEY,
   /**Returns true if object is a array read object */
@@ -362,17 +462,15 @@ export const ARRAY = {
       a && (a as { [STATE_ARRAY_READ_KEY]: boolean })[STATE_ARRAY_READ_KEY],
     );
   },
-  /**Returns the state array granular read object for an array, or a fake one if the array is not a state array read object */
-  read<RT>(arr: readonly RT[]): StateArrayReadTypes<RT> {
-    return (
-      ((arr as StateArrayRead<RT>)[
-        STATE_ARRAY_READ_KEY
-      ] as StateArrayReadTypes<RT>) ?? {
-        type: "fresh",
-        items: arr,
-      }
+  read,
+  read_apply,
+  //### Read
+  write_key: STATE_ARRAY_WRITE_KEY,
+  is_write(a: any): a is StateArrayWrite<any> {
+    return Boolean(
+      a && (a as { [STATE_ARRAY_WRITE_KEY]: boolean })[STATE_ARRAY_WRITE_KEY],
     );
   },
   write,
-  write_key: STATE_ARRAY_WRITE_KEY,
+  write_apply,
 };

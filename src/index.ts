@@ -98,7 +98,7 @@ export {
   STATE_ARRAY_WRITE_KEY,
   type StateArrayHelper,
   type StateArrayRead,
-  type StateArrayReadTypes,
+  type StateArrayOperations as StateArrayReadTypes,
   type StateArrayRelated,
 } from "./helpers/array";
 export {
