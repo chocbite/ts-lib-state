@@ -3,10 +3,10 @@ import { err, ok, ResultOk } from "@chocbite/ts-lib-result";
 import { assertType, describe, expect, it } from "vitest";
 import {
   state as st,
-  StateNormalREA,
-  StateNormalREAW,
-  StateNormalROA,
-  StateNormalROAW,
+  StateLocalREA,
+  StateLocalREAW,
+  StateLocalROA,
+  StateLocalROAW,
   StateREA,
   StateREAW,
   StateResult,
@@ -33,7 +33,7 @@ describe("Initialize delayed states", function () {
     it("ok", async function () {
       const init = st.roa(() => sleep(1, ok(1)));
       assertType<StateROA<number>>(init);
-      assertType<StateNormalROA<number>>(init);
+      assertType<StateLocalROA<number>>(init);
     });
     it("cleanup successfull", async function () {
       const init = st.roa(() => sleep(1, ok(1)));
@@ -84,12 +84,12 @@ describe("Initialize delayed states", function () {
     it("ok", async function () {
       const init = st.rea(() => sleep(1, ok(1)));
       assertType<StateREA<number>>(init);
-      assertType<StateNormalREA<number>>(init);
+      assertType<StateLocalREA<number>>(init);
     });
     it("err", async function () {
       const init = st.rea<number>(() => sleep(1, err("1")));
       assertType<StateREA<number>>(init);
-      assertType<StateNormalREA<number>>(init);
+      assertType<StateLocalREA<number>>(init);
     });
     it("cleanup successfull", async function () {
       const init = st.rea(() => sleep(1, ok(1)));
@@ -140,7 +140,7 @@ describe("Initialize delayed states", function () {
     it("ok", async function () {
       const init = st.roaw(() => sleep(1, ok(1)));
       assertType<StateROAW<number>>(init);
-      assertType<StateNormalROAW<number>>(init);
+      assertType<StateLocalROAW<number>>(init);
     });
     it("cleanup successfull", async function () {
       const init = st.roaw(() => sleep(1, ok(1)));
@@ -185,7 +185,7 @@ describe("Initialize delayed states", function () {
       return { o: true, s: false, w: true, state, set };
     };
     it("Write", async function () {
-      await test_state_write(maker_write);
+      await test_state_write(maker_write, false);
     });
   });
   //##################################################################################################################################################
@@ -199,12 +199,12 @@ describe("Initialize delayed states", function () {
     it("ok", async function () {
       const init = st.reaw(() => sleep(1, ok(1)));
       assertType<StateREAW<number>>(init);
-      assertType<StateNormalREAW<number>>(init);
+      assertType<StateLocalREAW<number>>(init);
     });
     it("err", async function () {
       const init = st.reaw<number>(() => sleep(1, err("1")));
       assertType<StateREAW<number>>(init);
-      assertType<StateNormalREAW<number>>(init);
+      assertType<StateLocalREAW<number>>(init);
     });
     it("cleanup successfull", async function () {
       const init = st.reaw(() => sleep(1, ok(1)));
@@ -249,7 +249,7 @@ describe("Initialize delayed states", function () {
       return { o: false, s: false, w: true, state, set };
     };
     it("Write", async function () {
-      await test_state_write(maker_write);
+      await test_state_write(maker_write, false);
     });
   });
 });

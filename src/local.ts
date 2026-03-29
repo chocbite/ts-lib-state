@@ -1,15 +1,20 @@
 import {
+  is_promise_like,
+  sync_reject,
+  sync_resolve,
+} from "@chocbite/ts-lib-common";
+import {
   err,
   none,
   ok,
   OptionNone,
-  ResultOk,
   ResultInferOk as RIOK,
   ResultOk as RO,
   type Result as R,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
 import {
+  ARRAY,
   STATE_ARRAY_READ_KEY,
   StateArrayRead,
   StateArrayReadTypes,
@@ -60,7 +65,7 @@ type Setter<
   value: WriteType<WT>,
   state: Owner<RRT, HEL, WT>,
   old?: RRT,
-) => Promise<R<void, string>>;
+) => PromiseLike<R<void, string>>;
 
 export interface Owner<
   RRT extends R<any, string>,
@@ -80,6 +85,8 @@ export interface Owner<
   set_onsub(func: () => void): void;
   /**Sets a function to be called when the state is terminally unsubscribed from */
   set_onunsub(func: () => void): void;
+  /**Array operations when the state is an array type */
+  readonly array: RRT extends SR<any[]> ? LocalArrayOwner<RRT> : never;
 }
 
 export type StateLocalROS<
@@ -175,106 +182,97 @@ export type StateLocalREAW<
 //      / ____ \| | \ \| | \ \  / ____ \| |
 //     /_/    \_\_|  \_\_|  \_\/_/    \_\_|
 
-export class ArrayOwner<T> {
-  #getter: () => SR<T[]>;
-  #setter: (v: ResultOk<T[] & StateArrayReadTypes<T>>) => void;
-  constructor(
-    getter: () => SR<T[]>,
-    setter: (v: ResultOk<T[] & StateArrayReadTypes<T>>) => void,
-  ) {
-    this.#getter = getter;
-    this.#setter = setter;
+export class LocalArrayOwner<RT extends R<StateArrayRead<any>, string>> {
+  #local: RXXX<RT, any, any>;
+  constructor(local: RXXX<RT, any, any>) {
+    this.#local = local;
   }
-  get array(): readonly T[] {
-    return this.#getter().unwrap_or<T[]>([]);
+  get get(): RIOK<RT> {
+    return this.#local.get().unwrap_or([]) as RIOK<RT>;
   }
-  get length(): number {
-    return this.#getter().unwrap_or<T[]>([]).length;
-  }
-  at(index: number): T | undefined {
-    return this.#getter().unwrap_or<T[]>([])[index];
-  }
-  set_index(index: number, value: T): void {
-    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
-      StateArrayReadTypes<T>;
-    arr[index] = value;
-    arr[STATE_ARRAY_READ_KEY] = { type: "changed", index, items: [value] };
-    this.#setter(ok(arr));
-  }
-  push(...items: T[]): number {
-    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
-      StateArrayReadTypes<T>;
+  push(...items: RIOK<RT>): number {
+    const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
     const index = arr.length;
-    const new_len = arr.push(...items);
-    arr[STATE_ARRAY_READ_KEY] = { type: "added", index, items };
-    this.#setter(ok(arr));
+    const new_len = (arr as any[]).push(...items);
+    arr[STATE_ARRAY_READ_KEY] = [{ type: "added", index, items }];
+    this.#local.set(ok(arr) as RT);
+    delete arr[STATE_ARRAY_READ_KEY];
     return new_len;
   }
-  pop(): T | undefined {
-    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
-      StateArrayReadTypes<T>;
+  unshift(...items: RIOK<RT>): number {
+    const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
+    const new_len = (arr as any[]).unshift(...items);
+    arr[STATE_ARRAY_READ_KEY] = [{ type: "added", index: 0, items }];
+    this.#local.set(ok(arr) as RT);
+    delete arr[STATE_ARRAY_READ_KEY];
+    return new_len;
+  }
+  pop(): RIOK<RT> | undefined {
+    const r = this.#local.get();
+    if (r.err) return undefined;
+    const arr = r.value;
     const l = arr.length;
-    const p = arr.pop();
+    const p = (arr as any[]).pop();
     if (arr.length < l) {
-      arr[STATE_ARRAY_READ_KEY] = {
-        type: "removed",
-        index: arr.length,
-        items: [p!],
-      };
-      this.#setter(ok(arr));
+      arr[STATE_ARRAY_READ_KEY] = [
+        { type: "removed", index: arr.length, items: [p!] },
+      ];
+      this.#local.set(ok(arr) as RT);
+      delete arr[STATE_ARRAY_READ_KEY];
     }
     return p;
   }
-  shift(): T | undefined {
-    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
-      StateArrayReadTypes<T>;
+  shift(): RIOK<RT> | undefined {
+    const r = this.#local.get();
+    if (r.err) return undefined;
+    const arr = r.value;
     const l = arr.length;
-    const s = arr.shift();
+    const s = (arr as any[]).shift();
     if (arr.length < l) {
-      arr[STATE_ARRAY_READ_KEY] = {
-        type: "removed",
-        index: 0,
-        items: [s!],
-      };
-      this.#setter(ok(arr));
+      arr[STATE_ARRAY_READ_KEY] = [{ type: "removed", index: 0, items: [s!] }];
+      this.#local.set(ok(arr) as RT);
+      delete arr[STATE_ARRAY_READ_KEY];
     }
     return s;
   }
-  unshift(...items: T[]): number {
-    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
-      StateArrayReadTypes<T>;
-    const new_len = arr.unshift(...items);
-    arr[STATE_ARRAY_READ_KEY] = { type: "added", index: 0, items };
-    this.#setter(ok(arr));
-    return new_len;
-  }
-  splice(start: number, delete_count?: number, ...items: T[]): T[] {
-    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
-      StateArrayReadTypes<T>;
-    const r = arr.splice(start, delete_count!, ...items);
-    if (r.length > 0) {
-      arr[STATE_ARRAY_READ_KEY] = { type: "removed", index: start, items: r };
-      this.#setter(ok(arr));
-    }
-    if (items.length > 0) {
-      arr[STATE_ARRAY_READ_KEY] = { type: "added", index: start, items };
-      this.#setter(ok(arr));
-    }
-    return r;
-  }
-  delete(val: T): void {
-    const arr = this.#getter().unwrap_or<T[]>([]) as T[] &
-      StateArrayReadTypes<T>;
+  delete(val: RIOK<RT>): this {
+    const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
+    const operations = [] as StateArrayReadTypes<RIOK<RT>>[];
     for (let i = 0; i < arr.length; i++)
-      if ((arr[i] = val)) {
-        arr[STATE_ARRAY_READ_KEY] = {
-          type: "removed",
-          index: i,
-          items: [val],
-        };
-        this.#setter(ok(arr));
+      if (arr[i] === val) {
+        (arr as any[]).splice(i, 1);
+        operations.push({ type: "removed", index: i, items: [val] });
         i--;
       }
+    arr[STATE_ARRAY_READ_KEY] = operations;
+    this.#local.set(ok(arr) as RT);
+    delete arr[STATE_ARRAY_READ_KEY];
+    return this;
+  }
+  change(index: number, ...items: RIOK<RT>): this {
+    const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
+    for (let i = 0; i < arr.length; i++) (arr as any[])[index + i] = items[i];
+    arr[STATE_ARRAY_READ_KEY] = [{ type: "changed", index: index, items }];
+    this.#local.set(ok(arr) as RT);
+    delete arr[STATE_ARRAY_READ_KEY];
+    return this;
+  }
+  splice(
+    index: number,
+    delete_count: number = 0,
+    ...items: RIOK<RT>
+  ): RIOK<RT> {
+    const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
+    const removed = (arr as any[]).splice(index, delete_count, ...items);
+    const operations = [] as StateArrayReadTypes<RIOK<RT>>[];
+    if (removed.length > 0)
+      operations.push({ type: "removed", index: index, items: removed });
+    if (items.length > 0)
+      operations.push({ type: "added", index: index, items });
+    arr[STATE_ARRAY_READ_KEY] = operations;
+    this.#local.set(ok(arr) as RT);
+    delete arr[STATE_ARRAY_READ_KEY];
+    return removed as RIOK<RT>;
   }
 }
 
@@ -309,19 +307,26 @@ class RXXX<
     if (setter === true)
       this.#setter = (value, state, old) => {
         if (old && !old.err && value === old.value)
-          return Promise.resolve(ok(undefined));
+          return sync_resolve(ok(undefined));
         if (this.#helper) {
           return this.#helper.limit(value).then((e) => {
             if (e.err) return err(e.error);
-            state.set_ok(e.value as RIOK<RRT>);
+            if (ARRAY.is_write(e.value))
+              ARRAY.read_set(
+                ARRAY.write_apply(e.value, old?.unwrap_or([])),
+                state.set_ok.bind(state) as (
+                  value: any[] | StateArrayRead<any>,
+                ) => void,
+              );
+            else state.set_ok(e.value as RIOK<RRT>);
             return ok(undefined);
           });
         }
-        return Promise.resolve(ok(state.set_ok(value as RIOK<RRT>)));
+        return sync_resolve(ok(state.set_ok(value as RIOK<RRT>)));
       };
     else this.#setter = setter;
     if (init[0] === 0) {
-      this.#value = init[2];
+      this.set(init[2]);
     } else if (init[0] === 1) {
       const f = init[2];
       this.get = () => this.#clean() ?? (this.#value = f());
@@ -333,7 +338,7 @@ class RXXX<
       const f = init[2];
       //Temporary override until first access
       let initializing = false;
-      this.then = async <TResult1 = RRT>(
+      this.then = <TResult1 = RRT>(
         func: (value: RRT) => TResult1 | PromiseLike<TResult1>,
       ): Promise<TResult1> => {
         if (f)
@@ -341,8 +346,9 @@ class RXXX<
             initializing = true;
             (async () => {
               try {
-                this.#value = await f();
-                this.ful_r_prom(this.#value);
+                const value = await f();
+                this.ful_r_prom((this.#value = value));
+                this.#helper?.on_change(value);
               } catch (e) {
                 console.error(
                   "Failed to initialize delayed RO state: ",
@@ -379,11 +385,8 @@ class RXXX<
 
   //#Owner Context
   set(value: RRT) {
+    this.#helper?.on_change(value);
     this.update_subs((this.#value = value));
-    if (this.#value.ok) {
-      // delete this.#value.value[STATE_ARRAY_READ_KEY];
-      // delete this.#value.value[STATE_OBJECT_READ_KEY];
-    }
   }
   set_ok(value: RIOK<RRT>): void {
     this.set(ok(value) as RRT);
@@ -414,6 +417,12 @@ class RXXX<
   set_onunsub(func: () => void): void {
     this.on_unsub = func;
   }
+  #array?: LocalArrayOwner<RRT>;
+  get array(): RRT extends SR<any[]> ? LocalArrayOwner<RRT> : never {
+    return (this.#array ??= new LocalArrayOwner(this)) as RRT extends SR<any[]>
+      ? LocalArrayOwner<RRT>
+      : never;
+  }
 
   //#Reader Context
   #rok: boolean;
@@ -423,13 +432,21 @@ class RXXX<
   get rsync(): boolean {
     return Boolean(this.#value);
   }
-  then<TResult1 = RRT>(
-    func: (value: RRT) => TResult1 | PromiseLike<TResult1>,
-  ): Promise<TResult1> {
+  then<TResult1 = RRT, TResult2 = never>(
+    on_fulfilled?: ((value: RRT) => TResult1 | PromiseLike<TResult1>) | null,
+    on_rejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
+  ): PromiseLike<TResult1 | TResult2> {
     try {
-      return Promise.resolve(func(this.get()));
+      const result = on_fulfilled ? on_fulfilled(this.get()) : this.get();
+      if (is_promise_like(result)) return result;
+      return sync_resolve(result as TResult1);
     } catch (error) {
-      return Promise.reject(error as Error);
+      if (on_rejected) {
+        const rejected_result = on_rejected(error);
+        if (is_promise_like(rejected_result)) return rejected_result;
+        return sync_resolve(rejected_result);
+      }
+      return sync_reject(error as any);
     }
   }
   get(): RRT {
@@ -447,24 +464,18 @@ class RXXX<
   get writable(): boolean {
     return this.#setter !== undefined;
   }
-  write(value: WriteType<WT>): Promise<R<void, string>> {
+  write(value: WriteType<WT>): PromiseLike<R<void, string>> {
     if (this.#setter) {
-      return Promise.resolve(
-        this.#setter(value, this as Owner<RRT, HEL, WT>, this.#value),
-      );
+      const res = this.#setter(value, this as Owner<RRT, HEL, WT>, this.#value);
+      return sync_resolve(res);
     }
-    return Promise.resolve(err("not writable"));
+    return sync_resolve(err("not writable"));
   }
-  limit(value: WriteType<WT>): Promise<R<WriteType<WT>, string>> {
-    return this.#helper?.limit(value) ?? Promise.resolve(ok(value));
+  limit(value: WriteType<WT>): PromiseLike<R<WriteType<WT>, string>> {
+    return this.#helper?.limit(value) ?? sync_resolve(ok(value));
   }
-  check(value: WriteType<WT>): Promise<R<WriteType<WT>, string>> {
-    return this.#helper?.check(value) ?? Promise.resolve(ok(value));
-  }
-
-  protected update_subs(value: RRT): void {
-    this.#helper?.on_update_subs(value);
-    super.update_subs(value);
+  check(value: WriteType<WT>): PromiseLike<R<WriteType<WT>, string>> {
+    return this.#helper?.check(value) ?? sync_resolve(ok(value));
   }
 }
 

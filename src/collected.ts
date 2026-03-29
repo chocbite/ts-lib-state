@@ -1,4 +1,9 @@
 import {
+  is_promise_like,
+  sync_reject,
+  sync_resolve,
+} from "@chocbite/ts-lib-common";
+import {
   err,
   none,
   OptionNone,
@@ -238,20 +243,42 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
   get rsync(): boolean {
     return this.#rsync;
   }
-  then<T = RRT>(func: (value: RRT) => T | PromiseLike<T>): Promise<T> {
+  then<TResult1 = RRT, TResult2 = never>(
+    on_fulfilled?: ((value: RRT) => TResult1 | PromiseLike<TResult1>) | null,
+    on_rejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
+  ): PromiseLike<TResult1 | TResult2> {
     try {
-      if (this.#buffer) return Promise.resolve(func(this.#buffer));
-      if (this.#rsync) return Promise.resolve(func(this.get()));
-      if (!this.#state_buffers.length) {
-        return Promise.resolve(
-          Promise.all(this.#states).then((v) =>
-            func(this.getter(v as StateCollectedTransVal<IN>)),
-          ),
-        );
+      if (this.#buffer) {
+        const result = on_fulfilled ? on_fulfilled(this.#buffer) : this.#buffer;
+        if (is_promise_like(result)) return result;
+        return sync_resolve(result as TResult1);
       }
-      return this.append_r_prom(func);
+      if (this.#rsync) {
+        const result = on_fulfilled ? on_fulfilled(this.get()) : this.get();
+        if (is_promise_like(result)) return result;
+        return sync_resolve(result as TResult1);
+      }
+      if (!this.#state_buffers.length) {
+        return Promise.all(this.#states).then((v) => {
+          const result = on_fulfilled
+            ? on_fulfilled(this.getter(v as StateCollectedTransVal<IN>))
+            : this.getter(v as StateCollectedTransVal<IN>);
+          if (is_promise_like(result)) return result;
+          return sync_resolve(result as TResult1);
+        });
+      }
+      return new Promise((resolve, reject) => {
+        this.append_r_prom(on_fulfilled ?? ((v) => v as unknown as TResult1))
+          .then(resolve)
+          .catch(reject);
+      });
     } catch (error) {
-      return Promise.reject(error as Error);
+      if (on_rejected) {
+        const rejected_result = on_rejected(error);
+        if (is_promise_like(rejected_result)) return rejected_result;
+        return sync_resolve(rejected_result);
+      }
+      return sync_reject(error as any);
     }
   }
   get(): RRT {
@@ -271,11 +298,11 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
   get writable(): false {
     return false;
   }
-  limit(_value: WT): Promise<SR<WT>> {
-    return Promise.resolve(err("not writable"));
+  limit(_value: WT): PromiseLike<SR<WT>> {
+    return sync_resolve(err("not writable"));
   }
-  check(_value: WT): Promise<SR<WT>> {
-    return Promise.resolve(err("not writable"));
+  check(_value: WT): PromiseLike<SR<WT>> {
+    return sync_resolve(err("not writable"));
   }
 }
 

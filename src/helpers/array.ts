@@ -1,3 +1,4 @@
+import { sync_resolve } from "@chocbite/ts-lib-common";
 import {
   err,
   ok,
@@ -108,6 +109,20 @@ function read_apply<T, U>(
   }
 }
 
+/**Calls a setter function with a state array read object*/
+function read_set<T>(
+  read: [T[], StateArrayReadTypes<T>[] | undefined],
+  setter: (value: T[] | StateArrayRead<T>) => void,
+) {
+  const [array, read_types] = read as [
+    StateArrayRead<T>,
+    StateArrayReadTypes<T>[] | undefined,
+  ];
+  if (read_types) array[STATE_ARRAY_READ_KEY] = read_types;
+  setter(array);
+  if (array[STATE_ARRAY_READ_KEY]) delete array[STATE_ARRAY_READ_KEY];
+}
+
 //##################################################################################################################################################
 //     __          _______  _____ _______ ______
 //     \ \        / /  __ \|_   _|__   __|  ____|
@@ -189,7 +204,7 @@ const write = {
 /**Modifies an array based on a StateArrayWrite instruction and returns the modified array and state array read types*/
 function write_apply<T>(
   write: StateArrayWrite<T>,
-  array: T[],
+  array: T[] = [],
 ): [T[], StateArrayReadTypes<T>[] | undefined] {
   if (write[STATE_ARRAY_WRITE_KEY]) {
     const w = write[STATE_ARRAY_WRITE_KEY];
@@ -213,7 +228,7 @@ function write_apply<T>(
     } else if (w.type === "delete") {
       const operations = [] as StateArrayReadTypes<T>[];
       for (let i = 0; i < array.length; i++) {
-        if ((array[i] = w.delete)) {
+        if (array[i] === w.delete) {
           array.splice(i, 1);
           operations.push({ type: "removed", index: i, items: [w.delete] });
           i--;
@@ -275,19 +290,19 @@ export class StateArrayHelperBase<RT extends any[]>
     super(options);
   }
 
-  on_update_subs(value: SR<RT>): void {
+  on_change(value: SR<RT>): void {
     if (value.ok) this.length.set_ok(value.value.length);
     else this.length.set_ok(0);
   }
 
-  async limit(value: RT): Promise<SR<RT>> {
-    return ok(value);
+  limit(value: RT): PromiseLike<SR<RT>> {
+    return sync_resolve(ok(value));
   }
 
-  async check(value: RT): Promise<SR<RT>> {
+  check(value: RT): PromiseLike<SR<RT>> {
     if (this.writable !== undefined && !this.writable)
-      return err("not writable");
-    return ok(value);
+      return sync_resolve(err("not writable"));
+    return sync_resolve(ok(value));
   }
 
   related(): OptionSome<StateArrayRelated> {
@@ -339,6 +354,7 @@ export const ARRAY = {
   },
   read,
   read_apply,
+  read_set,
   //### Read
   write_key: STATE_ARRAY_WRITE_KEY,
   is_write(a: any): a is StateArrayWrite<any> {

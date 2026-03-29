@@ -1,14 +1,19 @@
 import {
+  is_promise_like,
+  sync_reject,
+  sync_resolve,
+} from "@chocbite/ts-lib-common";
+import {
   err,
   none,
   ok,
   OptionNone,
   ResultInferOk,
   ResultOk,
-  type Result,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
 import {
+  StateResult as SR,
   StateInferResult,
   StateRES,
   StateRESW,
@@ -97,7 +102,7 @@ export type StateProxyREA<
   ROUT = RIN,
   WOUT = WIN,
 > = StateREA<ROUT, OptionNone, WOUT> &
-  Owner<S, WIN, ROUT, WOUT, StateResult<ROUT>> & {
+  Owner<S, WIN, ROUT, WOUT, SR<ROUT>> & {
     readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
     readonly read_write?: StateREAW<ROUT, OptionNone, WOUT>;
   };
@@ -109,7 +114,7 @@ export type StateProxyREAW<
   ROUT = RIN,
   WOUT = WIN,
 > = StateREAW<ROUT, OptionNone, WOUT> &
-  Owner<S, WIN, ROUT, WOUT, StateResult<ROUT>> & {
+  Owner<S, WIN, ROUT, WOUT, SR<ROUT>> & {
     readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
     readonly read_write: StateREAW<ROUT, OptionNone, WOUT>;
   };
@@ -121,7 +126,7 @@ export type StateProxyRES<
   ROUT = RIN,
   WOUT = WIN,
 > = StateRES<ROUT, OptionNone, WOUT> &
-  Owner<S, WIN, ROUT, WOUT, StateResult<ROUT>> & {
+  Owner<S, WIN, ROUT, WOUT, SR<ROUT>> & {
     readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
     readonly read_write?: StateREAW<ROUT, OptionNone, WOUT>;
   };
@@ -133,7 +138,7 @@ export type StateProxyRESW<
   ROUT = RIN,
   WOUT = WIN,
 > = StateRESW<ROUT, OptionNone, WOUT> &
-  Owner<S, WIN, ROUT, WOUT, StateResult<ROUT>> & {
+  Owner<S, WIN, ROUT, WOUT, SR<ROUT>> & {
     readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
     readonly read_write: StateREAW<ROUT, OptionNone, WOUT>;
   };
@@ -152,7 +157,7 @@ class RXXX<
   WIN,
   ROUT,
   WOUT,
-  RROUT extends StateResult<ROUT>,
+  RROUT extends SR<ROUT>,
 >
   extends StateBase<RROUT, WOUT, OptionNone>
   implements Owner<S, WIN, ROUT, WOUT, RROUT>
@@ -175,7 +180,7 @@ class RXXX<
   }
 
   #state: S;
-  #subscriber = (value: StateResult<RIN>) => {
+  #subscriber = (value: SR<RIN>) => {
     this.#buffer = this.transform_read(value as StateInferResult<S>);
     this.update_subs(this.#buffer);
   };
@@ -233,16 +238,31 @@ class RXXX<
   get rsync(): boolean {
     return this.#state.rsync;
   }
-  then<T = RROUT>(func: (value: RROUT) => T | PromiseLike<T>): Promise<T> {
+  then<TResult1 = RROUT, TResult2 = never>(
+    on_fulfilled?: ((value: RROUT) => TResult1 | PromiseLike<TResult1>) | null,
+    on_rejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
+  ): PromiseLike<TResult1 | TResult2> {
     try {
-      if (this.#buffer) return Promise.resolve(func(this.#buffer));
-      return Promise.resolve(
-        this.#state.then((v) =>
-          func(this.transform_read(v as StateInferResult<S>)),
-        ),
-      );
+      if (this.#buffer) {
+        const result = on_fulfilled ? on_fulfilled(this.#buffer) : this.#buffer;
+        if (is_promise_like(result)) return result;
+        return sync_resolve(result as TResult1);
+      } else {
+        return this.#state.then((v) => {
+          const result = on_fulfilled
+            ? on_fulfilled(this.transform_read(v as StateInferResult<S>))
+            : this.transform_read(v as StateInferResult<S>);
+          if (is_promise_like(result)) return result;
+          return sync_resolve(result as TResult1);
+        });
+      }
     } catch (error) {
-      return Promise.reject(error as Error);
+      if (on_rejected) {
+        const rejected_result = on_rejected(error);
+        if (is_promise_like(rejected_result)) return rejected_result;
+        return sync_resolve(rejected_result);
+      }
+      return sync_reject(error as any);
     }
   }
   get(): RROUT {
@@ -260,19 +280,19 @@ class RXXX<
   get writable(): boolean {
     return this.#state.writable;
   }
-  write(value: WOUT): Promise<StateResult<void>> {
-    if (!this.#state.write) return Promise.resolve(err("not writable"));
-    if (!this.transform_wout_win) return Promise.resolve(err("not writable"));
+  write(value: WOUT): PromiseLike<SR<void>> {
+    if (!this.#state.write) return sync_resolve(err("not writable"));
+    if (!this.transform_wout_win) return sync_resolve(err("not writable"));
     return this.#state.write(this.transform_wout_win(value));
   }
 
   //@ts-expect-error typescript workaround
-  get limit(): ((value: WOUT) => Promise<StateResult<WOUT>>) | undefined {
+  get limit(): ((value: WOUT) => PromiseLike<SR<WOUT>>) | undefined {
     const limit = this.#state.limit;
     return limit
       ? (value) => {
           if (!this.transform_wout_win)
-            return Promise.resolve(err("not writable"));
+            return sync_resolve(err("not writable"));
           return limit(this.transform_wout_win(value)).then((res) => {
             if (!this.transform_win_wout) return err("not writable");
             if (res.err) return err(res.error);
@@ -282,12 +302,12 @@ class RXXX<
       : undefined;
   }
   //@ts-expect-error typescript workaround
-  get check(): ((value: WOUT) => Promise<StateResult<WOUT>>) | undefined {
+  get check(): ((value: WOUT) => PromiseLike<SR<WOUT>>) | undefined {
     const check = this.#state.check;
     return check
       ? (value) => {
           if (!this.transform_wout_win)
-            return Promise.resolve(err("not writable"));
+            return sync_resolve(err("not writable"));
           return check(this.transform_wout_win(value)).then((res) => {
             if (!this.transform_win_wout) return err("not writable");
             if (res.err) return err(res.error);
@@ -431,9 +451,9 @@ function rea_from<
   WOUT = WIN,
 >(
   state: S,
-  transform?: (value: StateInferStateResult<S>) => Result<ROUT>,
+  transform?: (value: StateInferResult<S>) => SR<ROUT>,
 ): StateProxyREA<S, RIN, WIN, ROUT, WOUT> {
-  return new RXXX<S, RIN, WIN, ROUT, WOUT, StateResult<ROUT>>(
+  return new RXXX<S, RIN, WIN, ROUT, WOUT, SR<ROUT>>(
     state,
     transform,
   ) as StateProxyREA<S, RIN, WIN, ROUT, WOUT>;
@@ -457,13 +477,13 @@ function reaw_from<
   WOUT = WIN,
 >(
   state: S,
-  transform_read?: (value: StateInferStateResult<S>) => Result<ROUT>,
+  transform_read?: (value: StateInferResult<S>) => SR<ROUT>,
   transform_write?: {
     wout_win: (val: WOUT) => WIN;
     win_wout: (val: WIN) => WOUT;
   },
 ): StateProxyREAW<S, RIN, WIN, ROUT, WOUT> {
-  return new RXXX<S, RIN, WIN, ROUT, WOUT, StateResult<ROUT>>(
+  return new RXXX<S, RIN, WIN, ROUT, WOUT, SR<ROUT>>(
     state,
     transform_read,
     transform_write,
@@ -489,9 +509,9 @@ function res_from<
   WOUT = WIN,
 >(
   state: S,
-  transform?: (value: StateInferStateResult<S>) => Result<ROUT>,
+  transform?: (value: StateInferResult<S>) => SR<ROUT>,
 ): StateProxyRES<S, RIN, WIN, ROUT, WOUT> {
-  return new RXXX<S, RIN, WIN, ROUT, WOUT, StateResult<ROUT>>(
+  return new RXXX<S, RIN, WIN, ROUT, WOUT, SR<ROUT>>(
     state,
     transform,
   ) as StateProxyRES<S, RIN, WIN, ROUT, WOUT>;
@@ -516,13 +536,13 @@ function resw_from<
   WOUT = WIN,
 >(
   state: S,
-  transform_read?: (value: StateInferStateResult<S>) => Result<ROUT>,
+  transform_read?: (value: StateInferResult<S>) => SR<ROUT>,
   transform_write?: {
     wout_win: (val: WOUT) => WIN;
     win_wout: (val: WIN) => WOUT;
   },
 ): StateProxyRESW<S, RIN, WIN, ROUT, WOUT> {
-  return new RXXX<S, RIN, WIN, ROUT, WOUT, StateResult<ROUT>>(
+  return new RXXX<S, RIN, WIN, ROUT, WOUT, SR<ROUT>>(
     state,
     transform_read,
     transform_write,

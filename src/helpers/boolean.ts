@@ -1,3 +1,4 @@
+import { sync_resolve } from "@chocbite/ts-lib-common";
 import { err, ok, OptionSome, some } from "@chocbite/ts-lib-result";
 import { StateResult as SR } from "../types";
 import {
@@ -33,14 +34,14 @@ export class StateBoolHelperBase
     return true;
   }
 
-  async limit(value: boolean): Promise<SR<boolean>> {
-    return ok(value);
+  limit(value: boolean): PromiseLike<SR<boolean>> {
+    return sync_resolve(ok(value));
   }
 
-  async check(value: boolean): Promise<SR<boolean>> {
+  check(value: boolean): PromiseLike<SR<boolean>> {
     if (this.writable !== undefined && !this.writable)
-      return err("not writable");
-    return ok(value);
+      return sync_resolve(err("not writable"));
+    return sync_resolve(ok(value));
   }
 
   related(): OptionSome<StateBoolRelated> {

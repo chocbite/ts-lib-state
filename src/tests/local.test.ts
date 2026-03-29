@@ -87,7 +87,7 @@ describe("Sync states", function () {
       return { o: true, s: true, w: true, state, set };
     };
     it("Write", async function () {
-      await test_state_write(maker_write);
+      await test_state_write(maker_write, true);
     });
   });
   //##################################################################################################################################################
@@ -118,7 +118,7 @@ describe("Sync states", function () {
       return { o: false, s: true, w: true, state, set };
     };
     it("Write", async function () {
-      await test_state_write(maker_write);
+      await test_state_write(maker_write, true);
     });
   });
 });

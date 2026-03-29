@@ -1,4 +1,9 @@
 import {
+  is_promise_like,
+  sync_reject,
+  sync_resolve,
+} from "@chocbite/ts-lib-common";
+import {
   err,
   ok,
   OptionNone,
@@ -185,7 +190,7 @@ export abstract class StateRemote<
   protected abstract write_action(
     value: WT,
     state: StateRemoteOwner<RRT, WT, HEL>,
-  ): Promise<SR<void>>;
+  ): PromiseLike<SR<void>>;
 
   update_single(value: RRT, update: boolean = false) {
     this.#fetching = false;
@@ -228,29 +233,47 @@ export abstract class StateRemote<
   get rsync(): false {
     return false;
   }
-  async then<T = RRT>(func: (value: RRT) => T | PromiseLike<T>): Promise<T> {
-    if (this.#valid === true || this.#valid >= performance.now())
-      return func(this.#buffer!);
-    else {
-      const prom = this.append_r_prom(func);
-      if (!this.#fetching) {
-        this.#fetching = true;
-        this.#timeout_timout = setTimeout(
-          () => (this.#fetching = false),
-          this.timeout,
+  then<TResult1 = RRT, TResult2 = never>(
+    on_fulfilled?: ((value: RRT) => TResult1 | PromiseLike<TResult1>) | null,
+    on_rejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
+  ): PromiseLike<TResult1 | TResult2> {
+    try {
+      if (this.#valid === true || this.#valid >= performance.now()) {
+        const result = on_fulfilled
+          ? on_fulfilled(this.#buffer!)
+          : this.#buffer!;
+        if (is_promise_like(result)) return result;
+        return sync_resolve(result as TResult1);
+      } else {
+        const prom = this.append_r_prom(
+          on_fulfilled ?? ((v) => v as unknown as TResult1),
         );
-        if (this.debounce > 0)
-          setTimeout(() => this.single_get(this), this.debounce);
-        else this.single_get(this);
+        if (!this.#fetching) {
+          this.#fetching = true;
+          this.#timeout_timout = setTimeout(
+            () => (this.#fetching = false),
+            this.timeout,
+          );
+          if (this.debounce > 0)
+            setTimeout(() => this.single_get(this), this.debounce);
+          else this.single_get(this);
+        }
+        return prom;
       }
-      return prom;
+    } catch (error) {
+      if (on_rejected) {
+        const rejected_result = on_rejected(error);
+        if (is_promise_like(rejected_result)) return rejected_result;
+        return sync_resolve(rejected_result);
+      }
+      return sync_reject(error as any);
     }
   }
 
   //#Writer Context
   abstract get writable(): boolean;
 
-  async write(value: WT): Promise<SR<void>> {
+  write(value: WT): PromiseLike<SR<void>> {
     this.#write_buffer = value;
     if (this.write_debounce === 0) return this.write_action(value, this);
     else if (this.#write_debounce_timout === 0)
@@ -299,7 +322,7 @@ class Func<
     write_action?: (
       value: WT,
       state: StateRemoteOwner<RRT, WT, HEL>,
-    ) => Promise<SR<void>>,
+    ) => PromiseLike<SR<void>>,
     helper?: HEL,
   ) {
     super();
@@ -328,7 +351,7 @@ class Func<
   #write_action?: (
     value: WT,
     state: StateRemoteOwner<RRT, WT, HEL>,
-  ) => Promise<SR<void>>;
+  ) => PromiseLike<SR<void>>;
 
   get rok(): boolean {
     return this.#rok;
@@ -350,19 +373,19 @@ class Func<
   protected write_action(
     value: WT,
     state: StateRemoteOwner<RRT, WT, HEL>,
-  ): Promise<SR<void>> {
+  ): PromiseLike<SR<void>> {
     if (this.#write_action) return this.#write_action(value, state);
-    else return Promise.resolve(err("not writable"));
+    else return sync_resolve(err("not writable"));
   }
 
   related(): HELToREL<HEL> {
     return this.helper.related() as HELToREL<HEL>;
   }
-  limit(value: WT): Promise<SR<WT>> {
-    return this.helper?.limit(value) ?? Promise.resolve(ok(value));
+  limit(value: WT): PromiseLike<SR<WT>> {
+    return this.helper?.limit(value) ?? sync_resolve(ok(value));
   }
-  check(value: WT): Promise<SR<WT>> {
-    return this.helper?.check(value) ?? Promise.resolve(ok(value));
+  check(value: WT): PromiseLike<SR<WT>> {
+    return this.helper?.check(value) ?? sync_resolve(ok(value));
   }
 }
 
@@ -473,7 +496,7 @@ const reaw = {
     write_action?: (
       value: WT,
       state: StateRemoteOwner<SR<RT>, WT, HEL>,
-    ) => Promise<SR<void>>,
+    ) => PromiseLike<SR<void>>,
     times?: {
       timeout?: number;
       debounce?: number;
@@ -520,7 +543,7 @@ const roaw = {
     write_action?: (
       value: WT,
       state: StateRemoteOwner<ResultOk<RT>, WT, HEL>,
-    ) => Promise<SR<void>>,
+    ) => PromiseLike<SR<void>>,
     times?: {
       timeout?: number;
       debounce?: number;

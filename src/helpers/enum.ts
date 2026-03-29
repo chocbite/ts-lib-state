@@ -1,3 +1,4 @@
+import { sync_resolve } from "@chocbite/ts-lib-common";
 import { err, ok, OptionSome, some } from "@chocbite/ts-lib-result";
 import { SVGFunc } from "@chocbite/ts-lib-svg";
 import { StateResult as SR, State } from "../types";
@@ -62,15 +63,16 @@ export class StateEnumHelperBase<
     this.list = options.list;
   }
 
-  async limit(value: K): Promise<SR<K>> {
-    return ok(value);
+  limit(value: K): PromiseLike<SR<K>> {
+    return sync_resolve(ok(value));
   }
 
-  async check(value: K): Promise<SR<K>> {
-    const list = await this.list;
-    if (list.err) return err("list is not available");
-    if (value in list.value) return ok(value);
-    return err(String(value) + " is not in list");
+  check(value: K): PromiseLike<SR<K>> {
+    return this.list.then((list) => {
+      if (list.err) return err("list is not available");
+      if (value in list.value) return ok(value);
+      return err(String(value) + " is not in list");
+    });
   }
 
   related(): OptionSome<R> {

@@ -292,9 +292,11 @@ export async function test_state_get_ok(
  */
 export async function test_state_write(
   state_maker: TestStateWrite,
+  sync: boolean,
 ): Promise<void> {
   const { state } = state_maker();
-  expect(await state.write(15)).toEqual(ok(undefined));
+  if (sync) state.write(15).then((e) => expect(e).toEqual(ok(undefined)));
+  else expect(await state.write(15)).toEqual(ok(undefined));
   const awaited = await state;
   expect(awaited).toEqual(ok(15));
 }

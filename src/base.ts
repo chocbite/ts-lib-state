@@ -17,9 +17,10 @@ export abstract class StateBase<
   }
 
   //#Reader Context
-  abstract then<T = RRT>(
-    func: (value: RRT) => T | PromiseLike<T>,
-  ): PromiseLike<T>;
+  abstract then<TResult1 = RRT, TResult2 = never>(
+    on_fulfilled?: ((value: RRT) => TResult1 | PromiseLike<TResult1>) | null,
+    on_rejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
+  ): PromiseLike<TResult1 | TResult2>;
 
   abstract readonly rsync: boolean;
   get?(): RRT;
@@ -59,9 +60,9 @@ export abstract class StateBase<
 
   //#Writer Context
   abstract readonly writable: boolean;
-  write?(value: WT): Promise<SR<void>>;
-  abstract limit(value: WT): Promise<SR<WT>>;
-  abstract check(value: WT): Promise<SR<WT>>;
+  write?(value: WT): PromiseLike<SR<void>>;
+  abstract limit(value: WT): PromiseLike<SR<WT>>;
+  abstract check(value: WT): PromiseLike<SR<WT>>;
 
   /**Called when first subscriber is added*/
   protected on_sub(): void {}
