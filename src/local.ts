@@ -498,7 +498,7 @@ export function ros<
   return new RXXX<RO<RT>, HEL, WT>(
     typeof i === "function" ? [1, false, i] : [0, false, i],
     h,
-  ) as StateLocalROS<RT, HEL, WT>;
+  ) as StateLocalROS<ReadType<RT>, HEL, WT>;
 }
 
 /**Creates a sync ok state from an initial result.
@@ -516,7 +516,7 @@ export function rosw<
     typeof i === "function" ? [1, false, i] : [0, false, i],
     h,
     setter,
-  ) as StateLocalROSW<RT, HEL, WT>;
+  ) as StateLocalROSW<ReadType<RT>, HEL, WT>;
 }
 
 /**Creates a sync state from an initial result.
@@ -531,7 +531,7 @@ export function res<
   return new RXXX<SR<RT>, HEL, WT>(
     typeof i === "function" ? [1, false, i] : [0, false, i],
     h,
-  ) as StateLocalRES<RT, HEL, WT>;
+  ) as StateLocalRES<ReadType<RT>, HEL, WT>;
 }
 
 /**Creates a writable sync state from an initial result.
@@ -550,7 +550,7 @@ export function resw<
     typeof i === "function" ? [1, false, i] : [0, false, i],
     h,
     setter,
-  ) as StateLocalRESW<RT, HEL, WT>;
+  ) as StateLocalRESW<ReadType<RT>, HEL, WT>;
 }
 
 /**Creates a sync ok state from an initial result.
@@ -562,7 +562,7 @@ export function roa<
 >(init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<SR<RT>, HEL, WT>([2, true, i], h) as StateLocalROA<
-    RT,
+    ReadType<RT>,
     HEL,
     WT
   >;
@@ -580,7 +580,7 @@ export function roaw<
 ) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<SR<RT>, HEL, WT>([2, true, i], h, setter) as StateLocalROAW<
-    RT,
+    ReadType<RT>,
     HEL,
     WT
   >;
@@ -596,7 +596,7 @@ export function rea<
 >(init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<SR<RT>, HEL, WT>([2, true, i], h) as StateLocalREA<
-    RT,
+    ReadType<RT>,
     HEL,
     WT
   >;
@@ -615,7 +615,7 @@ export function reaw<
 ) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<SR<RT>, HEL, WT>([2, true, i], h, setter) as StateLocalREAW<
-    RT,
+    ReadType<RT>,
     HEL,
     WT
   >;
