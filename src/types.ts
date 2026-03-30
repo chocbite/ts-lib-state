@@ -275,6 +275,3 @@ export type StateROSW<
   REL extends Option<StateRelated> = Option<{}>,
   WT = RT,
 > = ROSW<RT, REL, WT>;
-
-const yo = undefined as unknown as State<{}>;
-yo.get!();

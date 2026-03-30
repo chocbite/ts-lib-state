@@ -180,6 +180,7 @@ export class LocalArrayOwner<RT extends StateResult<StateArrayRead<any>>> {
   }
   push(...items: RIOK<RT>): number {
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
+    if (items.length === 0) return arr.length;
     const index = arr.length;
     const new_len = (arr as any[]).push(...items);
     arr[STATE_ARRAY_READ_KEY] = [{ type: "added", index, items }];
@@ -189,6 +190,7 @@ export class LocalArrayOwner<RT extends StateResult<StateArrayRead<any>>> {
   }
   unshift(...items: RIOK<RT>): number {
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
+    if (items.length === 0) return arr.length;
     const new_len = (arr as any[]).unshift(...items);
     arr[STATE_ARRAY_READ_KEY] = [{ type: "added", index: 0, items }];
     this.#local.set(ok(arr) as RT);
@@ -223,7 +225,7 @@ export class LocalArrayOwner<RT extends StateResult<StateArrayRead<any>>> {
     }
     return s;
   }
-  delete(val: RIOK<RT>): this {
+  delete(val: RIOK<RT>[number]): this {
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
     const operations = [] as StateArrayReadTypes<RIOK<RT>>[];
     for (let i = 0; i < arr.length; i++)
@@ -238,9 +240,10 @@ export class LocalArrayOwner<RT extends StateResult<StateArrayRead<any>>> {
     return this;
   }
   change(index: number, ...items: RIOK<RT>): this {
+    if (items.length === 0) return this;
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
-    for (let i = 0; i < arr.length; i++) (arr as any[])[index + i] = items[i];
-    arr[STATE_ARRAY_READ_KEY] = [{ type: "changed", index: index, items }];
+    for (let i = 0; i < items.length; i++) (arr as any[])[index + i] = items[i];
+    arr[STATE_ARRAY_READ_KEY] = [{ type: "changed", index, items }];
     this.#local.set(ok(arr) as RT);
     delete arr[STATE_ARRAY_READ_KEY];
     return this;
