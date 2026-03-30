@@ -39,18 +39,6 @@ export type HelperRelated<HEL extends StateHelper<any, any, any>> = ReturnType<
   HEL["related"]
 >;
 
-// export type StateReadType<RT> = RT extends any[]
-//   ? StateArrayRead<RT>
-//   : RT extends object
-//     ? StateObjectRead<RT>
-//     : RT;
-
-// export type StateWriteType<WT> = WT extends any[]
-//   ? StateArrayWrite<WT>
-//   : WT extends object
-//     ? StateObjectWrite<WT>
-//     : WT;
-
 //###########################################################################################################################################################
 //###########################################################################################################################################################
 //      _____  ______          _____  ______ _____     _____ ____  _   _ _______ ________   _________
