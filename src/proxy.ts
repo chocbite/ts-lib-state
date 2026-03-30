@@ -14,13 +14,11 @@ import {
 import { StateBase } from "./base";
 import {
   StateResult as SR,
-  StateReadType as SRT,
   StateInferResult,
   StateRES,
   StateRESW,
   StateROS,
   StateROSW,
-  StateWriteType as SWT,
   type State,
   type StateREA,
   type StateREAW,
@@ -43,8 +41,8 @@ interface Owner<S extends State<any, any>, WIN, ROUT, WOUT, RROUT> {
   set_transform_read(transform: (value: StateInferResult<S>) => RROUT): void;
   /**Changes the transform function of the proxy, and updates subscribers with new value*/
   set_transform_write(
-    wout_win: (val: WOUT) => SWT<WIN>,
-    win_wout: (val: SWT<WIN>) => WOUT,
+    wout_win: (val: WOUT) => WIN,
+    win_wout: (val: WIN) => WOUT,
   ): void;
   readonly state: State<ROUT, OptionNone, WOUT>;
 }
@@ -168,8 +166,8 @@ class RXXX<
     state: S,
     transform_read?: (value: StateInferResult<S>) => RROUT,
     transform_write?: {
-      wout_win: (val: WOUT) => SWT<WIN>;
-      win_wout: (val: SWT<WIN>) => WOUT;
+      wout_win: (val: WOUT) => WIN;
+      win_wout: (val: WIN) => WOUT;
     },
   ) {
     super();
@@ -182,7 +180,7 @@ class RXXX<
   }
 
   #state: S;
-  #subscriber = (value: SR<SRT<RIN>>) => {
+  #subscriber = (value: SR<RIN>) => {
     this.#buffer = this.transform_read(value as StateInferResult<S>);
     this.update_subs(this.#buffer);
   };
@@ -191,8 +189,8 @@ class RXXX<
   private transform_read(value: StateInferResult<S>): RROUT {
     return value as unknown as RROUT;
   }
-  private transform_wout_win?: (value: WOUT) => SWT<WIN>;
-  private transform_win_wout?: (value: SWT<WIN>) => WOUT;
+  private transform_wout_win?: (value: WOUT) => WIN;
+  private transform_win_wout?: (value: WIN) => WOUT;
   protected on_sub(run: boolean = false): void {
     this.#state.sub(this.#subscriber, run);
   }
@@ -217,8 +215,8 @@ class RXXX<
     } else this.transform_read = transform;
   }
   set_transform_write(
-    wout_win: (val: WOUT) => SWT<WIN>,
-    win_wout: (val: SWT<WIN>) => WOUT,
+    wout_win: (val: WOUT) => WIN,
+    win_wout: (val: WIN) => WOUT,
   ) {
     this.transform_wout_win = wout_win;
     this.transform_win_wout = win_wout;
@@ -367,8 +365,8 @@ function roaw_from<
   state: S,
   transform_read?: (value: StateInferResult<S>) => ResultOk<ROUT>,
   transform_write?: {
-    wout_win: (val: WOUT) => SWT<WIN>;
-    win_wout: (val: SWT<WIN>) => WOUT;
+    wout_win: (val: WOUT) => WIN;
+    win_wout: (val: WIN) => WOUT;
   },
 ): StateProxyROAW<S, RIN, WIN, ROUT, WOUT> {
   return new RXXX<S, RIN, WIN, ROUT, WOUT, ResultOk<ROUT>>(
@@ -424,8 +422,8 @@ function rosw_from<
   state: S,
   transform_read?: (value: StateInferResult<S>) => ResultOk<ROUT>,
   transform_write?: {
-    wout_win: (val: WOUT) => SWT<WIN>;
-    win_wout: (val: SWT<WIN>) => WOUT;
+    wout_win: (val: WOUT) => WIN;
+    win_wout: (val: WIN) => WOUT;
   },
 ): StateProxyROSW<S, RIN, WIN, ROUT, WOUT> {
   return new RXXX<S, RIN, WIN, ROUT, WOUT, ResultOk<ROUT>>(
@@ -481,8 +479,8 @@ function reaw_from<
   state: S,
   transform_read?: (value: StateInferResult<S>) => SR<ROUT>,
   transform_write?: {
-    wout_win: (val: WOUT) => SWT<WIN>;
-    win_wout: (val: SWT<WIN>) => WOUT;
+    wout_win: (val: WOUT) => WIN;
+    win_wout: (val: WIN) => WOUT;
   },
 ): StateProxyREAW<S, RIN, WIN, ROUT, WOUT> {
   return new RXXX<S, RIN, WIN, ROUT, WOUT, SR<ROUT>>(
@@ -540,8 +538,8 @@ function resw_from<
   state: S,
   transform_read?: (value: StateInferResult<S>) => SR<ROUT>,
   transform_write?: {
-    wout_win: (val: WOUT) => SWT<WIN>;
-    win_wout: (val: SWT<WIN>) => WOUT;
+    wout_win: (val: WOUT) => WIN;
+    win_wout: (val: WIN) => WOUT;
   },
 ): StateProxyRESW<S, RIN, WIN, ROUT, WOUT> {
   return new RXXX<S, RIN, WIN, ROUT, WOUT, SR<ROUT>>(

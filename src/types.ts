@@ -4,8 +4,6 @@ import {
   type Result,
   type ResultOk,
 } from "@chocbite/ts-lib-result";
-import { StateArrayRead, StateArrayWrite } from "./helpers/array";
-import { StateObjectRead, StateObjectWrite } from "./helpers/object";
 
 export type StateResult<T> = Result<T, string>;
 
@@ -41,17 +39,17 @@ export type HelperRelated<HEL extends StateHelper<any, any, any>> = ReturnType<
   HEL["related"]
 >;
 
-export type StateReadType<RT> = RT extends any[]
-  ? StateArrayRead<RT>
-  : RT extends object
-    ? StateObjectRead<RT>
-    : RT;
+// export type StateReadType<RT> = RT extends any[]
+//   ? StateArrayRead<RT>
+//   : RT extends object
+//     ? StateObjectRead<RT>
+//     : RT;
 
-export type StateWriteType<WT> = WT extends any[]
-  ? StateArrayWrite<WT>
-  : WT extends object
-    ? StateObjectWrite<WT>
-    : WT;
+// export type StateWriteType<WT> = WT extends any[]
+//   ? StateArrayWrite<WT>
+//   : WT extends object
+//     ? StateObjectWrite<WT>
+//     : WT;
 
 //###########################################################################################################################################################
 //###########################################################################################################################################################
@@ -65,7 +63,7 @@ export type StateWriteType<WT> = WT extends any[]
 export const STATE_KEY = Symbol("state");
 
 export interface StateBase<
-  RRT extends StateResult<StateReadType<any>>,
+  RRT extends StateResult<any>,
   REL extends Option<StateRelated>,
   WT,
 > {
@@ -110,15 +108,15 @@ export interface StateBase<
   readonly writable: boolean;
   /** This attempts a write to the state, write is not guaranteed to succeed
    * @returns promise of result with error for the write*/
-  write?(value: StateWriteType<WT>): PromiseLike<StateResult<void>>;
+  write?(value: WT): PromiseLike<StateResult<void>>;
   /**Limits given value to valid range if possible returns None if not possible */
-  limit?(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
+  limit?(value: WT): PromiseLike<StateResult<WT>>;
   /**Checks if the value is valid and returns reason for invalidity */
-  check?(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
+  check?(value: WT): PromiseLike<StateResult<WT>>;
 }
 
 interface REA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<StateReadType<RT>>,
+  ResultOk<RT>,
   REL,
   WT
 > {
@@ -128,7 +126,7 @@ interface REA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface ROA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<StateReadType<RT>>,
+  ResultOk<RT>,
   REL,
   WT
 > {
@@ -138,81 +136,81 @@ interface ROA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface RES<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  StateResult<StateReadType<RT>>,
+  StateResult<RT>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): StateResult<StateReadType<RT>>;
+  get(): StateResult<RT>;
   readonly rok: false;
   readonly writable: false;
 }
 
 interface ROS<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<StateReadType<RT>>,
+  ResultOk<RT>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): ResultOk<StateReadType<RT>>;
+  get(): ResultOk<RT>;
   readonly rok: true;
-  ok(): StateReadType<RT>;
+  ok(): RT;
   readonly writable: false;
 }
 
 interface REAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<StateReadType<RT>>,
+  ResultOk<RT>,
   REL,
   WT
 > {
   readonly rsync: false;
   readonly rok: false;
   readonly writable: true;
-  write(value: StateWriteType<WT>): PromiseLike<StateResult<void>>;
-  limit(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
-  check(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
+  write(value: WT): PromiseLike<StateResult<void>>;
+  limit(value: WT): PromiseLike<StateResult<WT>>;
+  check(value: WT): PromiseLike<StateResult<WT>>;
 }
 
 interface ROAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<StateReadType<RT>>,
+  ResultOk<RT>,
   REL,
   WT
 > {
   readonly rsync: false;
   readonly rok: true;
   readonly writable: true;
-  write(value: StateWriteType<WT>): PromiseLike<StateResult<void>>;
-  limit(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
-  check(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
+  write(value: WT): PromiseLike<StateResult<void>>;
+  limit(value: WT): PromiseLike<StateResult<WT>>;
+  check(value: WT): PromiseLike<StateResult<WT>>;
 }
 
 interface RESW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  StateResult<StateReadType<RT>>,
+  StateResult<RT>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): StateResult<StateReadType<RT>>;
+  get(): StateResult<RT>;
   readonly rok: false;
   readonly writable: true;
-  write(value: StateWriteType<WT>): PromiseLike<StateResult<void>>;
-  limit(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
-  check(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
+  write(value: WT): PromiseLike<StateResult<void>>;
+  limit(value: WT): PromiseLike<StateResult<WT>>;
+  check(value: WT): PromiseLike<StateResult<WT>>;
 }
 
 interface ROSW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<StateReadType<RT>>,
+  ResultOk<RT>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): ResultOk<StateReadType<RT>>;
+  get(): ResultOk<RT>;
   readonly rok: true;
-  ok(): StateReadType<RT>;
+  ok(): RT;
   readonly writable: true;
-  write(value: StateWriteType<WT>): PromiseLike<StateResult<void>>;
-  limit(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
-  check(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
+  write(value: WT): PromiseLike<StateResult<void>>;
+  limit(value: WT): PromiseLike<StateResult<WT>>;
+  check(value: WT): PromiseLike<StateResult<WT>>;
 }
 
 //###########################################################################################################################################################
