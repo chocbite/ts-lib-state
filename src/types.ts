@@ -4,6 +4,8 @@ import {
   type Result,
   type ResultOk,
 } from "@chocbite/ts-lib-result";
+import { StateArrayRead, StateArrayWrite } from "./helpers/array";
+import { StateObjectRead, StateObjectWrite } from "./helpers/object";
 
 export type StateResult<T> = Result<T, string>;
 
@@ -39,6 +41,18 @@ export type HelperRelated<HEL extends StateHelper<any, any, any>> = ReturnType<
   HEL["related"]
 >;
 
+export type StateReadType<RT> = RT extends any[]
+  ? StateArrayRead<RT[number]>
+  : RT extends object
+    ? StateObjectRead<RT>
+    : RT;
+
+export type StateWriteType<WT> = WT extends any[]
+  ? StateArrayWrite<WT[number]>
+  : WT extends object
+    ? StateObjectWrite<WT>
+    : WT;
+
 //###########################################################################################################################################################
 //###########################################################################################################################################################
 //      _____  ______          _____  ______ _____     _____ ____  _   _ _______ ________   _________
@@ -51,7 +65,7 @@ export type HelperRelated<HEL extends StateHelper<any, any, any>> = ReturnType<
 export const STATE_KEY = Symbol("state");
 
 export interface StateBase<
-  RRT extends StateResult<any>,
+  RRT extends StateResult<StateReadType<any>>,
   REL extends Option<StateRelated>,
   WT,
 > {
@@ -96,15 +110,15 @@ export interface StateBase<
   readonly writable: boolean;
   /** This attempts a write to the state, write is not guaranteed to succeed
    * @returns promise of result with error for the write*/
-  write?(value: WT): PromiseLike<StateResult<void>>;
+  write?(value: StateWriteType<WT>): PromiseLike<StateResult<void>>;
   /**Limits given value to valid range if possible returns None if not possible */
-  limit?(value: WT): PromiseLike<StateResult<WT>>;
+  limit?(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
   /**Checks if the value is valid and returns reason for invalidity */
-  check?(value: WT): PromiseLike<StateResult<WT>>;
+  check?(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
 }
 
 interface REA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<RT>,
+  ResultOk<StateReadType<RT>>,
   REL,
   WT
 > {
@@ -114,7 +128,7 @@ interface REA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface ROA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<RT>,
+  ResultOk<StateReadType<RT>>,
   REL,
   WT
 > {
@@ -124,81 +138,81 @@ interface ROA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface RES<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  StateResult<RT>,
+  StateResult<StateReadType<RT>>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): StateResult<RT>;
+  get(): StateResult<StateReadType<RT>>;
   readonly rok: false;
   readonly writable: false;
 }
 
 interface ROS<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<RT>,
+  ResultOk<StateReadType<RT>>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): ResultOk<RT>;
+  get(): ResultOk<StateReadType<RT>>;
   readonly rok: true;
-  ok(): RT;
+  ok(): StateReadType<RT>;
   readonly writable: false;
 }
 
 interface REAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<RT>,
+  ResultOk<StateReadType<RT>>,
   REL,
   WT
 > {
   readonly rsync: false;
   readonly rok: false;
   readonly writable: true;
-  write(value: WT): PromiseLike<StateResult<void>>;
-  limit(value: WT): PromiseLike<StateResult<WT>>;
-  check(value: WT): PromiseLike<StateResult<WT>>;
+  write(value: StateWriteType<WT>): PromiseLike<StateResult<void>>;
+  limit(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
+  check(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
 }
 
 interface ROAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<RT>,
+  ResultOk<StateReadType<RT>>,
   REL,
   WT
 > {
   readonly rsync: false;
   readonly rok: true;
   readonly writable: true;
-  write(value: WT): PromiseLike<StateResult<void>>;
-  limit(value: WT): PromiseLike<StateResult<WT>>;
-  check(value: WT): PromiseLike<StateResult<WT>>;
+  write(value: StateWriteType<WT>): PromiseLike<StateResult<void>>;
+  limit(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
+  check(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
 }
 
 interface RESW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  StateResult<RT>,
+  StateResult<StateReadType<RT>>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): StateResult<RT>;
+  get(): StateResult<StateReadType<RT>>;
   readonly rok: false;
   readonly writable: true;
-  write(value: WT): PromiseLike<StateResult<void>>;
-  limit(value: WT): PromiseLike<StateResult<WT>>;
-  check(value: WT): PromiseLike<StateResult<WT>>;
+  write(value: StateWriteType<WT>): PromiseLike<StateResult<void>>;
+  limit(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
+  check(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
 }
 
 interface ROSW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<RT>,
+  ResultOk<StateReadType<RT>>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): ResultOk<RT>;
+  get(): ResultOk<StateReadType<RT>>;
   readonly rok: true;
-  ok(): RT;
+  ok(): StateReadType<RT>;
   readonly writable: true;
-  write(value: WT): PromiseLike<StateResult<void>>;
-  limit(value: WT): PromiseLike<StateResult<WT>>;
-  check(value: WT): PromiseLike<StateResult<WT>>;
+  write(value: StateWriteType<WT>): PromiseLike<StateResult<void>>;
+  limit(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
+  check(value: StateWriteType<WT>): PromiseLike<StateResult<WT>>;
 }
 
 //###########################################################################################################################################################
@@ -275,3 +289,6 @@ export type StateROSW<
   REL extends Option<StateRelated> = Option<{}>,
   WT = RT,
 > = ROSW<RT, REL, WT>;
+
+const yo = undefined as unknown as State<{}>;
+yo.get!();

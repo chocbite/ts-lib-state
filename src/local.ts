@@ -7,34 +7,35 @@ import {
   err,
   none,
   ok,
-  OptionNone,
-  ResultInferOk as RIOK,
-  ResultOk as RO,
+  type OptionNone,
   type Result as R,
+  type ResultInferOk as RIOK,
+  type ResultOk as RO,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
 import {
   ARRAY,
   STATE_ARRAY_READ_KEY,
-  StateArrayRead,
-  StateArrayReadTypes,
-  StateArrayWrite,
+  type StateArrayRead,
+  type StateArrayReadTypes,
 } from "./helpers/array";
-import { StateNoHelper as NoHelper, StateHelperBase } from "./helpers/helpers";
-import { StateObjectRead, StateObjectWrite } from "./helpers/object";
 import {
+  type StateNoHelper as NoHelper,
+  type StateHelperBase,
+} from "./helpers/helpers";
+import type {
   StateHelper as Helper,
   HelperRelated as HELToREL,
   StateResult as SR,
+  State,
   StateREA,
   StateREAW,
   StateRES,
   StateRESW,
   StateROA,
   StateROAW,
+  StateROS,
   StateROSW,
-  type State,
-  type StateROS,
 } from "./types";
 
 //##################################################################################################################################################
@@ -45,31 +46,19 @@ import {
 //        | |     | |  | |    | |____ ____) |
 //        |_|     |_|  |_|    |______|_____/
 
-type ReadType<RT> = RT extends any[]
-  ? StateArrayRead<RT[number]>
-  : RT extends object
-    ? StateObjectRead<RT>
-    : RT;
-
-type WriteType<WT> = WT extends any[]
-  ? StateArrayWrite<WT[number]>
-  : WT extends object
-    ? StateObjectWrite<WT>
-    : WT;
-
 type Setter<
   RRT extends R<any, string>,
-  HEL extends Helper<RRT, WriteType<WT>, any>,
+  HEL extends Helper<RRT, WT, any>,
   WT,
 > = (
-  value: WriteType<WT>,
+  value: WT,
   state: Owner<RRT, HEL, WT>,
   old?: RRT,
 ) => PromiseLike<R<void, string>>;
 
 export interface Owner<
   RRT extends R<any, string>,
-  HEL extends Helper<RRT, WriteType<WT>, any>,
+  HEL extends Helper<RRT, WT, any>,
   WT,
 > {
   readonly helper: HEL;
@@ -91,7 +80,7 @@ export interface Owner<
 
 export type StateLocalROS<
   RT,
-  HEL extends Helper<RO<RT>, WriteType<WT>, any> = any,
+  HEL extends Helper<RO<RT>, WT, any> = any,
   WT = RT,
 > = StateROS<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
@@ -101,7 +90,7 @@ export type StateLocalROS<
 
 export type StateLocalRES<
   RT,
-  HEL extends Helper<RO<RT>, WriteType<WT>, any> = any,
+  HEL extends Helper<RO<RT>, WT, any> = any,
   WT = RT,
 > = StateRES<RT, HELToREL<HEL>, WT> &
   Owner<R<RT, string>, HEL, WT> & {
@@ -112,7 +101,7 @@ export type StateLocalRES<
 
 export type StateLocalROA<
   RT,
-  HEL extends Helper<RO<RT>, WriteType<WT>, any> = any,
+  HEL extends Helper<RO<RT>, WT, any> = any,
   WT = RT,
 > = StateROA<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
@@ -122,7 +111,7 @@ export type StateLocalROA<
 
 export type StateLocalREA<
   RT,
-  HEL extends Helper<RO<RT>, WriteType<WT>, any> = any,
+  HEL extends Helper<RO<RT>, WT, any> = any,
   WT = RT,
 > = StateREA<RT, HELToREL<HEL>, WT> &
   Owner<R<RT, string>, HEL, WT> & {
@@ -133,7 +122,7 @@ export type StateLocalREA<
 
 export type StateLocalROSW<
   RT,
-  HEL extends Helper<RO<RT>, WriteType<WT>, any> = any,
+  HEL extends Helper<RO<RT>, WT, any> = any,
   WT = RT,
 > = StateROSW<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
@@ -144,7 +133,7 @@ export type StateLocalROSW<
 
 export type StateLocalRESW<
   RT,
-  HEL extends Helper<RO<RT>, WriteType<WT>, any> = any,
+  HEL extends Helper<RO<RT>, WT, any> = any,
   WT = RT,
 > = StateRESW<RT, HELToREL<HEL>, WT> &
   Owner<R<RT, string>, HEL, WT> & {
@@ -155,7 +144,7 @@ export type StateLocalRESW<
 
 export type StateLocalROAW<
   RT,
-  HEL extends Helper<RO<RT>, WriteType<WT>, any> = any,
+  HEL extends Helper<RO<RT>, WT, any> = any,
   WT = RT,
 > = StateROAW<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
@@ -165,7 +154,7 @@ export type StateLocalROAW<
 
 export type StateLocalREAW<
   RT,
-  HEL extends Helper<RO<RT>, WriteType<WT>, any> = any,
+  HEL extends Helper<RO<RT>, WT, any> = any,
   WT = RT,
 > = StateREAW<RT, HELToREL<HEL>, WT> &
   Owner<R<RT, string>, HEL, WT> & {
@@ -286,10 +275,10 @@ export class LocalArrayOwner<RT extends R<StateArrayRead<any>, string>> {
 
 class RXXX<
   RRT extends R<any, string>,
-  HEL extends Helper<RRT, WriteType<WT>, OptionNone>,
+  HEL extends Helper<RRT, WT, OptionNone>,
   WT,
 >
-  extends StateBase<RRT, WriteType<WT>, HELToREL<HEL>>
+  extends StateBase<RRT, WT, HELToREL<HEL>>
   implements Owner<RRT, HEL, WT>
 {
   constructor(
@@ -464,17 +453,17 @@ class RXXX<
   get writable(): boolean {
     return this.#setter !== undefined;
   }
-  write(value: WriteType<WT>): PromiseLike<R<void, string>> {
+  write(value: WT): PromiseLike<R<void, string>> {
     if (this.#setter) {
       const res = this.#setter(value, this as Owner<RRT, HEL, WT>, this.#value);
       return sync_resolve(res);
     }
     return sync_resolve(err("not writable"));
   }
-  limit(value: WriteType<WT>): PromiseLike<R<WriteType<WT>, string>> {
+  limit(value: WT): PromiseLike<R<WT, string>> {
     return this.#helper?.limit(value) ?? sync_resolve(ok(value));
   }
-  check(value: WriteType<WT>): PromiseLike<R<WriteType<WT>, string>> {
+  check(value: WT): PromiseLike<R<WT, string>> {
     return this.#helper?.check(value) ?? sync_resolve(ok(value));
   }
 }
@@ -492,13 +481,13 @@ class RXXX<
 export function ros<
   RT,
   WT = RT,
-  HEL extends Helper<RO<RT>, WriteType<WT>, any> = NoHelper,
+  HEL extends Helper<RO<RT>, WT, any> = NoHelper,
 >(init: (RO<RT> | (() => RO<RT>)) | [RO<RT> | (() => RO<RT>), HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<RO<RT>, HEL, WT>(
     typeof i === "function" ? [1, false, i] : [0, false, i],
     h,
-  ) as StateLocalROS<ReadType<RT>, HEL, WT>;
+  ) as StateLocalROS<RT, HEL, WT>;
 }
 
 /**Creates a sync ok state from an initial result.
@@ -506,7 +495,7 @@ export function ros<
 export function rosw<
   RT,
   WT = RT,
-  HEL extends Helper<RO<RT>, WriteType<WT>, any> = NoHelper,
+  HEL extends Helper<RO<RT>, WT, any> = NoHelper,
 >(
   init: (RO<RT> | (() => RO<RT>)) | [RO<RT> | (() => RO<RT>), HEL],
   setter: Setter<RO<RT>, HEL, WT> | true = true,
@@ -516,7 +505,7 @@ export function rosw<
     typeof i === "function" ? [1, false, i] : [0, false, i],
     h,
     setter,
-  ) as StateLocalROSW<ReadType<RT>, HEL, WT>;
+  ) as StateLocalROSW<RT, HEL, WT>;
 }
 
 /**Creates a sync state from an initial result.
@@ -525,13 +514,13 @@ export function rosw<
 export function res<
   RT,
   WT = RT,
-  HEL extends Helper<SR<RT>, WriteType<WT>, any> = NoHelper,
+  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(init: (SR<RT> | (() => SR<RT>)) | [SR<RT> | (() => SR<RT>), HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<SR<RT>, HEL, WT>(
     typeof i === "function" ? [1, false, i] : [0, false, i],
     h,
-  ) as StateLocalRES<ReadType<RT>, HEL, WT>;
+  ) as StateLocalRES<RT, HEL, WT>;
 }
 
 /**Creates a writable sync state from an initial result.
@@ -540,7 +529,7 @@ export function res<
 export function resw<
   RT,
   WT = RT,
-  HEL extends Helper<SR<RT>, WriteType<WT>, any> = NoHelper,
+  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(
   init: (SR<RT> | (() => SR<RT>)) | [SR<RT> | (() => SR<RT>), HEL],
   setter: Setter<SR<RT>, HEL, WT> | true = true,
@@ -550,7 +539,7 @@ export function resw<
     typeof i === "function" ? [1, false, i] : [0, false, i],
     h,
     setter,
-  ) as StateLocalRESW<ReadType<RT>, HEL, WT>;
+  ) as StateLocalRESW<RT, HEL, WT>;
 }
 
 /**Creates a sync ok state from an initial result.
@@ -558,11 +547,11 @@ export function resw<
 export function roa<
   RT,
   WT = RT,
-  HEL extends Helper<SR<RT>, WriteType<WT>, any> = NoHelper,
+  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<SR<RT>, HEL, WT>([2, true, i], h) as StateLocalROA<
-    ReadType<RT>,
+    RT,
     HEL,
     WT
   >;
@@ -573,14 +562,14 @@ export function roa<
 export function roaw<
   RT,
   WT = RT,
-  HEL extends Helper<SR<RT>, WriteType<WT>, any> = NoHelper,
+  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(
   init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL],
   setter: Setter<SR<RT>, HEL, WT> | true = true,
 ) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<SR<RT>, HEL, WT>([2, true, i], h, setter) as StateLocalROAW<
-    ReadType<RT>,
+    RT,
     HEL,
     WT
   >;
@@ -592,11 +581,11 @@ export function roaw<
 export function rea<
   RT,
   WT = RT,
-  HEL extends Helper<SR<RT>, WriteType<WT>, any> = NoHelper,
+  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<SR<RT>, HEL, WT>([2, true, i], h) as StateLocalREA<
-    ReadType<RT>,
+    RT,
     HEL,
     WT
   >;
@@ -608,14 +597,14 @@ export function rea<
 export function reaw<
   RT,
   WT = RT,
-  HEL extends Helper<SR<RT>, WriteType<WT>, any> = NoHelper,
+  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(
   init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL],
   setter: Setter<SR<RT>, HEL, WT> | true = true,
 ) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<SR<RT>, HEL, WT>([2, true, i], h, setter) as StateLocalREAW<
-    ReadType<RT>,
+    RT,
     HEL,
     WT
   >;

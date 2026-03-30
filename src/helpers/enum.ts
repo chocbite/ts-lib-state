@@ -18,21 +18,21 @@ type EnumHelperEntry = {
   icon?: SVGFunc;
 };
 
-type StateEnumHelperList<K extends PropertyKey> = {
-  [P in K]: EnumHelperEntry;
+type StateEnumHelperList<T extends PropertyKey> = {
+  [P in T]: EnumHelperEntry;
 };
 
 export interface StateEnumRelated<
   L extends StateEnumHelperList<PropertyKey> = StateEnumHelperList<PropertyKey>,
 > extends StateRelatedBase {
   readonly [STATE_ENUM_RELATED_KEY]: true;
-  list: State<L>;
+  list: State<L, any, any>;
 }
 
 export interface StateEnumHelperOptions<
-  L extends StateEnumHelperList<PropertyKey> = StateEnumHelperList<PropertyKey>,
+  L extends StateEnumHelperList<any> = StateEnumHelperList<any>,
 > extends StateHelperBaseOptions {
-  list: State<L>;
+  list: State<L, any, any>;
 }
 
 export interface StateEnumHelper<
@@ -56,7 +56,7 @@ export class StateEnumHelperBase<
     return true;
   }
 
-  readonly list: State<L>;
+  readonly list: State<L, any, any>;
 
   constructor(options: StateEnumHelperOptions<L>) {
     super(options);
@@ -99,8 +99,8 @@ export const ENUM = {
   },
   /**Creates an enum helper struct, use list method to make a list with correct typing*/
   help<
+    L extends StateEnumHelperList<any>,
     I extends Init<K>,
-    L extends StateEnumHelperList<PropertyKey>,
     K extends PropertyKey = keyof L,
     R extends StateRelatedBase = StateEnumRelated<L>,
   >(

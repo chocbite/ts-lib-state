@@ -1,5 +1,4 @@
-import { sync_resolve } from "@chocbite/ts-lib-common";
-import { none, ok, Option, OptionNone } from "@chocbite/ts-lib-result";
+import { Option, OptionNone } from "@chocbite/ts-lib-result";
 import {
   StateResult as SR,
   StateHelper,
@@ -52,19 +51,4 @@ export abstract class StateHelperBase<
   abstract check(value: WT): PromiseLike<SR<WT>>;
 }
 
-export class StateNoHelper implements StateHelper<any, any, OptionNone> {
-  /**Called by state when value is set */
-  protected set(_value: any): void {}
-
-  related(): OptionNone {
-    return none();
-  }
-
-  limit(value: any): PromiseLike<any> {
-    return sync_resolve(ok(value));
-  }
-
-  check(value: any): PromiseLike<any> {
-    return sync_resolve(ok(value));
-  }
-}
+export type StateNoHelper = StateHelper<any, any, OptionNone>;
