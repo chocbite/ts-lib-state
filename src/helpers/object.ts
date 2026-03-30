@@ -1,47 +1,268 @@
+import { sync_resolve } from "@chocbite/ts-lib-common";
+import {
+  err,
+  ok,
+  OptionSome,
+  ResultInferOk as RIO,
+  some,
+} from "@chocbite/ts-lib-result";
+import { ros } from "../local";
+import { StateResult as SR, StateHelper, StateROS } from "../types";
+import {
+  StateInitResult as SIR,
+  StateHelperBase,
+  StateHelperBaseOptions,
+  StateInit,
+  StateRelatedBase,
+} from "./helpers";
+
+//##################################################################################################################################################
+//      _____  ______          _____
+//     |  __ \|  ____|   /\   |  __ \
+//     | |__) | |__     /  \  | |  | |
+//     |  _  /|  __|   / /\ \ | |  | |
+//     | | \ \| |____ / ____ \| |__| |
+//     |_|  \_\______/_/    \_\_____/
 export const OBJECT_READ_KEY = Symbol("state_object_read_key");
+
+export type StateObjectReadTypes<TYPE> =
+  | {
+      type: "added";
+      items: Readonly<Record<PropertyKey, TYPE>>;
+    }
+  | {
+      type: "removed";
+      items: Readonly<Record<PropertyKey, TYPE>>;
+    }
+  | {
+      type: "changed";
+      items: Readonly<Record<PropertyKey, TYPE>>;
+    }
+  | {
+      type: "fresh";
+      items: Readonly<Record<PropertyKey, TYPE>>;
+    };
 
 export type StateObjectRead<TYPE> = {
   [key: PropertyKey]: TYPE;
 } & {
-  [OBJECT_READ_KEY]?:
-    | {
-        type: "added";
-        index: number;
-        items: Readonly<{ [key: PropertyKey]: TYPE }>;
-      }
-    | {
-        type: "removed";
-        index: number;
-        items: Readonly<{ [key: PropertyKey]: TYPE }>;
-      }
-    | {
-        type: "changed";
-        index: number;
-        items: Readonly<{ [key: PropertyKey]: TYPE }>;
-      }
-    | {
-        type: "fresh";
-      };
+  [OBJECT_READ_KEY]?: StateObjectReadTypes<TYPE>[];
 };
+
+/**Returns the state object granular read object for an object, or a fake one if the object is not a state object read object */
+function read<TYPE>(obj: Record<PropertyKey, TYPE>): StateObjectReadTypes<TYPE>[] {
+  return (
+    (obj as StateObjectRead<TYPE>)[OBJECT_READ_KEY] ?? [
+      { type: "fresh", items: obj },
+    ]
+  );
+}
+
+/**Applies the state object read object to an object, returning the modified object or a new object
+ * If a transform function is provided, values will be transformed before being added to the object*/
+function read_apply<T, U>(
+  read: StateObjectRead<T>,
+  obj: Record<PropertyKey, U>,
+  transform: (item: T) => U,
+): Record<PropertyKey, U>;
+function read_apply<T>(
+  read: StateObjectRead<T>,
+  obj: Record<PropertyKey, T>,
+  transform?: undefined,
+): Record<PropertyKey, T>;
+function read_apply<T, U>(
+  read: StateObjectRead<T>,
+  obj: Record<PropertyKey, U> | Record<PropertyKey, T>,
+  transform?: (item: T) => U,
+): Record<PropertyKey, U> | Record<PropertyKey, T> {
+  if (transform) {
+    if (read[OBJECT_READ_KEY]) {
+      for (const r of read[OBJECT_READ_KEY]) {
+        if (r.type === "added")
+          for (const key of Object.keys(r.items))
+            (obj as Record<PropertyKey, U>)[key] = transform(r.items[key]);
+        else if (r.type === "removed")
+          for (const key of Object.keys(r.items)) delete obj[key];
+        else if (r.type === "changed")
+          for (const key of Object.keys(r.items))
+            (obj as Record<PropertyKey, U>)[key] = transform(r.items[key]);
+        else if (r.type === "fresh") {
+          const result: Record<PropertyKey, U> = {};
+          for (const key of Object.keys(r.items))
+            result[key] = transform(r.items[key]);
+          return result;
+        }
+      }
+      return obj;
+    } else {
+      const result: Record<PropertyKey, U> = {};
+      for (const key of Object.keys(read))
+        result[key] = transform((read as Record<string, T>)[key]);
+      return result;
+    }
+  } else {
+    if (read[OBJECT_READ_KEY]) {
+      for (const r of read[OBJECT_READ_KEY]) {
+        if (r.type === "added") Object.assign(obj, r.items);
+        else if (r.type === "removed")
+          for (const key of Object.keys(r.items)) delete obj[key];
+        else if (r.type === "changed") Object.assign(obj, r.items);
+        else if (r.type === "fresh") return { ...r.items };
+      }
+      return obj;
+    } else {
+      return read as Record<PropertyKey, T>;
+    }
+  }
+}
+
+/**Calls a setter function with a state object read object*/
+function read_set<T>(
+  read: [Record<PropertyKey, T>, StateObjectReadTypes<T>[] | undefined],
+  setter: (value: Record<PropertyKey, T> | StateObjectRead<T>) => void,
+) {
+  const [obj, read_types] = read as [
+    StateObjectRead<T>,
+    StateObjectReadTypes<T>[] | undefined,
+  ];
+  if (read_types) obj[OBJECT_READ_KEY] = read_types;
+  setter(obj);
+  if (obj[OBJECT_READ_KEY]) delete obj[OBJECT_READ_KEY];
+}
+
+//##################################################################################################################################################
+//     __          _______  _____ _______ ______
+//     \ \        / /  __ \|_   _|__   __|  ____|
+//      \ \  /\  / /| |__) | | |    | |  | |__
+//       \ \/  \/ / |  _  /  | |    | |  |  __|
+//        \  /\  /  | | \ \ _| |_   | |  | |____
+//         \/  \/   |_|  \_\_____|  |_|  |______|
+
 export const OBJECT_WRITE_KEY = Symbol("state_object_write_key");
+
+export type StateObjectWriteTypes<TYPE> =
+  | { type: "fresh"; items: Record<PropertyKey, TYPE> }
+  | { type: "add"; items: Record<PropertyKey, TYPE> }
+  | { type: "remove"; items: readonly PropertyKey[] }
+  | { type: "change"; items: Record<PropertyKey, TYPE> };
 
 export type StateObjectWrite<TYPE> = {
   [key: PropertyKey]: TYPE;
 } & {
-  [OBJECT_WRITE_KEY]?:
-    | {
-        type: "add";
-        items: { [key: PropertyKey]: TYPE };
-      }
-    | {
-        type: "remove";
-        items: readonly PropertyKey[];
-      }
-    | {
-        type: "change";
-        items: { [key: PropertyKey]: TYPE };
-      };
+  [OBJECT_WRITE_KEY]?: StateObjectWriteTypes<TYPE>;
 };
+
+const write = {
+  fresh<T>(items: Record<PropertyKey, T>): StateObjectWrite<T> {
+    (items as StateObjectWrite<T>)[OBJECT_WRITE_KEY] = {
+      type: "fresh",
+      items,
+    };
+    return items as StateObjectWrite<T>;
+  },
+  add<T>(items: Record<PropertyKey, T>): StateObjectWrite<T> {
+    const obj = {} as StateObjectWrite<T>;
+    obj[OBJECT_WRITE_KEY] = { type: "add", items };
+    return obj;
+  },
+  remove<T>(...keys: PropertyKey[]): StateObjectWrite<T> {
+    const obj = {} as StateObjectWrite<T>;
+    obj[OBJECT_WRITE_KEY] = { type: "remove", items: keys };
+    return obj;
+  },
+  change<T>(items: Record<PropertyKey, T>): StateObjectWrite<T> {
+    const obj = {} as StateObjectWrite<T>;
+    obj[OBJECT_WRITE_KEY] = { type: "change", items };
+    return obj;
+  },
+};
+
+/**Modifies an object based on a StateObjectWrite instruction and returns the modified object and state object read types*/
+function write_apply<T>(
+  write: StateObjectWrite<T>,
+  obj: Record<PropertyKey, T> = {},
+): [Record<PropertyKey, T>, StateObjectReadTypes<T>[] | undefined] {
+  if (write[OBJECT_WRITE_KEY]) {
+    const w = write[OBJECT_WRITE_KEY];
+    if (w.type === "fresh") {
+      const result: Record<PropertyKey, T> = {};
+      for (const key of Object.keys(w.items)) result[key] = w.items[key];
+      return [result, [{ type: "fresh", items: w.items }]];
+    } else if (w.type === "add") {
+      Object.assign(obj, w.items);
+      return [obj, [{ type: "added", items: w.items }]];
+    } else if (w.type === "remove") {
+      const removed: Record<PropertyKey, T> = {};
+      for (const key of w.items) {
+        if (key in obj) {
+          removed[key] = obj[key];
+          delete obj[key];
+        }
+      }
+      return [obj, [{ type: "removed", items: removed }]];
+    } else if (w.type === "change") {
+      Object.assign(obj, w.items);
+      return [obj, [{ type: "changed", items: w.items }]];
+    } else return [obj, undefined];
+  } else return [write as Record<PropertyKey, T>, undefined];
+}
+
+//##################################################################################################################################################
+//      _    _ ______ _      _____  ______ _____
+//     | |  | |  ____| |    |  __ \|  ____|  __ \
+//     | |__| | |__  | |    | |__) | |__  | |__) |
+//     |  __  |  __| | |    |  ___/|  __| |  _  /
+//     | |  | | |____| |____| |    | |____| | \ \
+//     |_|  |_|______|______|_|    |______|_|  \_\
+export const STATE_OBJECT_RELATED_KEY = Symbol("state_object_related");
+export const STATE_OBJECT_HELPER_KEY = Symbol("state_object_helper");
+
+export interface StateObjectRelated extends StateRelatedBase {
+  readonly [STATE_OBJECT_RELATED_KEY]: true;
+  size: StateROS<number>;
+}
+
+export interface StateObjectHelperOptions extends StateHelperBaseOptions {}
+
+export interface StateObjectHelper<RT extends Record<PropertyKey, any>>
+  extends StateHelper<SR<RT>, RT, OptionSome<StateObjectRelated>> {}
+
+export class StateObjectHelperBase<RT extends Record<PropertyKey, any>>
+  extends StateHelperBase<SR<RT>, RT, OptionSome<StateObjectRelated>>
+  implements StateObjectRelated
+{
+  get [STATE_OBJECT_RELATED_KEY](): true {
+    return true;
+  }
+  get [STATE_OBJECT_HELPER_KEY](): true {
+    return true;
+  }
+
+  readonly size = ros(ok(0));
+
+  constructor(options?: StateObjectHelperOptions) {
+    super(options);
+  }
+
+  on_change(value: SR<RT>): void {
+    if (value.ok) this.size.set_ok(Object.keys(value.value).length);
+    else this.size.set_ok(0);
+  }
+
+  limit(value: RT): PromiseLike<SR<RT>> {
+    return sync_resolve(ok(value));
+  }
+
+  check(value: RT): PromiseLike<SR<RT>> {
+    if (this.writable !== undefined && !this.writable)
+      return sync_resolve(err("not writable"));
+    return sync_resolve(ok(value));
+  }
+
+  related(): OptionSome<StateObjectRelated> {
+    return some(this);
+  }
+}
 
 export interface StateObjectMethods<T> {
   add(key: PropertyKey, value: T): void;
@@ -49,7 +270,66 @@ export interface StateObjectMethods<T> {
   change(key: PropertyKey, value: T): void;
 }
 
+//##################################################################################################################################################
+//      ________   _______   ____  _____ _______ _____
+//     |  ____\ \ / /  __ \ / __ \|  __ \__   __/ ____|
+//     | |__   \ V /| |__) | |  | | |__) | | | | (___
+//     |  __|   > < |  ___/| |  | |  _  /  | |  \___ \
+//     | |____ / . \| |    | |__| | | \ \  | |  ____) |
+//     |______/_/ \_\_|     \____/|_|  \_\ |_| |_____/
+
 export const OBJECT = {
+  /**Unique key to check if object is an object related */
+  RELATED_KEY: STATE_OBJECT_RELATED_KEY,
+  /**Returns true if object is an object related */
+  is_related(r: any): r is StateObjectRelated {
+    return Boolean(
+      r &&
+        (r as { [STATE_OBJECT_RELATED_KEY]: boolean })[
+          STATE_OBJECT_RELATED_KEY
+        ],
+    );
+  },
+  /**Unique key to check if object is an object helper */
+  HELPER_KEY: STATE_OBJECT_HELPER_KEY,
+  /**Returns true if object is an object helper */
+  is_helper(h: any): h is StateObjectHelperBase<any> {
+    return Boolean(
+      h &&
+        (h as { [STATE_OBJECT_HELPER_KEY]: boolean })[
+          STATE_OBJECT_HELPER_KEY
+        ],
+    );
+  },
+  /**Object helper*/
+  help<
+    I extends StateInit<Record<PropertyKey, any>>,
+    RRT extends SR<any> = SIR<I>,
+  >(
+    init: I,
+    options?: StateObjectHelperOptions,
+  ): [I, StateObjectHelper<RIO<RRT>>] {
+    return [init, new StateObjectHelperBase<RIO<RRT>>(options)];
+  },
+  //### Read
+  /**Unique key to check if an object contains an object read object */
   read_key: OBJECT_READ_KEY,
+  /**Returns true if object is an object read object */
+  is_read(a: any): a is StateObjectRead<any> {
+    return Boolean(
+      a && (a as { [OBJECT_READ_KEY]: boolean })[OBJECT_READ_KEY],
+    );
+  },
+  read,
+  read_apply,
+  read_set,
+  //### Write
   write_key: OBJECT_WRITE_KEY,
+  is_write(a: any): a is StateObjectWrite<any> {
+    return Boolean(
+      a && (a as { [OBJECT_WRITE_KEY]: boolean })[OBJECT_WRITE_KEY],
+    );
+  },
+  write,
+  write_apply,
 };

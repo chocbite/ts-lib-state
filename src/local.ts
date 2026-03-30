@@ -19,6 +19,11 @@ import {
   type StateArrayReadTypes as SART,
 } from "./helpers/array";
 import {
+  OBJECT,
+  OBJECT_READ_KEY as SORK,
+  type StateObjectRead as SOR,
+} from "./helpers/object";
+import {
   type StateNoHelper as NoHelper,
   type StateHelperBase as SHB,
 } from "./helpers/helpers";
@@ -76,6 +81,12 @@ export interface Owner<
   set_onunsub(func: () => void): void;
   /**Array operations when the state is an array type */
   readonly array: RRT extends SR<readonly any[]> ? LocalArrayOwner<RRT> : never;
+  /**Object operations when the state is an object record type */
+  readonly object: RRT extends SR<readonly any[]>
+    ? never
+    : RRT extends SR<Record<string, any>>
+      ? LocalObjectOwner<RRT>
+      : never;
 }
 
 export type StateLocalROS<
@@ -280,6 +291,62 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
 }
 
 //##################################################################################################################################################
+//       ____  ____       _ ______ _____ _______
+//      / __ \|  _ \     | |  ____/ ____|__   __|
+//     | |  | | |_) |    | | |__ | |      | |
+//     | |  | |  _ < _   | |  __|| |      | |
+//     | |__| | |_) | |__| | |___| |____  | |
+//      \____/|____/ \____/|______\\_____| |_|
+
+export class LocalObjectOwner<RT extends StateResult<Record<string, any>>> {
+  #local: RXXX<RT, any, any>;
+  constructor(local: RXXX<RT, any, any>) {
+    this.#local = local;
+  }
+  get get(): Readonly<RIOK<RT>> {
+    return this.#local.get().unwrap_or({}) as RIOK<RT>;
+  }
+  /**Adds a key-value pair to the object
+   * @param key — The key to add.
+   * @param value — The value to add.*/
+  add(key: PropertyKey, value: RIOK<RT>[string]): this {
+    const obj = this.#local.get().unwrap_or<RIOK<RT>>({} as RIOK<RT>);
+    const items = { [key]: value } as Record<PropertyKey, RIOK<RT>[string]>;
+    (obj as Record<PropertyKey, any>)[key] = value;
+    (obj as any)[SORK] = [{ type: "added", items }];
+    this.#local.set(ok(obj) as RT);
+    delete (obj as any)[SORK];
+    return this;
+  }
+  /**Removes a key-value pair from the object
+   * @param key — The key to remove.*/
+  remove(key: PropertyKey): this {
+    const obj = this.#local.get().unwrap_or<RIOK<RT>>({} as RIOK<RT>);
+    if (!(key in (obj as Record<PropertyKey, any>))) return this;
+    const removed = {
+      [key]: (obj as Record<PropertyKey, any>)[key],
+    } as Record<PropertyKey, RIOK<RT>[string]>;
+    delete (obj as Record<PropertyKey, any>)[key];
+    (obj as any)[SORK] = [{ type: "removed", items: removed }];
+    this.#local.set(ok(obj) as RT);
+    delete (obj as any)[SORK];
+    return this;
+  }
+  /**Changes the value for a key in the object
+   * @param key — The key to change.
+   * @param value — The new value.*/
+  change(key: PropertyKey, value: RIOK<RT>[string]): this {
+    const obj = this.#local.get().unwrap_or<RIOK<RT>>({} as RIOK<RT>);
+    const items = { [key]: value } as Record<PropertyKey, RIOK<RT>[string]>;
+    (obj as Record<PropertyKey, any>)[key] = value;
+    (obj as any)[SORK] = [{ type: "changed", items }];
+    this.#local.set(ok(obj) as RT);
+    delete (obj as any)[SORK];
+    return this;
+  }
+}
+
+//##################################################################################################################################################
 //       _____ _                _____ _____
 //      / ____| |        /\    / ____/ ____|
 //     | |    | |       /  \  | (___| (___
@@ -317,6 +384,13 @@ class RXXX<
               ARRAY.read_set(
                 ARRAY.write_apply(e.value, old?.unwrap_or([])),
                 state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
+              );
+            else if (OBJECT.is_write(e.value))
+              OBJECT.read_set(
+                OBJECT.write_apply(e.value, old?.unwrap_or({})),
+                state.set_ok.bind(state) as (
+                  value: Record<PropertyKey, any> | SOR<any>,
+                ) => void,
               );
             else state.set_ok(e.value as RIOK<RRT>);
             return ok(undefined);
@@ -421,6 +495,20 @@ class RXXX<
     >
       ? LocalArrayOwner<RRT>
       : never;
+  }
+  #object?: LocalObjectOwner<RRT>;
+  get object(): RRT extends SR<readonly any[]>
+    ? never
+    : RRT extends SR<Record<string, any>>
+      ? LocalObjectOwner<RRT>
+      : never {
+    return (this.#object ??= new LocalObjectOwner(this)) as RRT extends SR<
+      readonly any[]
+    >
+      ? never
+      : RRT extends SR<Record<string, any>>
+        ? LocalObjectOwner<RRT>
+        : never;
   }
 
   //#Reader Context
