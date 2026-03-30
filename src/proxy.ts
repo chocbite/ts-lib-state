@@ -19,9 +19,9 @@ import {
   StateRESW,
   StateROS,
   StateROSW,
-  type AutoRead,
   type State,
   type StateREA,
+  type StateReadType,
   type StateREAW,
   type StateROA,
   type StateROAW,
@@ -181,7 +181,7 @@ class RXXX<
   }
 
   #state: S;
-  #subscriber = (value: SR<AutoRead<RIN>>) => {
+  #subscriber = (value: SR<StateReadType<RIN>>) => {
     this.#buffer = this.transform_read(value as StateInferResult<S>);
     this.update_subs(this.#buffer);
   };

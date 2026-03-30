@@ -122,18 +122,18 @@ export {
   type StateNumberRelated,
 } from "./helpers/number";
 export {
+  OBJECT_READ_KEY,
+  OBJECT_WRITE_KEY,
+  type StateObjectMethods,
+  type StateObjectRead,
+  type StateObjectWrite,
+} from "./helpers/object";
+export {
   STATE_STRING_HELPER_KEY,
   STATE_STRING_RELATED_KEY,
   type StateStringHelper,
   type StateStringRelated,
 } from "./helpers/string";
-export {
-  OBJECT_READ_KEY,
-  OBJECT_WRITE_KEY,
-  type StateObjectRead,
-  type StateObjectWrite,
-  type StateObjectMethods,
-} from "./helpers/object";
 export {
   type StateLocalREA,
   type StateLocalREAW,
@@ -169,8 +169,8 @@ export {
 //      ____) |  | |/ ____ \| |  | |____     | |     | |  | |    | |____ ____) |
 //     |_____/   |_/_/    \_\_|  |______|    |_|     |_|  |_|    |______|_____/
 export type {
-  AutoRead,
-  AutoWrite,
+  StateReadType as AutoRead,
+  StateWriteType as AutoWrite,
   State,
   STATE_KEY,
   StateInferResult,

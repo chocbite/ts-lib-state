@@ -11,25 +11,23 @@ export type StateResult<T> = Result<T, string>;
 
 /**Automatically maps array types to StateArrayRead and object record types to StateObjectRead when reading state values.
  * For primitive types and non-record objects, returns the type unchanged.*/
-export type AutoRead<RT> =
-  0 extends 1 & RT
-    ? RT
-    : RT extends readonly (infer E)[]
-      ? StateArrayRead<E>
-      : string extends keyof RT
-        ? StateObjectRead<RT[string & keyof RT]>
-        : RT;
+export type StateReadType<RT> = 0 extends 1 & RT
+  ? RT
+  : RT extends readonly (infer E)[]
+    ? StateArrayRead<E>
+    : string extends keyof RT
+      ? StateObjectRead<RT[string & keyof RT]>
+      : RT;
 
 /**Automatically maps array types to StateArrayWrite and object record types to StateObjectWrite when writing state values.
  * For primitive types and non-record objects, returns the type unchanged.*/
-export type AutoWrite<RT> =
-  0 extends 1 & RT
-    ? RT
-    : RT extends readonly (infer E)[]
-      ? StateArrayWrite<E>
-      : string extends keyof RT
-        ? StateObjectWrite<RT[string & keyof RT]>
-        : RT;
+export type StateWriteType<RT> = 0 extends 1 & RT
+  ? RT
+  : RT extends readonly (infer E)[]
+    ? StateArrayWrite<E>
+    : string extends keyof RT
+      ? StateObjectWrite<RT[string & keyof RT]>
+      : RT;
 
 /**Function used to subscribe to state changes
  * @template RT - The type of the state’s value when read.*/
@@ -37,13 +35,13 @@ export type StateSub<RRT extends StateResult<any>> = (value: RRT) => void;
 
 export type StateInferResult<S extends State<any>> =
   S extends StateROA<infer RT>
-    ? ResultOk<AutoRead<RT>>
+    ? ResultOk<StateReadType<RT>>
     : S extends StateREA<infer RT>
-      ? StateResult<AutoRead<RT>>
+      ? StateResult<StateReadType<RT>>
       : never;
 
 export type StateInferType<S extends State<any>> =
-  S extends State<infer RT> ? AutoRead<RT> : never;
+  S extends State<infer RT> ? StateReadType<RT> : never;
 
 export type StateInferSub<S extends State<any>> = StateSub<StateInferResult<S>>;
 
@@ -128,7 +126,7 @@ export interface StateBase<
 }
 
 interface REA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<AutoRead<RT>>,
+  ResultOk<StateReadType<RT>>,
   REL,
   WT
 > {
@@ -138,7 +136,7 @@ interface REA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface ROA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<AutoRead<RT>>,
+  ResultOk<StateReadType<RT>>,
   REL,
   WT
 > {
@@ -148,30 +146,30 @@ interface ROA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface RES<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  StateResult<AutoRead<RT>>,
+  StateResult<StateReadType<RT>>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): StateResult<AutoRead<RT>>;
+  get(): StateResult<StateReadType<RT>>;
   readonly rok: false;
   readonly writable: false;
 }
 
 interface ROS<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<AutoRead<RT>>,
+  ResultOk<StateReadType<RT>>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): ResultOk<AutoRead<RT>>;
+  get(): ResultOk<StateReadType<RT>>;
   readonly rok: true;
-  ok(): AutoRead<RT>;
+  ok(): StateReadType<RT>;
   readonly writable: false;
 }
 
 interface REAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<AutoRead<RT>>,
+  ResultOk<StateReadType<RT>>,
   REL,
   WT
 > {
@@ -184,7 +182,7 @@ interface REAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface ROAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<AutoRead<RT>>,
+  ResultOk<StateReadType<RT>>,
   REL,
   WT
 > {
@@ -197,12 +195,12 @@ interface ROAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface RESW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  StateResult<AutoRead<RT>>,
+  StateResult<StateReadType<RT>>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): StateResult<AutoRead<RT>>;
+  get(): StateResult<StateReadType<RT>>;
   readonly rok: false;
   readonly writable: true;
   write(value: WT): PromiseLike<StateResult<void>>;
@@ -211,14 +209,14 @@ interface RESW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface ROSW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<AutoRead<RT>>,
+  ResultOk<StateReadType<RT>>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): ResultOk<AutoRead<RT>>;
+  get(): ResultOk<StateReadType<RT>>;
   readonly rok: true;
-  ok(): AutoRead<RT>;
+  ok(): StateReadType<RT>;
   readonly writable: true;
   write(value: WT): PromiseLike<StateResult<void>>;
   limit(value: WT): PromiseLike<StateResult<WT>>;
@@ -233,7 +231,11 @@ interface ROSW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 //        | |     | |  | |    | |____ ____) |
 //        |_|     |_|  |_|    |______|_____/
 
-export type State<RT, REL extends Option<StateRelated> = Option<{}>, WT = AutoWrite<RT>> =
+export type State<
+  RT,
+  REL extends Option<StateRelated> = Option<{}>,
+  WT = StateWriteType<RT>,
+> =
   | StateREA<RT, REL, WT>
   | StateROA<RT, REL, WT>
   | StateRES<RT, REL, WT>
@@ -246,7 +248,7 @@ export type State<RT, REL extends Option<StateRelated> = Option<{}>, WT = AutoWr
 export type StateREA<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = AutoWrite<RT>,
+  WT = StateWriteType<RT>,
 > =
   | REA<RT, REL, WT>
   | StateREAW<RT, REL, WT>
@@ -257,25 +259,25 @@ export type StateREA<
 export type StateROA<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = AutoWrite<RT>,
+  WT = StateWriteType<RT>,
 > = ROA<RT, REL, WT> | StateROAW<RT, REL, WT> | StateROS<RT, REL, WT>;
 
 export type StateRES<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = AutoWrite<RT>,
+  WT = StateWriteType<RT>,
 > = RES<RT, REL, WT> | StateRESW<RT, REL, WT> | StateROS<RT, REL, WT>;
 
 export type StateROS<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = AutoWrite<RT>,
+  WT = StateWriteType<RT>,
 > = ROS<RT, REL, WT> | StateROSW<RT, REL, WT>;
 
 export type StateREAW<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = AutoWrite<RT>,
+  WT = StateWriteType<RT>,
 > =
   | REAW<RT, REL, WT>
   | StateROAW<RT, REL, WT>
@@ -285,18 +287,17 @@ export type StateREAW<
 export type StateROAW<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = AutoWrite<RT>,
+  WT = StateWriteType<RT>,
 > = ROAW<RT, REL, WT> | StateROSW<RT, REL, WT>;
 
 export type StateRESW<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = AutoWrite<RT>,
+  WT = StateWriteType<RT>,
 > = RESW<RT, REL, WT> | StateROSW<RT, REL, WT>;
 
 export type StateROSW<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = AutoWrite<RT>,
+  WT = StateWriteType<RT>,
 > = ROSW<RT, REL, WT>;
-

@@ -14,18 +14,17 @@ import {
 import { StateBase } from "./base";
 import {
   ARRAY,
-  STATE_ARRAY_READ_KEY,
-  type StateArrayRead,
-  type StateArrayReadTypes,
+  STATE_ARRAY_READ_KEY as SARK,
+  type StateArrayRead as SAR,
+  type StateArrayReadTypes as SART,
 } from "./helpers/array";
 import {
   type StateNoHelper as NoHelper,
-  type StateHelperBase,
+  type StateHelperBase as SHB,
 } from "./helpers/helpers";
 import type {
   StateHelper as Helper,
   HelperRelated as HELToREL,
-  AutoWrite,
   StateResult as SR,
   State,
   StateREA,
@@ -37,6 +36,7 @@ import type {
   StateROAW,
   StateROS,
   StateROSW,
+  StateWriteType as SWT,
 } from "./types";
 
 //##################################################################################################################################################
@@ -75,15 +75,13 @@ export interface Owner<
   /**Sets a function to be called when the state is terminally unsubscribed from */
   set_onunsub(func: () => void): void;
   /**Array operations when the state is an array type */
-  readonly array: RRT extends SR<readonly any[]>
-    ? LocalArrayOwner<RRT>
-    : never;
+  readonly array: RRT extends SR<readonly any[]> ? LocalArrayOwner<RRT> : never;
 }
 
 export type StateLocalROS<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
 > = StateROS<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
     readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
@@ -93,7 +91,7 @@ export type StateLocalROS<
 export type StateLocalRES<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
 > = StateRES<RT, HELToREL<HEL>, WT> &
   Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
@@ -104,7 +102,7 @@ export type StateLocalRES<
 export type StateLocalROA<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
 > = StateROA<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
     readonly read_only: StateROA<RT, HELToREL<HEL>, WT>;
@@ -114,7 +112,7 @@ export type StateLocalROA<
 export type StateLocalREA<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
 > = StateREA<RT, HELToREL<HEL>, WT> &
   Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
@@ -125,7 +123,7 @@ export type StateLocalREA<
 export type StateLocalROSW<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
 > = StateROSW<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
     setter: Setter<RO<RT>, HEL, WT>;
@@ -136,7 +134,7 @@ export type StateLocalROSW<
 export type StateLocalRESW<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
 > = StateRESW<RT, HELToREL<HEL>, WT> &
   Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
@@ -147,7 +145,7 @@ export type StateLocalRESW<
 export type StateLocalROAW<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
 > = StateROAW<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
     readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
@@ -157,7 +155,7 @@ export type StateLocalROAW<
 export type StateLocalREAW<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
 > = StateREAW<RT, HELToREL<HEL>, WT> &
   Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
@@ -173,7 +171,7 @@ export type StateLocalREAW<
 //      / ____ \| | \ \| | \ \  / ____ \| |
 //     /_/    \_\_|  \_\_|  \_\/_/    \_\_|
 
-export class LocalArrayOwner<RT extends StateResult<StateArrayRead<any>>> {
+export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
   #local: RXXX<RT, any, any>;
   constructor(local: RXXX<RT, any, any>) {
     this.#local = local;
@@ -185,17 +183,17 @@ export class LocalArrayOwner<RT extends StateResult<StateArrayRead<any>>> {
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
     const index = arr.length;
     const new_len = (arr as any[]).push(...items);
-    arr[STATE_ARRAY_READ_KEY] = [{ type: "added", index, items }];
+    arr[SARK] = [{ type: "added", index, items }];
     this.#local.set(ok(arr) as RT);
-    delete arr[STATE_ARRAY_READ_KEY];
+    delete arr[SARK];
     return new_len;
   }
   unshift(...items: RIOK<RT>): number {
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
     const new_len = (arr as any[]).unshift(...items);
-    arr[STATE_ARRAY_READ_KEY] = [{ type: "added", index: 0, items }];
+    arr[SARK] = [{ type: "added", index: 0, items }];
     this.#local.set(ok(arr) as RT);
-    delete arr[STATE_ARRAY_READ_KEY];
+    delete arr[SARK];
     return new_len;
   }
   pop(): RIOK<RT> | undefined {
@@ -205,11 +203,9 @@ export class LocalArrayOwner<RT extends StateResult<StateArrayRead<any>>> {
     const l = arr.length;
     const p = (arr as any[]).pop();
     if (arr.length < l) {
-      arr[STATE_ARRAY_READ_KEY] = [
-        { type: "removed", index: arr.length, items: [p!] },
-      ];
+      arr[SARK] = [{ type: "removed", index: arr.length, items: [p!] }];
       this.#local.set(ok(arr) as RT);
-      delete arr[STATE_ARRAY_READ_KEY];
+      delete arr[SARK];
     }
     return p;
   }
@@ -220,32 +216,32 @@ export class LocalArrayOwner<RT extends StateResult<StateArrayRead<any>>> {
     const l = arr.length;
     const s = (arr as any[]).shift();
     if (arr.length < l) {
-      arr[STATE_ARRAY_READ_KEY] = [{ type: "removed", index: 0, items: [s!] }];
+      arr[SARK] = [{ type: "removed", index: 0, items: [s!] }];
       this.#local.set(ok(arr) as RT);
-      delete arr[STATE_ARRAY_READ_KEY];
+      delete arr[SARK];
     }
     return s;
   }
   delete(val: RIOK<RT>): this {
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
-    const operations = [] as StateArrayReadTypes<RIOK<RT>>[];
+    const operations = [] as SART<RIOK<RT>>[];
     for (let i = 0; i < arr.length; i++)
       if (arr[i] === val) {
         (arr as any[]).splice(i, 1);
         operations.push({ type: "removed", index: i, items: [val] });
         i--;
       }
-    arr[STATE_ARRAY_READ_KEY] = operations;
+    arr[SARK] = operations;
     this.#local.set(ok(arr) as RT);
-    delete arr[STATE_ARRAY_READ_KEY];
+    delete arr[SARK];
     return this;
   }
   change(index: number, ...items: RIOK<RT>): this {
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
     for (let i = 0; i < arr.length; i++) (arr as any[])[index + i] = items[i];
-    arr[STATE_ARRAY_READ_KEY] = [{ type: "changed", index: index, items }];
+    arr[SARK] = [{ type: "changed", index: index, items }];
     this.#local.set(ok(arr) as RT);
-    delete arr[STATE_ARRAY_READ_KEY];
+    delete arr[SARK];
     return this;
   }
   splice(
@@ -255,14 +251,14 @@ export class LocalArrayOwner<RT extends StateResult<StateArrayRead<any>>> {
   ): RIOK<RT> {
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
     const removed = (arr as any[]).splice(index, delete_count, ...items);
-    const operations = [] as StateArrayReadTypes<RIOK<RT>>[];
+    const operations = [] as SART<RIOK<RT>>[];
     if (removed.length > 0)
       operations.push({ type: "removed", index: index, items: removed });
     if (items.length > 0)
       operations.push({ type: "added", index: index, items });
-    arr[STATE_ARRAY_READ_KEY] = operations;
+    arr[SARK] = operations;
     this.#local.set(ok(arr) as RT);
-    delete arr[STATE_ARRAY_READ_KEY];
+    delete arr[SARK];
     return removed as RIOK<RT>;
   }
 }
@@ -292,8 +288,7 @@ class RXXX<
     setter?: Setter<RRT, HEL, WT> | true,
   ) {
     super();
-    if (helper)
-      this.#helper = helper as unknown as StateHelperBase<any, any, any>;
+    if (helper) this.#helper = helper as unknown as SHB<any, any, any>;
     this.#rok = init[1];
     if (setter === true)
       this.#setter = (value, state, old) => {
@@ -305,9 +300,7 @@ class RXXX<
             if (ARRAY.is_write(e.value))
               ARRAY.read_set(
                 ARRAY.write_apply(e.value, old?.unwrap_or([])),
-                state.set_ok.bind(state) as (
-                  value: any[] | StateArrayRead<any>,
-                ) => void,
+                state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
               );
             else state.set_ok(e.value as RIOK<RRT>);
             return ok(undefined);
@@ -366,7 +359,7 @@ class RXXX<
     (["then", "get", "set", "write"] as const).forEach((k) => delete this[k]);
   }
 
-  #helper?: StateHelperBase<any, any, any>;
+  #helper?: SHB<any, any, any>;
 
   #value?: RRT;
   #setter?: Setter<RRT, HEL, WT>;
@@ -481,7 +474,7 @@ class RXXX<
  * @param init initial result for state or helper.*/
 export function ros<
   RT,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
   HEL extends Helper<RO<RT>, WT, any> = NoHelper,
 >(init: (RO<RT> | (() => RO<RT>)) | [RO<RT> | (() => RO<RT>), HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
@@ -495,7 +488,7 @@ export function ros<
  * @param init initial result for state or helper.*/
 export function rosw<
   RT,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
   HEL extends Helper<RO<RT>, WT, any> = NoHelper,
 >(
   init: (RO<RT> | (() => RO<RT>)) | [RO<RT> | (() => RO<RT>), HEL],
@@ -514,7 +507,7 @@ export function rosw<
  * @param helper functions to check and limit the value, and to return related states.*/
 export function res<
   RT,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
   HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(init: (SR<RT> | (() => SR<RT>)) | [SR<RT> | (() => SR<RT>), HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
@@ -529,7 +522,7 @@ export function res<
  * @param helper functions to check and limit the value, and to return related states.*/
 export function resw<
   RT,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
   HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(
   init: (SR<RT> | (() => SR<RT>)) | [SR<RT> | (() => SR<RT>), HEL],
@@ -547,7 +540,7 @@ export function resw<
  * @param init initial result for state or helper.*/
 export function roa<
   RT,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
   HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
@@ -562,7 +555,7 @@ export function roa<
  * @param init initial result for state or helper.*/
 export function roaw<
   RT,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
   HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(
   init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL],
@@ -581,7 +574,7 @@ export function roaw<
  * @param helper functions to check and limit the value, and to return related states.*/
 export function rea<
   RT,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
   HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
@@ -597,7 +590,7 @@ export function rea<
  * @param helper functions to check and limit the value, and to return related states.*/
 export function reaw<
   RT,
-  WT = AutoWrite<RT>,
+  WT = SWT<RT>,
   HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(
   init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL],

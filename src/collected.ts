@@ -7,18 +7,18 @@ import {
   err,
   none,
   OptionNone,
-  ResultInferOk,
+  ResultInferOk as RIOK,
   type ResultOk,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
 import {
+  StateInferResult as SIR,
   StateResult as SR,
-  StateInferResult,
   StateREA,
   StateROA,
   StateSub,
-  type AutoRead,
   type State,
+  type StateReadType,
   type StateRES,
   type StateROS,
 } from "./types";
@@ -31,19 +31,19 @@ import {
 //        | |     | |  | |    | |____ ____) |
 //        |_|     |_|  |_|    |______|_____/
 export type StateCollectedTransVal<IN extends State<any>[]> = {
-  [I in keyof IN]: StateInferResult<IN[I]>;
+  [I in keyof IN]: SIR<IN[I]>;
 };
 
 export type StateCollectedTransValUnk<IN extends State<any>[]> = {
   [I in keyof IN]: IN[I] extends StateROA<infer RT>
-    ? ResultOk<AutoRead<RT>>
+    ? ResultOk<StateReadType<RT>>
     : IN[I] extends StateREA<infer RT>
-      ? SR<AutoRead<RT>>
+      ? SR<StateReadType<RT>>
       : unknown;
 };
 
 export type StateCollectedSubs<IN extends State<any>[]> = {
-  [I in keyof IN]: StateSub<StateInferResult<IN[I]>>;
+  [I in keyof IN]: StateSub<SIR<IN[I]>>;
 };
 
 export type StateCollectedStates<IN extends State<any>[]> = {
@@ -288,8 +288,8 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
       this.#states.map((s) => s.get!()) as StateCollectedTransVal<IN>,
     );
   }
-  ok(): ResultInferOk<RRT> {
-    return (this.get() as ResultOk<ResultInferOk<RRT>>).value;
+  ok(): RIOK<RRT> {
+    return (this.get() as ResultOk<RIOK<RRT>>).value;
   }
   related(): OptionNone {
     return none();
