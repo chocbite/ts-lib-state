@@ -25,6 +25,7 @@ import {
 import type {
   StateHelper as Helper,
   HelperRelated as HELToREL,
+  AutoWrite,
   StateResult as SR,
   State,
   StateREA,
@@ -74,13 +75,15 @@ export interface Owner<
   /**Sets a function to be called when the state is terminally unsubscribed from */
   set_onunsub(func: () => void): void;
   /**Array operations when the state is an array type */
-  readonly array: RRT extends SR<any[]> ? LocalArrayOwner<RRT> : never;
+  readonly array: RRT extends SR<readonly any[]>
+    ? LocalArrayOwner<RRT>
+    : never;
 }
 
 export type StateLocalROS<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = RT,
+  WT = AutoWrite<RT>,
 > = StateROS<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
     readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
@@ -90,7 +93,7 @@ export type StateLocalROS<
 export type StateLocalRES<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = RT,
+  WT = AutoWrite<RT>,
 > = StateRES<RT, HELToREL<HEL>, WT> &
   Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
@@ -101,7 +104,7 @@ export type StateLocalRES<
 export type StateLocalROA<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = RT,
+  WT = AutoWrite<RT>,
 > = StateROA<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
     readonly read_only: StateROA<RT, HELToREL<HEL>, WT>;
@@ -111,7 +114,7 @@ export type StateLocalROA<
 export type StateLocalREA<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = RT,
+  WT = AutoWrite<RT>,
 > = StateREA<RT, HELToREL<HEL>, WT> &
   Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
@@ -122,7 +125,7 @@ export type StateLocalREA<
 export type StateLocalROSW<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = RT,
+  WT = AutoWrite<RT>,
 > = StateROSW<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
     setter: Setter<RO<RT>, HEL, WT>;
@@ -133,7 +136,7 @@ export type StateLocalROSW<
 export type StateLocalRESW<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = RT,
+  WT = AutoWrite<RT>,
 > = StateRESW<RT, HELToREL<HEL>, WT> &
   Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
@@ -144,7 +147,7 @@ export type StateLocalRESW<
 export type StateLocalROAW<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = RT,
+  WT = AutoWrite<RT>,
 > = StateROAW<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
     readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
@@ -154,7 +157,7 @@ export type StateLocalROAW<
 export type StateLocalREAW<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = RT,
+  WT = AutoWrite<RT>,
 > = StateREAW<RT, HELToREL<HEL>, WT> &
   Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
@@ -403,8 +406,10 @@ class RXXX<
     this.on_unsub = func;
   }
   #array?: LocalArrayOwner<RRT>;
-  get array(): RRT extends SR<any[]> ? LocalArrayOwner<RRT> : never {
-    return (this.#array ??= new LocalArrayOwner(this)) as RRT extends SR<any[]>
+  get array(): RRT extends SR<readonly any[]> ? LocalArrayOwner<RRT> : never {
+    return (this.#array ??= new LocalArrayOwner(this)) as RRT extends SR<
+      readonly any[]
+    >
       ? LocalArrayOwner<RRT>
       : never;
   }
@@ -476,7 +481,7 @@ class RXXX<
  * @param init initial result for state or helper.*/
 export function ros<
   RT,
-  WT = RT,
+  WT = AutoWrite<RT>,
   HEL extends Helper<RO<RT>, WT, any> = NoHelper,
 >(init: (RO<RT> | (() => RO<RT>)) | [RO<RT> | (() => RO<RT>), HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
@@ -490,7 +495,7 @@ export function ros<
  * @param init initial result for state or helper.*/
 export function rosw<
   RT,
-  WT = RT,
+  WT = AutoWrite<RT>,
   HEL extends Helper<RO<RT>, WT, any> = NoHelper,
 >(
   init: (RO<RT> | (() => RO<RT>)) | [RO<RT> | (() => RO<RT>), HEL],
@@ -509,7 +514,7 @@ export function rosw<
  * @param helper functions to check and limit the value, and to return related states.*/
 export function res<
   RT,
-  WT = RT,
+  WT = AutoWrite<RT>,
   HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(init: (SR<RT> | (() => SR<RT>)) | [SR<RT> | (() => SR<RT>), HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
@@ -524,7 +529,7 @@ export function res<
  * @param helper functions to check and limit the value, and to return related states.*/
 export function resw<
   RT,
-  WT = RT,
+  WT = AutoWrite<RT>,
   HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(
   init: (SR<RT> | (() => SR<RT>)) | [SR<RT> | (() => SR<RT>), HEL],
@@ -542,7 +547,7 @@ export function resw<
  * @param init initial result for state or helper.*/
 export function roa<
   RT,
-  WT = RT,
+  WT = AutoWrite<RT>,
   HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
@@ -557,7 +562,7 @@ export function roa<
  * @param init initial result for state or helper.*/
 export function roaw<
   RT,
-  WT = RT,
+  WT = AutoWrite<RT>,
   HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(
   init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL],
@@ -576,7 +581,7 @@ export function roaw<
  * @param helper functions to check and limit the value, and to return related states.*/
 export function rea<
   RT,
-  WT = RT,
+  WT = AutoWrite<RT>,
   HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
@@ -592,7 +597,7 @@ export function rea<
  * @param helper functions to check and limit the value, and to return related states.*/
 export function reaw<
   RT,
-  WT = RT,
+  WT = AutoWrite<RT>,
   HEL extends Helper<SR<RT>, WT, any> = NoHelper,
 >(
   init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL],
