@@ -300,4 +300,3 @@ export type StateROSW<
   WT = AutoWrite<RT>,
 > = ROSW<RT, REL, WT>;
 
-
