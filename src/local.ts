@@ -176,9 +176,11 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
   constructor(local: RXXX<RT, any, any>) {
     this.#local = local;
   }
-  get get(): RIOK<RT> {
+  get get(): Readonly<RIOK<RT>> {
     return this.#local.get().unwrap_or([]) as RIOK<RT>;
   }
+  /** Appends new elements to the end of an array, and returns the new length of the array.
+   * @param items — New elements to add to the array.*/
   push(...items: RIOK<RT>): number {
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
     if (items.length === 0) return arr.length;
@@ -189,6 +191,8 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
     delete arr[SARK];
     return new_len;
   }
+  /** Inserts new elements at the start of an array, and returns the new length of the array.
+   * @param items — Elements to insert at the start of the array.*/
   unshift(...items: RIOK<RT>): number {
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
     if (items.length === 0) return arr.length;
@@ -198,6 +202,7 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
     delete arr[SARK];
     return new_len;
   }
+  /**Removes the last element from an array and returns it. If the array is empty, undefined is returned and the array is not modified. */
   pop(): RIOK<RT> | undefined {
     const r = this.#local.get();
     if (r.err) return undefined;
@@ -211,6 +216,7 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
     }
     return p;
   }
+  /**Removes the first element from an array and returns it. If the array is empty, undefined is returned and the array is not modified. */
   shift(): RIOK<RT> | undefined {
     const r = this.#local.get();
     if (r.err) return undefined;
@@ -224,6 +230,7 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
     }
     return s;
   }
+  /**Removes all elements that are equal to the given value from an array*/
   delete(val: RIOK<RT>[number]): this {
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
     const operations = [] as SART<RIOK<RT>>[];
@@ -238,6 +245,7 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
     delete arr[SARK];
     return this;
   }
+  /**Changes elements at the specified index in an array*/
   change(index: number, ...items: RIOK<RT>): this {
     if (items.length === 0) return this;
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
@@ -247,6 +255,11 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
     delete arr[SARK];
     return this;
   }
+  /**Removes elements from an array and, if necessary, inserts new elements in their place, returning the deleted elements.
+   * @param start — The zero-based location in the array from which to start removing elements.
+   * @param deleteCount — The number of elements to remove. If value of this argument is either a negative number, zero, undefined, or a type that cannot be converted to an integer, the function will evaluate the argument as zero and not remove any elements.
+   * @param items — Elements to insert into the array in place of the deleted elements.
+   * @returns — An array containing the elements that were deleted.*/
   splice(
     index: number,
     delete_count: number = 0,
