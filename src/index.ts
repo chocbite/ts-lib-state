@@ -100,6 +100,8 @@ export {
   type StateArrayRead,
   type StateArrayReadTypes,
   type StateArrayRelated,
+  type StateArrayWrite,
+  type StateArrayWriteTypes,
 } from "./helpers/array";
 export {
   STATE_BOOL_HELPER_KEY,
@@ -119,6 +121,13 @@ export {
   type StateNumberHelper,
   type StateNumberRelated,
 } from "./helpers/number";
+export {
+  OBJECT_READ_KEY,
+  OBJECT_WRITE_KEY,
+  type StateObjectMethods,
+  type StateObjectRead,
+  type StateObjectWrite,
+} from "./helpers/object";
 export {
   STATE_STRING_HELPER_KEY,
   STATE_STRING_RELATED_KEY,
@@ -160,6 +169,8 @@ export {
 //      ____) |  | |/ ____ \| |  | |____     | |     | |  | |    | |____ ____) |
 //     |_____/   |_/_/    \_\_|  |______|    |_|     |_|  |_|    |______|_____/
 export type {
+  StateReadType as AutoRead,
+  StateWriteType as AutoWrite,
   State,
   STATE_KEY,
   StateInferResult,
