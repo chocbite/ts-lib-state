@@ -309,10 +309,10 @@ export class LocalObjectOwner<RT extends StateResult<Record<string, any>>> {
   /**Adds a key-value pair to the object
    * @param key — The key to add.
    * @param value — The value to add.*/
-  add(key: PropertyKey, value: RIOK<RT>[string]): this {
+  add(key: string, value: RIOK<RT>[string]): this {
     const obj = this.#local.get().unwrap_or<RIOK<RT>>({} as RIOK<RT>);
-    const items = { [key]: value } as Record<PropertyKey, RIOK<RT>[string]>;
-    (obj as Record<PropertyKey, any>)[key] = value;
+    const items = { [key]: value } as Record<string, RIOK<RT>[string]>;
+    (obj as Record<string, any>)[key] = value;
     (obj as any)[SORK] = [{ type: "added", items }];
     this.#local.set(ok(obj) as RT);
     delete (obj as any)[SORK];
@@ -320,13 +320,13 @@ export class LocalObjectOwner<RT extends StateResult<Record<string, any>>> {
   }
   /**Removes a key-value pair from the object
    * @param key — The key to remove.*/
-  remove(key: PropertyKey): this {
+  remove(key: string): this {
     const obj = this.#local.get().unwrap_or<RIOK<RT>>({} as RIOK<RT>);
-    if (!(key in (obj as Record<PropertyKey, any>))) return this;
+    if (!(key in (obj as Record<string, any>))) return this;
     const removed = {
-      [key]: (obj as Record<PropertyKey, any>)[key],
-    } as Record<PropertyKey, RIOK<RT>[string]>;
-    delete (obj as Record<PropertyKey, any>)[key];
+      [key]: (obj as Record<string, any>)[key],
+    } as Record<string, RIOK<RT>[string]>;
+    delete (obj as Record<string, any>)[key];
     (obj as any)[SORK] = [{ type: "removed", items: removed }];
     this.#local.set(ok(obj) as RT);
     delete (obj as any)[SORK];
@@ -335,10 +335,10 @@ export class LocalObjectOwner<RT extends StateResult<Record<string, any>>> {
   /**Changes the value for a key in the object
    * @param key — The key to change.
    * @param value — The new value.*/
-  change(key: PropertyKey, value: RIOK<RT>[string]): this {
+  change(key: string, value: RIOK<RT>[string]): this {
     const obj = this.#local.get().unwrap_or<RIOK<RT>>({} as RIOK<RT>);
-    const items = { [key]: value } as Record<PropertyKey, RIOK<RT>[string]>;
-    (obj as Record<PropertyKey, any>)[key] = value;
+    const items = { [key]: value } as Record<string, RIOK<RT>[string]>;
+    (obj as Record<string, any>)[key] = value;
     (obj as any)[SORK] = [{ type: "changed", items }];
     this.#local.set(ok(obj) as RT);
     delete (obj as any)[SORK];

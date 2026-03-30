@@ -259,9 +259,9 @@ export class StateObjectHelperBase<RT extends Record<PropertyKey, any>>
 }
 
 export interface StateObjectMethods<T> {
-  add(key: PropertyKey, value: T): void;
-  remove(key: PropertyKey): void;
-  change(key: PropertyKey, value: T): void;
+  add(key: string, value: T): void;
+  remove(key: string): void;
+  change(key: string, value: T): void;
 }
 
 //##################################################################################################################################################

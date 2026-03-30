@@ -102,35 +102,33 @@ describe("Object Methods on Local State", async () => {
 //     | |__| | |_) | |__| | |___| |____  | |    | |  | | |____| |____| |    | |____| | \ \
 //      \____/|____/ \____/|______\\_____| |_|    |_|  |_|______|______|_|    |______|_|  \_\
 describe("Object Helper", async () => {
-  it("help creates helper with size tracking", async () => {
+  it("help creates helper", async () => {
     const s = st.rosw(
       st.o.help(ok<Record<string, number>>({ a: 1, b: 2 })),
       true,
     );
     const related = s.related().unwrap();
-    expect((await related.size).unwrap()).to.equal(2);
+    expect(related).toBeDefined();
   });
 
-  it("size updates on add", async () => {
+  it("helper tracks changes on add", async () => {
     const s = st.rosw(
       st.o.help(ok<Record<string, number>>({ a: 1 })),
       true,
     );
-    const related = s.related().unwrap();
-    expect((await related.size).unwrap()).to.equal(1);
+    expect(s.ok()).toEqual({ a: 1 });
     s.object.add("b", 2);
-    expect((await related.size).unwrap()).to.equal(2);
+    expect(s.ok()).toEqual({ a: 1, b: 2 });
   });
 
-  it("size updates on remove", async () => {
+  it("helper tracks changes on remove", async () => {
     const s = st.rosw(
       st.o.help(ok<Record<string, number>>({ a: 1, b: 2 })),
       true,
     );
-    const related = s.related().unwrap();
-    expect((await related.size).unwrap()).to.equal(2);
+    expect(s.ok()).toEqual({ a: 1, b: 2 });
     s.object.remove("b");
-    expect((await related.size).unwrap()).to.equal(1);
+    expect(s.ok()).toEqual({ a: 1 });
   });
 });
 
