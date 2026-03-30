@@ -19,14 +19,14 @@ import {
   type StateArrayReadTypes as SART,
 } from "./helpers/array";
 import {
+  type StateNoHelper as NoHelper,
+  type StateHelperBase as SHB,
+} from "./helpers/helpers";
+import {
   OBJECT,
   OBJECT_READ_KEY as SORK,
   type StateObjectRead as SOR,
 } from "./helpers/object";
-import {
-  type StateNoHelper as NoHelper,
-  type StateHelperBase as SHB,
-} from "./helpers/helpers";
 import type {
   StateHelper as Helper,
   HelperRelated as HELToREL,
@@ -296,7 +296,7 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
 //     | |  | | |_) |    | | |__ | |      | |
 //     | |  | |  _ < _   | |  __|| |      | |
 //     | |__| | |_) | |__| | |___| |____  | |
-//      \____/|____/ \____/|______\\_____| |_|
+//      \____/|____/ \____/|______\\_____||_|
 
 export class LocalObjectOwner<RT extends StateResult<Record<string, any>>> {
   #local: RXXX<RT, any, any>;
