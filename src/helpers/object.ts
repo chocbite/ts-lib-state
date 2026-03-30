@@ -6,8 +6,7 @@ import {
   ResultInferOk as RIO,
   some,
 } from "@chocbite/ts-lib-result";
-import { ros } from "../local";
-import { StateResult as SR, StateHelper, StateROS } from "../types";
+import { StateResult as SR, StateHelper } from "../types";
 import {
   StateInitResult as SIR,
   StateHelperBase,
@@ -50,7 +49,9 @@ export type StateObjectRead<TYPE> = {
 };
 
 /**Returns the state object granular read object for an object, or a fake one if the object is not a state object read object */
-function read<TYPE>(obj: Record<PropertyKey, TYPE>): StateObjectReadTypes<TYPE>[] {
+function read<TYPE>(
+  obj: Record<PropertyKey, TYPE>,
+): StateObjectReadTypes<TYPE>[] {
   return (
     (obj as StateObjectRead<TYPE>)[OBJECT_READ_KEY] ?? [
       { type: "fresh", items: obj },
@@ -219,13 +220,13 @@ export const STATE_OBJECT_HELPER_KEY = Symbol("state_object_helper");
 
 export interface StateObjectRelated extends StateRelatedBase {
   readonly [STATE_OBJECT_RELATED_KEY]: true;
-  size: StateROS<number>;
 }
 
 export interface StateObjectHelperOptions extends StateHelperBaseOptions {}
 
-export interface StateObjectHelper<RT extends Record<PropertyKey, any>>
-  extends StateHelper<SR<RT>, RT, OptionSome<StateObjectRelated>> {}
+export interface StateObjectHelper<
+  RT extends Record<PropertyKey, any>,
+> extends StateHelper<SR<RT>, RT, OptionSome<StateObjectRelated>> {}
 
 export class StateObjectHelperBase<RT extends Record<PropertyKey, any>>
   extends StateHelperBase<SR<RT>, RT, OptionSome<StateObjectRelated>>
@@ -238,15 +239,8 @@ export class StateObjectHelperBase<RT extends Record<PropertyKey, any>>
     return true;
   }
 
-  readonly size = ros(ok(0));
-
   constructor(options?: StateObjectHelperOptions) {
     super(options);
-  }
-
-  on_change(value: SR<RT>): void {
-    if (value.ok) this.size.set_ok(Object.keys(value.value).length);
-    else this.size.set_ok(0);
   }
 
   limit(value: RT): PromiseLike<SR<RT>> {
@@ -285,9 +279,7 @@ export const OBJECT = {
   is_related(r: any): r is StateObjectRelated {
     return Boolean(
       r &&
-        (r as { [STATE_OBJECT_RELATED_KEY]: boolean })[
-          STATE_OBJECT_RELATED_KEY
-        ],
+      (r as { [STATE_OBJECT_RELATED_KEY]: boolean })[STATE_OBJECT_RELATED_KEY],
     );
   },
   /**Unique key to check if object is an object helper */
@@ -296,9 +288,7 @@ export const OBJECT = {
   is_helper(h: any): h is StateObjectHelperBase<any> {
     return Boolean(
       h &&
-        (h as { [STATE_OBJECT_HELPER_KEY]: boolean })[
-          STATE_OBJECT_HELPER_KEY
-        ],
+      (h as { [STATE_OBJECT_HELPER_KEY]: boolean })[STATE_OBJECT_HELPER_KEY],
     );
   },
   /**Object helper*/
@@ -316,9 +306,7 @@ export const OBJECT = {
   read_key: OBJECT_READ_KEY,
   /**Returns true if object is an object read object */
   is_read(a: any): a is StateObjectRead<any> {
-    return Boolean(
-      a && (a as { [OBJECT_READ_KEY]: boolean })[OBJECT_READ_KEY],
-    );
+    return Boolean(a && (a as { [OBJECT_READ_KEY]: boolean })[OBJECT_READ_KEY]);
   },
   read,
   read_apply,
