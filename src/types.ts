@@ -276,5 +276,4 @@ export type StateROSW<
   WT = RT,
 > = ROSW<RT, REL, WT>;
 
-const yo = undefined as unknown as State<{}>;
-yo.get!();
+
