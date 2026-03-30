@@ -8,7 +8,6 @@ import {
   none,
   ok,
   type OptionNone,
-  type Result as R,
   type ResultInferOk as RIOK,
   type ResultOk as RO,
 } from "@chocbite/ts-lib-result";
@@ -31,6 +30,7 @@ import type {
   StateREA,
   StateREAW,
   StateRES,
+  StateResult,
   StateRESW,
   StateROA,
   StateROAW,
@@ -47,21 +47,20 @@ import type {
 //        |_|     |_|  |_|    |______|_____/
 
 type Setter<
-  RRT extends R<any, string>,
+  RRT extends StateResult<any>,
   HEL extends Helper<RRT, WT, any>,
   WT,
 > = (
   value: WT,
   state: Owner<RRT, HEL, WT>,
   old?: RRT,
-) => PromiseLike<R<void, string>>;
+) => PromiseLike<StateResult<void>>;
 
 export interface Owner<
-  RRT extends R<any, string>,
+  RRT extends StateResult<any>,
   HEL extends Helper<RRT, WT, any>,
   WT,
 > {
-  readonly helper: HEL;
   /**Changes state value */
   set(value: RRT): void;
   /**Changes state value to a ResultOk value */
@@ -93,7 +92,7 @@ export type StateLocalRES<
   HEL extends Helper<RO<RT>, WT, any> = any,
   WT = RT,
 > = StateRES<RT, HELToREL<HEL>, WT> &
-  Owner<R<RT, string>, HEL, WT> & {
+  Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
     readonly read_only: StateRES<RT, HELToREL<HEL>, WT>;
     readonly read_write?: StateRESW<RT, HELToREL<HEL>, WT>;
@@ -114,7 +113,7 @@ export type StateLocalREA<
   HEL extends Helper<RO<RT>, WT, any> = any,
   WT = RT,
 > = StateREA<RT, HELToREL<HEL>, WT> &
-  Owner<R<RT, string>, HEL, WT> & {
+  Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
     readonly read_only: StateREA<RT, HELToREL<HEL>, WT>;
     readonly read_write?: StateREAW<RT, HELToREL<HEL>, WT>;
@@ -136,7 +135,7 @@ export type StateLocalRESW<
   HEL extends Helper<RO<RT>, WT, any> = any,
   WT = RT,
 > = StateRESW<RT, HELToREL<HEL>, WT> &
-  Owner<R<RT, string>, HEL, WT> & {
+  Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
     readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
     readonly read_write: StateROSW<RT, HELToREL<HEL>, WT>;
@@ -157,7 +156,7 @@ export type StateLocalREAW<
   HEL extends Helper<RO<RT>, WT, any> = any,
   WT = RT,
 > = StateREAW<RT, HELToREL<HEL>, WT> &
-  Owner<R<RT, string>, HEL, WT> & {
+  Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
     readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
     readonly read_write: StateROSW<RT, HELToREL<HEL>, WT>;
@@ -171,7 +170,7 @@ export type StateLocalREAW<
 //      / ____ \| | \ \| | \ \  / ____ \| |
 //     /_/    \_\_|  \_\_|  \_\/_/    \_\_|
 
-export class LocalArrayOwner<RT extends R<StateArrayRead<any>, string>> {
+export class LocalArrayOwner<RT extends StateResult<StateArrayRead<any>>> {
   #local: RXXX<RT, any, any>;
   constructor(local: RXXX<RT, any, any>) {
     this.#local = local;
@@ -274,7 +273,7 @@ export class LocalArrayOwner<RT extends R<StateArrayRead<any>, string>> {
 //      \_____|______/_/    \_\_____/_____/
 
 class RXXX<
-  RRT extends R<any, string>,
+  RRT extends StateResult<any>,
   HEL extends Helper<RRT, WT, OptionNone>,
   WT,
 >
@@ -365,9 +364,6 @@ class RXXX<
   }
 
   #helper?: StateHelperBase<any, any, any>;
-  get helper(): HEL {
-    return this.#helper as unknown as HEL;
-  }
 
   #value?: RRT;
   #setter?: Setter<RRT, HEL, WT>;
@@ -453,17 +449,17 @@ class RXXX<
   get writable(): boolean {
     return this.#setter !== undefined;
   }
-  write(value: WT): PromiseLike<R<void, string>> {
+  write(value: WT): PromiseLike<StateResult<void>> {
     if (this.#setter) {
       const res = this.#setter(value, this as Owner<RRT, HEL, WT>, this.#value);
       return sync_resolve(res);
     }
     return sync_resolve(err("not writable"));
   }
-  limit(value: WT): PromiseLike<R<WT, string>> {
+  limit(value: WT): PromiseLike<StateResult<WT>> {
     return this.#helper?.limit(value) ?? sync_resolve(ok(value));
   }
-  check(value: WT): PromiseLike<R<WT, string>> {
+  check(value: WT): PromiseLike<StateResult<WT>> {
     return this.#helper?.check(value) ?? sync_resolve(ok(value));
   }
 }

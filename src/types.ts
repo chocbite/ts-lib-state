@@ -42,13 +42,13 @@ export type HelperRelated<HEL extends StateHelper<any, any, any>> = ReturnType<
 >;
 
 export type StateReadType<RT> = RT extends any[]
-  ? StateArrayRead<RT[number]>
+  ? StateArrayRead<RT>
   : RT extends object
     ? StateObjectRead<RT>
     : RT;
 
 export type StateWriteType<WT> = WT extends any[]
-  ? StateArrayWrite<WT[number]>
+  ? StateArrayWrite<WT>
   : WT extends object
     ? StateObjectWrite<WT>
     : WT;

@@ -5,13 +5,14 @@ import {
 } from "@chocbite/ts-lib-common";
 import {
   err,
+  none,
   ok,
   OptionNone,
   ResultInferOk,
   ResultOk,
 } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
-import { StateNoHelper as NoHelper } from "./helpers/helpers";
+import { StateNoHelper as NoHelper, StateHelperBase } from "./helpers/helpers";
 import {
   StateHelper as Helper,
   HelperRelated as HELToREL,
@@ -326,7 +327,8 @@ class Func<
     helper?: HEL,
   ) {
     super();
-    this.helper = helper ?? (new NoHelper() as unknown as HEL);
+    if (helper)
+      this.#helper = helper as unknown as StateHelperBase<any, any, any>;
     this.#rok = read_ok;
     this.single_get = once;
     this.setup_connection = setup;
@@ -339,7 +341,7 @@ class Func<
     this.write_debounce = write_debounce || 0;
   }
 
-  readonly helper: HEL;
+  #helper?: StateHelperBase<any, any, any>;
 
   readonly timeout: number;
   readonly debounce: number;
@@ -379,13 +381,13 @@ class Func<
   }
 
   related(): HELToREL<HEL> {
-    return this.helper.related() as HELToREL<HEL>;
+    return (this.#helper?.related() ?? none()) as HELToREL<HEL>;
   }
   limit(value: WT): PromiseLike<SR<WT>> {
-    return this.helper?.limit(value) ?? sync_resolve(ok(value));
+    return this.#helper?.limit(value) ?? sync_resolve(ok(value));
   }
   check(value: WT): PromiseLike<SR<WT>> {
-    return this.helper?.check(value) ?? sync_resolve(ok(value));
+    return this.#helper?.check(value) ?? sync_resolve(ok(value));
   }
 }
 
