@@ -261,7 +261,7 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
   change(index: number, ...items: RIOK<RT>): this {
     if (items.length === 0) return this;
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
-    for (let i = 0; i < arr.length; i++) (arr as any[])[index + i] = items[i];
+    for (let i = 0; i < items.length; i++) (arr as any[])[index + i] = items[i];
     arr[SARK] = [{ type: "changed", index, items }];
     this.#local.set(ok(arr) as RT);
     delete arr[SARK];
