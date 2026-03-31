@@ -3,12 +3,12 @@ import { describe, expect, it } from "vitest";
 import { state as st } from "..";
 
 //##################################################################################################################################################
-//       ____  ____       _ ______ _____ _______   __  __ ______ _______ _    _  ____  _____   _____
-//      / __ \|  _ \     | |  ____/ ____|__   __| |  \/  |  ____|__   __| |  | |/ __ \|  __ \ / ____|
+//       ____  ____       _ ______ _____ _______  __  __ ______ _______ _    _  ____  _____   _____
+//      / __ \|  _ \     | |  ____/ ____|__   __||  \/  |  ____|__   __| |  | |/ __ \|  __ \ / ____|
 //     | |  | | |_) |    | | |__ | |      | |    | \  / | |__     | |  | |__| | |  | | |  | | (___
 //     | |  | |  _ < _   | |  __|| |      | |    | |\/| |  __|    | |  |  __  | |  | | |  | |\___ \
 //     | |__| | |_) | |__| | |___| |____  | |    | |  | | |____   | |  | |  | | |__| | |__| |____) |
-//      \____/|____/ \____/|______\\_____| |_|    |_|  |_|______|  |_|  |_|  |_|\____/|_____/|_____/
+//      \____/|____/ \____/|______\\_____||_|    |_|  |_|______|  |_|  |_|  |_|\____/|_____/|_____/
 describe("Object Methods on Local State", async () => {
   it("get", async () => {
     const s = st.rosw(ok<Record<string, number>>({ a: 1, b: 2 }));
@@ -95,12 +95,12 @@ describe("Object Methods on Local State", async () => {
 });
 
 //##################################################################################################################################################
-//       ____  ____       _ ______ _____ _______   _    _ ______ _      _____  ______ _____
-//      / __ \|  _ \     | |  ____/ ____|__   __| | |  | |  ____| |    |  __ \|  ____|  __ \
+//       ____  ____       _ ______ _____ _______  _    _ ______ _      _____  ______ _____
+//      / __ \|  _ \     | |  ____/ ____|__   __|| |  | |  ____| |    |  __ \|  ____|  __ \
 //     | |  | | |_) |    | | |__ | |      | |    | |__| | |__  | |    | |__) | |__  | |__) |
 //     | |  | |  _ < _   | |  __|| |      | |    |  __  |  __| | |    |  ___/|  __| |  _  /
 //     | |__| | |_) | |__| | |___| |____  | |    | |  | | |____| |____| |    | |____| | \ \
-//      \____/|____/ \____/|______\\_____| |_|    |_|  |_|______|______|_|    |______|_|  \_\
+//      \____/|____/ \____/|______\\_____||_|    |_|  |_|______|______|_|    |______|_|  \_\
 describe("Object Helper", async () => {
   it("help creates helper", async () => {
     const s = st.rosw(
@@ -112,10 +112,7 @@ describe("Object Helper", async () => {
   });
 
   it("helper tracks changes on add", async () => {
-    const s = st.rosw(
-      st.o.help(ok<Record<string, number>>({ a: 1 })),
-      true,
-    );
+    const s = st.rosw(st.o.help(ok<Record<string, number>>({ a: 1 })), true);
     expect(s.ok()).toEqual({ a: 1 });
     s.object.add("b", 2);
     expect(s.ok()).toEqual({ a: 1, b: 2 });
@@ -161,20 +158,19 @@ describe("Object Write / Apply", async () => {
   });
 
   it("write_apply add", async () => {
-    const [result, reads] = st.o.write_apply(
-      st.o.write.add<number>({ b: 2 }),
-      { a: 1 },
-    );
+    const [result, reads] = st.o.write_apply(st.o.write.add<number>({ b: 2 }), {
+      a: 1,
+    });
     expect(result).toEqual({ a: 1, b: 2 });
     expect(reads).toBeDefined();
     expect(reads![0].type).to.equal("added");
   });
 
   it("write_apply remove", async () => {
-    const [result, reads] = st.o.write_apply(
-      st.o.write.remove<number>("b"),
-      { a: 1, b: 2 },
-    );
+    const [result, reads] = st.o.write_apply(st.o.write.remove<number>("b"), {
+      a: 1,
+      b: 2,
+    });
     expect(result).toEqual({ a: 1 });
     expect(reads).toBeDefined();
     expect(reads![0].type).to.equal("removed");
