@@ -35,13 +35,13 @@ export type StateSub<RRT extends StateResult<any>> = (value: RRT) => void;
 
 export type StateInferResult<S extends State<any>> =
   S extends StateROA<infer RT>
-    ? ResultOk<StateReadType<RT>>
+    ? ResultOk<RT>
     : S extends StateREA<infer RT>
-      ? StateResult<StateReadType<RT>>
+      ? StateResult<RT>
       : never;
 
 export type StateInferType<S extends State<any>> =
-  S extends State<infer RT> ? StateReadType<RT> : never;
+  S extends State<infer RT> ? RT : never;
 
 export type StateInferSub<S extends State<any>> = StateSub<StateInferResult<S>>;
 
@@ -80,7 +80,6 @@ export interface StateBase<
   [STATE_KEY]: true;
 
   //#Reader Context
-
   /**Allows getting value of the state*/
   then<TResult1 = RRT, TResult2 = never>(
     on_fulfilled?: ((value: RRT) => TResult1 | PromiseLike<TResult1>) | null,
@@ -126,7 +125,7 @@ export interface StateBase<
 }
 
 interface REA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<StateReadType<RT>>,
+  ResultOk<RT>,
   REL,
   WT
 > {
@@ -136,7 +135,7 @@ interface REA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface ROA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<StateReadType<RT>>,
+  ResultOk<RT>,
   REL,
   WT
 > {
@@ -146,30 +145,30 @@ interface ROA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface RES<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  StateResult<StateReadType<RT>>,
+  StateResult<RT>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): StateResult<StateReadType<RT>>;
+  get(): StateResult<RT>;
   readonly rok: false;
   readonly writable: false;
 }
 
 interface ROS<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<StateReadType<RT>>,
+  ResultOk<RT>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): ResultOk<StateReadType<RT>>;
+  get(): ResultOk<RT>;
   readonly rok: true;
-  ok(): StateReadType<RT>;
+  ok(): RT;
   readonly writable: false;
 }
 
 interface REAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<StateReadType<RT>>,
+  ResultOk<RT>,
   REL,
   WT
 > {
@@ -182,7 +181,7 @@ interface REAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface ROAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<StateReadType<RT>>,
+  ResultOk<RT>,
   REL,
   WT
 > {
@@ -195,12 +194,12 @@ interface ROAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface RESW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  StateResult<StateReadType<RT>>,
+  StateResult<RT>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): StateResult<StateReadType<RT>>;
+  get(): StateResult<RT>;
   readonly rok: false;
   readonly writable: true;
   write(value: WT): PromiseLike<StateResult<void>>;
@@ -209,14 +208,14 @@ interface RESW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface ROSW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  ResultOk<StateReadType<RT>>,
+  ResultOk<RT>,
   REL,
   WT
 > {
   readonly rsync: true;
-  get(): ResultOk<StateReadType<RT>>;
+  get(): ResultOk<RT>;
   readonly rok: true;
-  ok(): StateReadType<RT>;
+  ok(): RT;
   readonly writable: true;
   write(value: WT): PromiseLike<StateResult<void>>;
   limit(value: WT): PromiseLike<StateResult<WT>>;

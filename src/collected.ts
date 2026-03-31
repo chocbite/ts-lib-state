@@ -18,7 +18,6 @@ import {
   StateROA,
   StateSub,
   type State,
-  type StateReadType,
   type StateRES,
   type StateROS,
 } from "./types";
@@ -36,9 +35,9 @@ export type StateCollectedTransVal<IN extends State<any>[]> = {
 
 export type StateCollectedTransValUnk<IN extends State<any>[]> = {
   [I in keyof IN]: IN[I] extends StateROA<infer RT>
-    ? ResultOk<StateReadType<RT>>
+    ? ResultOk<RT>
     : IN[I] extends StateREA<infer RT>
-      ? SR<StateReadType<RT>>
+      ? SR<RT>
       : unknown;
 };
 
