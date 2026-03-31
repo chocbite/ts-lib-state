@@ -111,8 +111,8 @@ function read_apply<T, U>(
 
 /**Calls a setter function with a state array read object*/
 function read_set<T>(
-  read: [T, StateArrayReadTypes<T>[] | undefined],
-  setter: (value: T | StateArrayRead<T>) => void,
+  read: [T[], StateArrayReadTypes<T>[] | undefined],
+  setter: (value: StateArrayRead<T>) => void,
 ) {
   const [array, read_types] = read as [
     StateArrayRead<T>,
@@ -143,45 +143,47 @@ export type StateArrayWriteTypes<WT> =
   | { type: "change"; index: number; items: WT[] }
   | { type: "splice"; index: number; delete_count: number; items: WT[] };
 
-export type StateArrayWrite<WT> = WT[] & {
-  [STATE_ARRAY_WRITE_KEY]?: StateArrayWriteTypes<WT>;
-};
+export type StateArrayWrite<WT> =
+  | WT[]
+  | {
+      [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<WT>;
+    };
 
 const write = {
   fresh<T>(items: T[]): StateArrayWrite<T> {
-    (items as StateArrayWrite<T>)[STATE_ARRAY_WRITE_KEY] = {
+    (items as any)[STATE_ARRAY_WRITE_KEY] = {
       type: "fresh",
       items,
     };
     return items;
   },
   push<T>(...items: T[]): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = { type: "push", items };
     return array;
   },
   unshift<T>(...items: T[]): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = { type: "unshift", items };
     return array;
   },
   pop<T>(): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = { type: "pop" };
     return array;
   },
   shift<T>(): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = { type: "shift" };
     return array;
   },
   delete<T>(val: T): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = { type: "delete", delete: val };
     return array;
   },
   change<T>(index: number, ...items: T[]): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = { type: "change", index, items };
     return array;
   },
@@ -190,7 +192,7 @@ const write = {
     delete_count: number = 0,
     ...items: T[]
   ): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = {
       type: "splice",
       index: start,
@@ -206,9 +208,13 @@ function write_apply<T>(
   write: StateArrayWrite<T>,
   array: T[] = [],
 ): [T[], StateArrayReadTypes<T>[] | undefined] {
-  if (write[STATE_ARRAY_WRITE_KEY]) {
-    const w = write[STATE_ARRAY_WRITE_KEY];
-    if (w.type === "fresh") return [write, [{ type: "fresh", items: write }]];
+  const wk = (write as any)[STATE_ARRAY_WRITE_KEY] as
+    | StateArrayWriteTypes<T>
+    | undefined;
+  if (wk) {
+    const w = wk;
+    if (w.type === "fresh")
+      return [write as T[], [{ type: "fresh", items: write as T[] }]];
     else if (w.type === "push") {
       const index = array.length;
       array.push(...w.items);
@@ -247,7 +253,7 @@ function write_apply<T>(
         operations.push({ type: "added", index: w.index, items: w.items });
       return [array, operations];
     } else return [array, undefined];
-  } else return [write, undefined];
+  } else return [write as T[], undefined];
 }
 
 //##################################################################################################################################################
@@ -319,8 +325,6 @@ export class StateArrayHelperBase<RT extends any[]>
 //     |______/_/ \_\_|     \____/|_|  \_\ |_| |_____/
 
 export const ARRAY = {
-  /**Unique key to check if object is a array related */
-  RELATED_KEY: STATE_ARRAY_RELATED_KEY,
   /**Returns true if object is a array related */
   is_related(r: any): r is StateArrayRelated {
     return Boolean(
@@ -328,8 +332,6 @@ export const ARRAY = {
       (r as { [STATE_ARRAY_RELATED_KEY]: boolean })[STATE_ARRAY_RELATED_KEY],
     );
   },
-  /**Unique key to check if object is a array helper */
-  HELPER_KEY: STATE_ARRAY_HELPER_KEY,
   /**Returns true if object is a array helper */
   is_helper(h: any): h is StateArrayHelperBase<any> {
     return Boolean(
@@ -344,8 +346,6 @@ export const ARRAY = {
     return [init, new StateArrayHelperBase<RIO<RRT>>(options)];
   },
   //### Read
-  /**Unique key to check if an array contains an array read object */
-  read_key: STATE_ARRAY_READ_KEY,
   /**Returns true if object is a array read object */
   is_read(a: any): a is StateArrayRead<any> {
     return Boolean(
@@ -355,9 +355,11 @@ export const ARRAY = {
   read,
   read_apply,
   read_set,
-  //### Read
-  write_key: STATE_ARRAY_WRITE_KEY,
-  is_write(a: any): a is StateArrayWrite<any> {
+  //### Write
+  /**Returns true if object is a array write object */
+  is_write(
+    a: any,
+  ): a is { [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<any> } {
     return Boolean(
       a && (a as { [STATE_ARRAY_WRITE_KEY]: boolean })[STATE_ARRAY_WRITE_KEY],
     );

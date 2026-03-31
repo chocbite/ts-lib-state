@@ -50,16 +50,12 @@ export class StateBoolHelperBase
 }
 
 export const BOOL = {
-  /**Unique key to check if object is a boolean related */
-  RELATED_KEY: STATE_BOOL_RELATED_KEY,
   /**Returns true if object is a boolean related */
   is_related(r: any): r is StateBoolRelated {
     return Boolean(
       r && (r as { [STATE_BOOL_RELATED_KEY]: boolean })[STATE_BOOL_RELATED_KEY],
     );
   },
-  /**Unique key to check if object is a boolean helper */
-  HELPER_KEY: STATE_BOOL_HELPER_KEY,
   /**Returns true if object is a boolean helper */
   is_helper(h: any): h is StateBoolHelperBase {
     return Boolean(

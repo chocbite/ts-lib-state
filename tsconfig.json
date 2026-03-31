@@ -6,7 +6,7 @@
     "moduleResolution": "Bundler",
     "lib": ["ESNext", "DOM"],
     "declaration": true,
-    "declarationMap": true,
+    "declarationMap": false,
     "sourceMap": true,
     /*Typescripts errors if set to dist?*/
     "outDir": "./dist2",

@@ -24,13 +24,14 @@ import {
 } from "./helpers/helpers";
 import {
   OBJECT,
-  OBJECT_READ_KEY as SORK,
+  STATE_OBJECT_READ_KEY as SORK,
   type StateObjectRead as SOR,
 } from "./helpers/object";
 import type {
   StateHelper as Helper,
   HelperRelated as HELToREL,
   StateResult as SR,
+  StateReadType as SRT,
   State,
   StateREA,
   StateREAW,
@@ -68,9 +69,9 @@ export interface Owner<
   WT,
 > {
   /**Changes state value */
-  set(value: RRT): void;
+  set(value: RRT | RO<SRT<RIOK<RRT>>>): void;
   /**Changes state value to a ResultOk value */
-  set_ok(value: RIOK<RRT>): void;
+  set_ok(value: RIOK<RRT> | SRT<RIOK<RRT>>): void;
   /**Changes state setter function, if done on a none writable state, it will become writable */
   setter?: Setter<RRT, HEL, WT>;
   /**Returns state as a simple state type */
@@ -437,7 +438,7 @@ class RXXX<
       };
       this.set = (value) => {
         this.#clean();
-        this.set(this.ful_r_prom(value));
+        this.set(this.ful_r_prom(value as RRT));
       };
       const write = this.write.bind(this);
       this.write = async (value) =>
@@ -455,11 +456,11 @@ class RXXX<
   #setter?: Setter<RRT, HEL, WT>;
 
   //#Owner Context
-  set(value: RRT) {
-    this.#helper?.on_change(value);
-    this.update_subs((this.#value = value));
+  set(value: RRT | RO<SRT<RIOK<RRT>>>) {
+    this.#helper?.on_change(value as RRT);
+    this.update_subs((this.#value = value as RRT));
   }
-  set_ok(value: RIOK<RRT>): void {
+  set_ok(value: RIOK<RRT> | SRT<RIOK<RRT>>): void {
     this.set(ok(value) as RRT);
   }
   set_err(error: string): void {
