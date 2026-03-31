@@ -218,6 +218,24 @@ describe("Array Methods on Local State", async () => {
     expect(s.ok()).toEqual([1, 2, 3]);
   });
 
+  it("change with index beyond array length is no-op", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    let count = 0;
+    s.sub(() => count++);
+    s.array.change(10, 99);
+    expect(count).to.equal(0);
+    expect(s.ok()).toEqual([1, 2, 3]);
+  });
+
+  it("change clamps items extending past array end", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    let count = 0;
+    s.sub(() => count++);
+    s.array.change(2, 30, 40);
+    expect(count).to.equal(1);
+    expect(s.ok()).toEqual([1, 2, 30]);
+  });
+
   it("change tracks read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
     let reads: any = undefined;
@@ -450,6 +468,26 @@ describe("Array Write / Apply", async () => {
     expect(reads).toBeDefined();
     expect(reads![0].type).to.equal("changed");
     expect(reads![0]).toHaveProperty("index", 1);
+  });
+
+  it("write_apply change with index beyond array length is no-op", async () => {
+    const [result, reads] = st.a.write_apply(
+      st.a.write.change(10, 99),
+      [1, 2, 3],
+    );
+    expect(result).toEqual([1, 2, 3]);
+    expect(reads).to.equal(undefined);
+  });
+
+  it("write_apply change clamps items extending past array end", async () => {
+    const [result, reads] = st.a.write_apply(
+      st.a.write.change(2, 30, 40),
+      [1, 2, 3],
+    );
+    expect(result).toEqual([1, 2, 30]);
+    expect(reads).toBeDefined();
+    expect(reads![0].type).to.equal("changed");
+    expect(reads![0]).toHaveProperty("index", 2);
   });
 
   it("write_apply splice", async () => {

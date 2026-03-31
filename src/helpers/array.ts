@@ -242,8 +242,10 @@ function write_apply<T>(
       }
       return [array, operations];
     } else if (w.type === "change") {
-      for (let i = 0; i < w.items.length; i++) array[w.index + i] = w.items[i];
-      return [array, [{ type: "changed", index: w.index, items: w.items }]];
+      if (w.index >= array.length) return [array, undefined];
+      const capped = w.items.slice(0, array.length - w.index);
+      for (let i = 0; i < capped.length; i++) array[w.index + i] = capped[i];
+      return [array, [{ type: "changed", index: w.index, items: capped }]];
     } else if (w.type === "splice") {
       const removed = array.splice(w.index, w.delete_count, ...w.items);
       const operations = [] as StateArrayReadTypes<T>[];
