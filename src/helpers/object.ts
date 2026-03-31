@@ -149,30 +149,30 @@ export type StateObjectWriteTypes<TYPE> =
 
 export type StateObjectWrite<TYPE> = {
   [key: PropertyKey]: TYPE;
-} & {
+} | {
   [OBJECT_WRITE_KEY]?: StateObjectWriteTypes<TYPE>;
 };
 
 const write = {
   fresh<T>(items: Record<PropertyKey, T>): StateObjectWrite<T> {
-    (items as StateObjectWrite<T>)[OBJECT_WRITE_KEY] = {
+    (items as any)[OBJECT_WRITE_KEY] = {
       type: "fresh",
       items,
     };
     return items as StateObjectWrite<T>;
   },
   add<T>(items: Record<PropertyKey, T>): StateObjectWrite<T> {
-    const obj = {} as StateObjectWrite<T>;
+    const obj: any = {};
     obj[OBJECT_WRITE_KEY] = { type: "add", items };
     return obj;
   },
   remove<T>(...keys: PropertyKey[]): StateObjectWrite<T> {
-    const obj = {} as StateObjectWrite<T>;
+    const obj: any = {};
     obj[OBJECT_WRITE_KEY] = { type: "remove", items: keys };
     return obj;
   },
   change<T>(items: Record<PropertyKey, T>): StateObjectWrite<T> {
-    const obj = {} as StateObjectWrite<T>;
+    const obj: any = {};
     obj[OBJECT_WRITE_KEY] = { type: "change", items };
     return obj;
   },
@@ -183,8 +183,9 @@ function write_apply<T>(
   write: StateObjectWrite<T>,
   obj: Record<PropertyKey, T> = {},
 ): [Record<PropertyKey, T>, StateObjectReadTypes<T>[] | undefined] {
-  if (write[OBJECT_WRITE_KEY]) {
-    const w = write[OBJECT_WRITE_KEY];
+  const wk = (write as any)[OBJECT_WRITE_KEY] as StateObjectWriteTypes<T> | undefined;
+  if (wk) {
+    const w = wk;
     if (w.type === "fresh") {
       const result: Record<PropertyKey, T> = {};
       for (const key of Object.keys(w.items)) result[key] = w.items[key];

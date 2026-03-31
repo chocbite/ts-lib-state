@@ -143,45 +143,45 @@ export type StateArrayWriteTypes<WT> =
   | { type: "change"; index: number; items: WT[] }
   | { type: "splice"; index: number; delete_count: number; items: WT[] };
 
-export type StateArrayWrite<WT> = WT[] & {
+export type StateArrayWrite<WT> = WT[] | {
   [STATE_ARRAY_WRITE_KEY]?: StateArrayWriteTypes<WT>;
 };
 
 const write = {
   fresh<T>(items: T[]): StateArrayWrite<T> {
-    (items as StateArrayWrite<T>)[STATE_ARRAY_WRITE_KEY] = {
+    (items as any)[STATE_ARRAY_WRITE_KEY] = {
       type: "fresh",
       items,
     };
     return items;
   },
   push<T>(...items: T[]): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = { type: "push", items };
     return array;
   },
   unshift<T>(...items: T[]): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = { type: "unshift", items };
     return array;
   },
   pop<T>(): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = { type: "pop" };
     return array;
   },
   shift<T>(): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = { type: "shift" };
     return array;
   },
   delete<T>(val: T): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = { type: "delete", delete: val };
     return array;
   },
   change<T>(index: number, ...items: T[]): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = { type: "change", index, items };
     return array;
   },
@@ -190,7 +190,7 @@ const write = {
     delete_count: number = 0,
     ...items: T[]
   ): StateArrayWrite<T> {
-    const array = [] as unknown as StateArrayWrite<T>;
+    const array: any = [];
     array[STATE_ARRAY_WRITE_KEY] = {
       type: "splice",
       index: start,
@@ -206,9 +206,10 @@ function write_apply<T>(
   write: StateArrayWrite<T>,
   array: T[] = [],
 ): [T[], StateArrayReadTypes<T>[] | undefined] {
-  if (write[STATE_ARRAY_WRITE_KEY]) {
-    const w = write[STATE_ARRAY_WRITE_KEY];
-    if (w.type === "fresh") return [write, [{ type: "fresh", items: write }]];
+  const wk = (write as any)[STATE_ARRAY_WRITE_KEY] as StateArrayWriteTypes<T> | undefined;
+  if (wk) {
+    const w = wk;
+    if (w.type === "fresh") return [write as T[], [{ type: "fresh", items: write as T[] }]];
     else if (w.type === "push") {
       const index = array.length;
       array.push(...w.items);
@@ -247,7 +248,7 @@ function write_apply<T>(
         operations.push({ type: "added", index: w.index, items: w.items });
       return [array, operations];
     } else return [array, undefined];
-  } else return [write, undefined];
+  } else return [write as T[], undefined];
 }
 
 //##################################################################################################################################################
