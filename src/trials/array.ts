@@ -12,3 +12,4 @@ const state_inst = state.rosw(state.a.help(ok([5])), async (val, s, o) => {
   }
   return ok(undefined);
 });
+console.debug(state_inst);

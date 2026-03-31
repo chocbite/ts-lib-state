@@ -26,3 +26,5 @@ const rea = state.c.rea(
   state.err<string>("1"),
   state.roa<ResultOk<number>>(undefined),
 );
+
+console.debug(ros, res, roa, rea);

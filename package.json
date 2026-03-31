@@ -25,7 +25,8 @@
     "build": "tsdown src/index.ts --sourcemap false --onlyBundle",
     "lint": "eslint src/**/*.ts",
     "test": "vitest run",
-    "prepublishOnly": "npm run build",
+    "check-trials": "tsc --noEmit",
+    "prepublishOnly": "npm run check-trials && npm run build",
     "upgrades": "npx npm-check-updates --target semver",
     "upgrade": "npx npm-check-updates --target semver -u && npm install"
   },
