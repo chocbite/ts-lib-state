@@ -325,8 +325,6 @@ export class StateArrayHelperBase<RT extends any[]>
 //     |______/_/ \_\_|     \____/|_|  \_\ |_| |_____/
 
 export const ARRAY = {
-  /**Unique key to check if object is a array related */
-  RELATED_KEY: STATE_ARRAY_RELATED_KEY,
   /**Returns true if object is a array related */
   is_related(r: any): r is StateArrayRelated {
     return Boolean(
@@ -334,8 +332,6 @@ export const ARRAY = {
       (r as { [STATE_ARRAY_RELATED_KEY]: boolean })[STATE_ARRAY_RELATED_KEY],
     );
   },
-  /**Unique key to check if object is a array helper */
-  HELPER_KEY: STATE_ARRAY_HELPER_KEY,
   /**Returns true if object is a array helper */
   is_helper(h: any): h is StateArrayHelperBase<any> {
     return Boolean(
@@ -350,8 +346,6 @@ export const ARRAY = {
     return [init, new StateArrayHelperBase<RIO<RRT>>(options)];
   },
   //### Read
-  /**Unique key to check if an array contains an array read object */
-  read_key: STATE_ARRAY_READ_KEY,
   /**Returns true if object is a array read object */
   is_read(a: any): a is StateArrayRead<any> {
     return Boolean(
@@ -361,9 +355,11 @@ export const ARRAY = {
   read,
   read_apply,
   read_set,
-  //### Read
-  write_key: STATE_ARRAY_WRITE_KEY,
-  is_write(a: any): a is { [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<any> } {
+  //### Write
+  /**Returns true if object is a array write object */
+  is_write(
+    a: any,
+  ): a is { [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<any> } {
     return Boolean(
       a && (a as { [STATE_ARRAY_WRITE_KEY]: boolean })[STATE_ARRAY_WRITE_KEY],
     );

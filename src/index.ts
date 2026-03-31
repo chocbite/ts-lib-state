@@ -1,12 +1,20 @@
 import { err, ok } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
 import { COLLECTED } from "./collected";
-import { ARRAY } from "./helpers/array";
+import {
+  ARRAY,
+  STATE_ARRAY_READ_KEY,
+  STATE_ARRAY_WRITE_KEY,
+} from "./helpers/array";
 import { BOOL } from "./helpers/boolean";
 import { ENUM } from "./helpers/enum";
 import { IS } from "./helpers/is";
 import { NUMBER } from "./helpers/number";
-import { OBJECT } from "./helpers/object";
+import {
+  OBJECT,
+  STATE_OBJECT_READ_KEY,
+  STATE_OBJECT_WRITE_KEY,
+} from "./helpers/object";
 import { STRING } from "./helpers/string";
 import { UTIL } from "./helpers/util";
 import { rea, reaw, res, resw, roa, roaw, ros, rosw } from "./local";
@@ -97,9 +105,7 @@ export {
 } from "./collected";
 export {
   STATE_ARRAY_HELPER_KEY,
-  STATE_ARRAY_READ_KEY,
   STATE_ARRAY_RELATED_KEY,
-  STATE_ARRAY_WRITE_KEY,
   type StateArrayHelper,
   type StateArrayRead,
   type StateArrayReadTypes,
@@ -126,12 +132,9 @@ export {
   type StateNumberRelated,
 } from "./helpers/number";
 export {
-  OBJECT_READ_KEY,
-  OBJECT_WRITE_KEY,
   STATE_OBJECT_HELPER_KEY,
   STATE_OBJECT_RELATED_KEY,
   type StateObjectHelper,
-  type StateObjectMethods,
   type StateObjectRead,
   type StateObjectReadTypes,
   type StateObjectRelated,
@@ -171,6 +174,12 @@ export {
   type StateRemoteFuncROA as StateResourceFuncROA,
   type StateRemoteFuncROAW as StateResourceFuncROAW,
 } from "./remote";
+export {
+  STATE_ARRAY_READ_KEY,
+  STATE_ARRAY_WRITE_KEY,
+  STATE_OBJECT_READ_KEY,
+  STATE_OBJECT_WRITE_KEY,
+};
 
 //       _____ _______    _______ ______   _________     _______  ______  _____
 //      / ____|__   __|/\|__   __|  ____| |__   __\ \   / /  __ \|  ____|/ ____|

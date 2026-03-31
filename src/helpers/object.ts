@@ -22,7 +22,7 @@ import {
 //     |  _  /|  __|   / /\ \ | |  | |
 //     | | \ \| |____ / ____ \| |__| |
 //     |_|  \_\______/_/    \_\_____/
-export const OBJECT_READ_KEY = Symbol("state_object_read_key");
+export const STATE_OBJECT_READ_KEY = Symbol("state_object_read_key");
 
 export type StateObjectReadTypes<TYPE> =
   | {
@@ -45,7 +45,7 @@ export type StateObjectReadTypes<TYPE> =
 export type StateObjectRead<TYPE> = {
   [key: PropertyKey]: TYPE;
 } & {
-  [OBJECT_READ_KEY]?: StateObjectReadTypes<TYPE>[];
+  [STATE_OBJECT_READ_KEY]?: StateObjectReadTypes<TYPE>[];
 };
 
 /**Returns the state object granular read object for an object, or a fake one if the object is not a state object read object */
@@ -53,7 +53,7 @@ function read<TYPE>(
   obj: Record<PropertyKey, TYPE>,
 ): StateObjectReadTypes<TYPE>[] {
   return (
-    (obj as StateObjectRead<TYPE>)[OBJECT_READ_KEY] ?? [
+    (obj as StateObjectRead<TYPE>)[STATE_OBJECT_READ_KEY] ?? [
       { type: "fresh", items: obj },
     ]
   );
@@ -77,8 +77,8 @@ function read_apply<T, U>(
   transform?: (item: T) => U,
 ): Record<PropertyKey, U> | Record<PropertyKey, T> {
   if (transform) {
-    if (read[OBJECT_READ_KEY]) {
-      for (const r of read[OBJECT_READ_KEY]) {
+    if (read[STATE_OBJECT_READ_KEY]) {
+      for (const r of read[STATE_OBJECT_READ_KEY]) {
         if (r.type === "added")
           for (const key of Object.keys(r.items))
             (obj as Record<PropertyKey, U>)[key] = transform(r.items[key]);
@@ -102,8 +102,8 @@ function read_apply<T, U>(
       return result;
     }
   } else {
-    if (read[OBJECT_READ_KEY]) {
-      for (const r of read[OBJECT_READ_KEY]) {
+    if (read[STATE_OBJECT_READ_KEY]) {
+      for (const r of read[STATE_OBJECT_READ_KEY]) {
         if (r.type === "added") Object.assign(obj, r.items);
         else if (r.type === "removed")
           for (const key of Object.keys(r.items)) delete obj[key];
@@ -126,9 +126,9 @@ function read_set<T>(
     StateObjectRead<T>,
     StateObjectReadTypes<T>[] | undefined,
   ];
-  if (read_types) obj[OBJECT_READ_KEY] = read_types;
+  if (read_types) obj[STATE_OBJECT_READ_KEY] = read_types;
   setter(obj);
-  if (obj[OBJECT_READ_KEY]) delete obj[OBJECT_READ_KEY];
+  if (obj[STATE_OBJECT_READ_KEY]) delete obj[STATE_OBJECT_READ_KEY];
 }
 
 //##################################################################################################################################################
@@ -139,7 +139,7 @@ function read_set<T>(
 //        \  /\  /  | | \ \ _| |_   | |  | |____
 //         \/  \/   |_|  \_\_____|  |_|  |______|
 
-export const OBJECT_WRITE_KEY = Symbol("state_object_write_key");
+export const STATE_OBJECT_WRITE_KEY = Symbol("state_object_write_key");
 
 export type StateObjectWriteTypes<TYPE> =
   | { type: "fresh"; items: Record<PropertyKey, TYPE> }
@@ -147,15 +147,17 @@ export type StateObjectWriteTypes<TYPE> =
   | { type: "remove"; items: readonly PropertyKey[] }
   | { type: "change"; items: Record<PropertyKey, TYPE> };
 
-export type StateObjectWrite<TYPE> = {
-  [key: PropertyKey]: TYPE;
-} | {
-  [OBJECT_WRITE_KEY]: StateObjectWriteTypes<TYPE>;
-};
+export type StateObjectWrite<TYPE> =
+  | {
+      [key: PropertyKey]: TYPE;
+    }
+  | {
+      [STATE_OBJECT_WRITE_KEY]: StateObjectWriteTypes<TYPE>;
+    };
 
 const write = {
   fresh<T>(items: Record<PropertyKey, T>): StateObjectWrite<T> {
-    (items as any)[OBJECT_WRITE_KEY] = {
+    (items as any)[STATE_OBJECT_WRITE_KEY] = {
       type: "fresh",
       items,
     };
@@ -163,17 +165,17 @@ const write = {
   },
   add<T>(items: Record<PropertyKey, T>): StateObjectWrite<T> {
     const obj: any = {};
-    obj[OBJECT_WRITE_KEY] = { type: "add", items };
+    obj[STATE_OBJECT_WRITE_KEY] = { type: "add", items };
     return obj;
   },
   remove<T>(...keys: PropertyKey[]): StateObjectWrite<T> {
     const obj: any = {};
-    obj[OBJECT_WRITE_KEY] = { type: "remove", items: keys };
+    obj[STATE_OBJECT_WRITE_KEY] = { type: "remove", items: keys };
     return obj;
   },
   change<T>(items: Record<PropertyKey, T>): StateObjectWrite<T> {
     const obj: any = {};
-    obj[OBJECT_WRITE_KEY] = { type: "change", items };
+    obj[STATE_OBJECT_WRITE_KEY] = { type: "change", items };
     return obj;
   },
 };
@@ -183,7 +185,9 @@ function write_apply<T>(
   write: StateObjectWrite<T>,
   obj: Record<PropertyKey, T> = {},
 ): [Record<PropertyKey, T>, StateObjectReadTypes<T>[] | undefined] {
-  const wk = (write as any)[OBJECT_WRITE_KEY] as StateObjectWriteTypes<T> | undefined;
+  const wk = (write as any)[STATE_OBJECT_WRITE_KEY] as
+    | StateObjectWriteTypes<T>
+    | undefined;
   if (wk) {
     const w = wk;
     if (w.type === "fresh") {
@@ -304,19 +308,23 @@ export const OBJECT = {
   },
   //### Read
   /**Unique key to check if an object contains an object read object */
-  read_key: OBJECT_READ_KEY,
+  READ_KEY: STATE_OBJECT_READ_KEY,
   /**Returns true if object is an object read object */
   is_read(a: any): a is StateObjectRead<any> {
-    return Boolean(a && (a as { [OBJECT_READ_KEY]: boolean })[OBJECT_READ_KEY]);
+    return Boolean(
+      a && (a as { [STATE_OBJECT_READ_KEY]: boolean })[STATE_OBJECT_READ_KEY],
+    );
   },
   read,
   read_apply,
   read_set,
   //### Write
-  write_key: OBJECT_WRITE_KEY,
-  is_write(a: any): a is { [OBJECT_WRITE_KEY]: StateObjectWriteTypes<any> } {
+  WRITE_KEY: STATE_OBJECT_WRITE_KEY,
+  is_write(
+    a: any,
+  ): a is { [STATE_OBJECT_WRITE_KEY]: StateObjectWriteTypes<any> } {
     return Boolean(
-      a && (a as { [OBJECT_WRITE_KEY]: boolean })[OBJECT_WRITE_KEY],
+      a && (a as { [STATE_OBJECT_WRITE_KEY]: boolean })[STATE_OBJECT_WRITE_KEY],
     );
   },
   write,
