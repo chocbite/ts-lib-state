@@ -484,14 +484,14 @@ describe("Array Write / Apply", async () => {
   });
 
   // Bug: pop/shift in write_apply check `if (items[0])` which fails for falsy values like 0
-  it.fails("write_apply pop with falsy value (0) should return correct result", async () => {
+  it.fails("write_apply pop with falsy value (0) removes last element", async () => {
     const [result, reads] = st.a.write_apply(st.a.write.pop<number>(), [1, 2, 0]);
     expect(result).toEqual([1, 2]);
     expect(reads).toBeDefined();
     expect(reads![0].type).to.equal("removed");
   });
 
-  it.fails("write_apply shift with falsy value (0) should return correct result", async () => {
+  it.fails("write_apply shift with falsy value (0) removes first element", async () => {
     const [result, reads] = st.a.write_apply(
       st.a.write.shift<number>(),
       [0, 1, 2],
