@@ -1,53 +1,65 @@
 import {
-  OptionNone,
+  ResultInferOk,
   type Option,
   type Result,
   type ResultOk,
 } from "@chocbite/ts-lib-result";
-import type { StateArrayRead, StateArrayWrite } from "./array/sync";
+import type { StateArrayRead, StateArrayWrite } from "./helpers/array";
+import type { StateObjectRead, StateObjectWrite } from "./helpers/object";
+
+export type StateResult<T> = Result<T, string>;
+
+/**Automatically maps array types to StateArrayRead and object record types to StateObjectRead when reading state values.
+ * For primitive types and non-record objects, returns the type unchanged.*/
+export type StateReadType<RT> = 0 extends 1 & RT
+  ? RT
+  : RT extends readonly (infer E)[]
+    ? StateArrayRead<E>
+    : string extends keyof RT
+      ? StateObjectRead<RT[string & keyof RT]>
+      : RT;
+
+/**Automatically maps array types to StateArrayWrite and object record types to StateObjectWrite when writing state values.
+ * For primitive types and non-record objects, returns the type unchanged.*/
+export type StateWriteType<RT> = 0 extends 1 & RT
+  ? RT
+  : RT extends readonly (infer E)[]
+    ? StateArrayWrite<E>
+    : string extends keyof RT
+      ? StateObjectWrite<RT[string & keyof RT]>
+      : RT;
 
 /**Function used to subscribe to state changes
  * @template RT - The type of the state’s value when read.*/
-export type StateSub<RRT extends Result<any, string>> = (value: RRT) => void;
+export type StateSub<RRT extends StateResult<any>> = (value: RRT) => void;
 
 export type StateInferResult<S extends State<any>> =
   S extends StateROA<infer RT>
-    ? ResultOk<RT>
+    ? ResultOk<StateReadType<RT>>
     : S extends StateREA<infer RT>
-      ? Result<RT, string>
+      ? StateResult<StateReadType<RT>>
       : never;
 
 export type StateInferType<S extends State<any>> =
-  S extends State<infer RT> ? RT : never;
+  S extends State<infer RT> ? StateReadType<RT> : never;
 
 export type StateInferSub<S extends State<any>> = StateSub<StateInferResult<S>>;
 
+export interface StateRelated {}
+
 /**Map of values or states related to a state */
-export type StateRelated = {};
+export interface StateHelper<_RRT, WT, REL extends StateRelated> {
+  /**Returns data related to the state */
+  related(): REL;
+  /**Limits given value to valid range if possible or error reason if not possible */
+  limit(value: WT): PromiseLike<StateResult<WT>>;
+  /**Checks if the value is valid and returns reason for invalidity */
+  check(value: WT): PromiseLike<StateResult<WT>>;
+}
 
-export type StateSetREXW<RT, S, WT = RT> = (
-  value: WT,
-  state: S,
-  old?: Result<RT, string>,
-) => Promise<Result<void, string>>;
-
-export type StateSetROXW<RT, S, WT = RT> = (
-  value: WT,
-  state: S,
-  old?: ResultOk<RT>,
-) => Promise<Result<void, string>>;
-
-export type StateSetREXWS<RT, S, WT = RT> = (
-  value: WT,
-  state: S,
-  old?: Result<RT, string>,
-) => Result<void, string>;
-
-export type StateSetROXWS<RT, S, WT = RT> = (
-  value: WT,
-  state: S,
-  old?: ResultOk<RT>,
-) => Result<void, string>;
+export type HelperRelated<HEL extends StateHelper<any, any, any>> = ReturnType<
+  HEL["related"]
+>;
 
 //###########################################################################################################################################################
 //###########################################################################################################################################################
@@ -58,20 +70,22 @@ export type StateSetROXWS<RT, S, WT = RT> = (
 //     | | \ \| |____ / ____ \| |__| | |____| | \ \  | |___| |__| | |\  |  | |  | |____ / . \   | |
 //     |_|  \_\______/_/    \_\_____/|______|_|  \_\  \_____\____/|_| \_|  |_|  |______/_/ \_\  |_|
 
-export const STATE_KEY = Symbol("is_state");
+export const STATE_KEY = Symbol("state");
 
 export interface StateBase<
-  RT,
-  WT,
+  RRT extends StateResult<any>,
   REL extends Option<StateRelated>,
-  RRT extends Result<RT, string>,
+  WT,
 > {
   [STATE_KEY]: true;
 
   //#Reader Context
 
   /**Allows getting value of the state*/
-  then<T = RRT>(func: (value: RRT) => T | PromiseLike<T>): PromiseLike<T>;
+  then<TResult1 = RRT, TResult2 = never>(
+    on_fulfilled?: ((value: RRT) => TResult1 | PromiseLike<TResult1>) | null,
+    on_rejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
+  ): PromiseLike<TResult1 | TResult2>;
 
   /**Is state guarenteed sync*/
   readonly rsync: boolean;
@@ -81,13 +95,14 @@ export interface StateBase<
   /**Is state guarenteed OK*/
   readonly rok: boolean;
   /**Gets the value of the state without result, only works when state is OK */
-  ok?(): RT;
+  ok?(): ResultInferOk<RRT>;
 
   /**This adds a function as a subscriber to changes to the state
    * @param update set true to update subscriber immediatly*/
   sub<T = StateSub<RRT>>(func: StateSub<RRT>, update?: boolean): T;
   /**This removes a function as a subscriber to the state*/
   unsub<T = StateSub<RRT>>(func: T): T;
+
   /**This returns related states if any*/
   related(): REL;
 
@@ -103,18 +118,17 @@ export interface StateBase<
   readonly writable: boolean;
   /** This attempts a write to the state, write is not guaranteed to succeed
    * @returns promise of result with error for the write*/
-  write?(value: WT): Promise<Result<void, string>>;
+  write?(value: WT): PromiseLike<StateResult<void>>;
   /**Limits given value to valid range if possible returns None if not possible */
-  limit?(value: WT): Promise<Result<WT, string>>;
+  limit?(value: WT): PromiseLike<StateResult<WT>>;
   /**Checks if the value is valid and returns reason for invalidity */
-  check?(value: WT): Promise<Result<WT, string>>;
+  check?(value: WT): PromiseLike<StateResult<WT>>;
 }
 
 interface REA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  RT,
-  WT,
+  ResultOk<StateReadType<RT>>,
   REL,
-  ResultOk<RT>
+  WT
 > {
   readonly rsync: false;
   readonly rok: false;
@@ -122,10 +136,9 @@ interface REA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface ROA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  RT,
-  WT,
+  ResultOk<StateReadType<RT>>,
   REL,
-  ResultOk<RT>
+  WT
 > {
   readonly rsync: false;
   readonly rok: true;
@@ -133,87 +146,81 @@ interface ROA<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 }
 
 interface RES<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  RT,
-  WT,
+  StateResult<StateReadType<RT>>,
   REL,
-  Result<RT, string>
+  WT
 > {
   readonly rsync: true;
-  get(): Result<RT, string>;
+  get(): StateResult<StateReadType<RT>>;
   readonly rok: false;
   readonly writable: false;
 }
 
 interface ROS<RT, REL extends Option<StateRelated>, WT> extends StateBase<
-  RT,
-  WT,
+  ResultOk<StateReadType<RT>>,
   REL,
-  ResultOk<RT>
+  WT
 > {
   readonly rsync: true;
-  get(): ResultOk<RT>;
+  get(): ResultOk<StateReadType<RT>>;
   readonly rok: true;
-  ok(): RT;
+  ok(): StateReadType<RT>;
   readonly writable: false;
 }
 
-interface REAW<RT, WT, REL extends Option<StateRelated>> extends StateBase<
-  RT,
-  WT,
+interface REAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
+  ResultOk<StateReadType<RT>>,
   REL,
-  ResultOk<RT>
+  WT
 > {
   readonly rsync: false;
   readonly rok: false;
   readonly writable: true;
-  write(value: WT): Promise<Result<void, string>>;
-  limit(value: WT): Promise<Result<WT, string>>;
-  check(value: WT): Promise<Result<WT, string>>;
+  write(value: WT): PromiseLike<StateResult<void>>;
+  limit(value: WT): PromiseLike<StateResult<WT>>;
+  check(value: WT): PromiseLike<StateResult<WT>>;
 }
 
-interface ROAW<RT, WT, REL extends Option<StateRelated>> extends StateBase<
-  RT,
-  WT,
+interface ROAW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
+  ResultOk<StateReadType<RT>>,
   REL,
-  ResultOk<RT>
+  WT
 > {
   readonly rsync: false;
   readonly rok: true;
   readonly writable: true;
-  write(value: WT): Promise<Result<void, string>>;
-  limit(value: WT): Promise<Result<WT, string>>;
-  check(value: WT): Promise<Result<WT, string>>;
+  write(value: WT): PromiseLike<StateResult<void>>;
+  limit(value: WT): PromiseLike<StateResult<WT>>;
+  check(value: WT): PromiseLike<StateResult<WT>>;
 }
 
-interface RESW<RT, WT, REL extends Option<StateRelated>> extends StateBase<
-  RT,
-  WT,
+interface RESW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
+  StateResult<StateReadType<RT>>,
   REL,
-  Result<RT, string>
+  WT
 > {
   readonly rsync: true;
-  get(): Result<RT, string>;
+  get(): StateResult<StateReadType<RT>>;
   readonly rok: false;
   readonly writable: true;
-  write(value: WT): Promise<Result<void, string>>;
-  limit(value: WT): Promise<Result<WT, string>>;
-  check(value: WT): Promise<Result<WT, string>>;
+  write(value: WT): PromiseLike<StateResult<void>>;
+  limit(value: WT): PromiseLike<StateResult<WT>>;
+  check(value: WT): PromiseLike<StateResult<WT>>;
 }
 
-interface ROSW<RT, WT, REL extends Option<StateRelated>> extends StateBase<
-  RT,
-  WT,
+interface ROSW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
+  ResultOk<StateReadType<RT>>,
   REL,
-  ResultOk<RT>
+  WT
 > {
   readonly rsync: true;
-  get(): ResultOk<RT>;
+  get(): ResultOk<StateReadType<RT>>;
   readonly rok: true;
-  ok(): RT;
+  ok(): StateReadType<RT>;
   readonly writable: true;
-  write(value: WT): Promise<Result<void, string>>;
-  limit(value: WT): Promise<Result<WT, string>>;
-  check(value: WT): Promise<Result<WT, string>>;
+  write(value: WT): PromiseLike<StateResult<void>>;
+  limit(value: WT): PromiseLike<StateResult<WT>>;
+  check(value: WT): PromiseLike<StateResult<WT>>;
 }
 
 //###########################################################################################################################################################
@@ -224,23 +231,27 @@ interface ROSW<RT, WT, REL extends Option<StateRelated>> extends StateBase<
 //        | |     | |  | |    | |____ ____) |
 //        |_|     |_|  |_|    |______|_____/
 
-export type State<RT, WT = RT, REL extends Option<StateRelated> = Option<{}>> =
+export type State<
+  RT,
+  REL extends Option<StateRelated> = Option<{}>,
+  WT = StateWriteType<RT>,
+> =
   | StateREA<RT, REL, WT>
   | StateROA<RT, REL, WT>
   | StateRES<RT, REL, WT>
   | StateROS<RT, REL, WT>
-  | StateREAW<RT, WT, REL>
-  | StateROAW<RT, WT, REL>
-  | StateRESW<RT, WT, REL>
-  | StateROSW<RT, WT, REL>;
+  | StateREAW<RT, REL, WT>
+  | StateROAW<RT, REL, WT>
+  | StateRESW<RT, REL, WT>
+  | StateROSW<RT, REL, WT>;
 
 export type StateREA<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = any,
+  WT = StateWriteType<RT>,
 > =
   | REA<RT, REL, WT>
-  | StateREAW<RT, WT, REL>
+  | StateREAW<RT, REL, WT>
   | StateROA<RT, REL, WT>
   | StateROS<RT, REL, WT>
   | StateRES<RT, REL, WT>;
@@ -248,93 +259,45 @@ export type StateREA<
 export type StateROA<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = any,
-> = ROA<RT, REL, WT> | StateROAW<RT, WT, REL> | StateROS<RT, REL, WT>;
+  WT = StateWriteType<RT>,
+> = ROA<RT, REL, WT> | StateROAW<RT, REL, WT> | StateROS<RT, REL, WT>;
 
 export type StateRES<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = any,
-> = RES<RT, REL, WT> | StateRESW<RT, WT, REL> | StateROS<RT, REL, WT>;
+  WT = StateWriteType<RT>,
+> = RES<RT, REL, WT> | StateRESW<RT, REL, WT> | StateROS<RT, REL, WT>;
 
 export type StateROS<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = any,
-> = ROS<RT, REL, WT> | StateROSW<RT, WT, REL>;
+  WT = StateWriteType<RT>,
+> = ROS<RT, REL, WT> | StateROSW<RT, REL, WT>;
 
 export type StateREAW<
   RT,
-  WT = RT,
   REL extends Option<StateRelated> = Option<{}>,
+  WT = StateWriteType<RT>,
 > =
-  | REAW<RT, WT, REL>
-  | StateROAW<RT, WT, REL>
-  | StateROSW<RT, WT, REL>
-  | StateRESW<RT, WT, REL>;
+  | REAW<RT, REL, WT>
+  | StateROAW<RT, REL, WT>
+  | StateROSW<RT, REL, WT>
+  | StateRESW<RT, REL, WT>;
 
 export type StateROAW<
   RT,
-  WT = RT,
   REL extends Option<StateRelated> = Option<{}>,
-> = ROAW<RT, WT, REL> | StateROSW<RT, WT, REL>;
+  WT = StateWriteType<RT>,
+> = ROAW<RT, REL, WT> | StateROSW<RT, REL, WT>;
 
 export type StateRESW<
   RT,
-  WT = RT,
   REL extends Option<StateRelated> = Option<{}>,
-> = RESW<RT, WT, REL> | StateROSW<RT, WT, REL>;
+  WT = StateWriteType<RT>,
+> = RESW<RT, REL, WT> | StateROSW<RT, REL, WT>;
 
 export type StateROSW<
   RT,
-  WT = RT,
   REL extends Option<StateRelated> = Option<{}>,
-> = ROSW<RT, WT, REL>;
-
-//#State Array Types
-export type StateArray<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = State<StateArrayRead<AT>, StateArrayWrite<AT>, REL>;
-
-export type StateArrayREA<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateREA<StateArrayRead<AT>, REL, StateArrayWrite<AT>>;
-
-export type StateArrayROA<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateROA<StateArrayRead<AT>, REL, StateArrayWrite<AT>>;
-
-export type StateArrayRES<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateRES<StateArrayRead<AT>, REL, StateArrayWrite<AT>>;
-
-export type StateArrayROS<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateROS<StateArrayRead<AT>, REL, StateArrayWrite<AT>>;
-
-export type StateArrayREAW<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateREAW<StateArrayRead<AT>, StateArrayWrite<AT>, REL>;
-
-export type StateArrayROAW<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateROAW<StateArrayRead<AT>, StateArrayWrite<AT>, REL>;
-
-export type StateArrayRESW<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateRESW<StateArrayRead<AT>, StateArrayWrite<AT>, REL>;
-
-export type StateArrayROSW<
-  AT,
-  REL extends Option<StateRelated> = Option<{}>,
-> = StateROSW<StateArrayRead<AT>, StateArrayWrite<AT>, REL>;
-
-export type StateOpt<REL> = REL extends OptionNone ? Option<{}> : REL;
+  WT = StateWriteType<RT>,
+> = ROSW<RT, REL, WT>;

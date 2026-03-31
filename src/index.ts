@@ -1,115 +1,176 @@
-import { STATE_ARRAY } from "./array/sync";
+import { err, ok } from "@chocbite/ts-lib-result";
 import { StateBase } from "./base";
-import { STATE_COLLECTS_NUMBER } from "./collected/number";
-import { STATE_COLLECTED_REA } from "./collected/rea";
-import { STATE_COLLECTED_RES } from "./collected/res";
-import { STATE_COLLECTED_ROA } from "./collected/roa";
-import { STATE_COLLECTED_ROS } from "./collected/ros";
-import { STATE_DELAYED } from "./delayed/delayed";
-import { STATE_HELPERS } from "./helpers";
-import { STATE_LAZY } from "./lazy/lazy";
-import { STATE_PROXY_REA } from "./proxy/rea";
-import { STATE_PROXY_RES } from "./proxy/res";
-import { STATE_PROXY_ROA } from "./proxy/roa";
-import { STATE_PROXY_ROS } from "./proxy/ros";
-import { STATE_RESOURCE_REA } from "./resource/rea";
-import { STATE_RESOURCE_ROA } from "./resource/roa";
-import { STATE_SYNC } from "./sync/sync";
-import { STATE_KEY, type State } from "./types";
+import { COLLECTED } from "./collected";
+import { ARRAY } from "./helpers/array";
+import { BOOL } from "./helpers/boolean";
+import { ENUM } from "./helpers/enum";
+import { IS } from "./helpers/is";
+import { NUMBER } from "./helpers/number";
+import { OBJECT } from "./helpers/object";
+import { STRING } from "./helpers/string";
+import { UTIL } from "./helpers/util";
+import { rea, reaw, res, resw, roa, roaw, ros, rosw } from "./local";
+import { PROXY } from "./proxy";
+import { RESOURCE } from "./remote";
+import { StateResult as SR, STATE_KEY } from "./types";
 
 export const state = {
+  //Quick access states
+  /**Creates an ok state with the given initial value */
+  ok<RT>(init: RT) {
+    return ros(ok(init));
+  },
+  /**Creates an error state with the given initial error message */
+  err<RT>(init: string) {
+    return res(err(init) as SR<RT>);
+  },
+  /**Creates an errorable state with the given initial value */
+  from<RT>(init: RT) {
+    return res(ok(init) as SR<RT>);
+  },
+  /**Creates a writable ok state with the given initial value */
+  ok_w<RT>(init: RT) {
+    return rosw(ok(init));
+  },
+  /**Creates a writable error state with the given initial error message */
+  err_w<RT>(init: string) {
+    return resw(err(init) as SR<RT>);
+  },
+  /**Creates a writable errorable state with the given initial value */
+  from_w<RT>(init: RT) {
+    return resw(ok(init) as SR<RT>);
+  },
+  //Local
+  ros,
+  rosw,
+  res,
+  resw,
+  roa,
+  roaw,
+  rea,
+  reaw,
+  /**Proxy states, allows for creating states that proxy other states */
+  p: PROXY,
+  proxy: PROXY,
+  /**Collected states, collects values from multiple states and reduces it to one */
+  c: COLLECTED,
+  collected: COLLECTED,
+  /**Remote states, allows for creating states representing remote resources */
+  r: RESOURCE,
+  remote: RESOURCE,
+  /**Helper functionality for arrays */
+  a: ARRAY,
+  array: ARRAY,
+  /**Helper functionality for objects */
+  o: OBJECT,
+  object: OBJECT,
+  /**Helper functionality for numbers */
+  n: NUMBER,
+  number: NUMBER,
+  /**Helper functionality for strings */
+  s: STRING,
+  string: STRING,
+  /**Helper functionality for enums */
+  e: ENUM,
+  enum: ENUM,
+  /**Helper functionality for booleans */
+  b: BOOL,
+  bool: BOOL,
+  /**Utility functions for states */
+  u: UTIL,
+  util: UTIL,
+  /**Functions to determine if a variable is a state*/
+  is: IS,
   /**The state key is a symbol used to identify state objects
    * To implement a custom state, set this key to true on the object */
   STATE_KEY,
-  a: STATE_ARRAY,
-  /**Collected states, collects values from multiple states and reduces it to one */
-  c: {
-    rea: STATE_COLLECTED_REA,
-    res: STATE_COLLECTED_RES,
-    roa: STATE_COLLECTED_ROA,
-    ros: STATE_COLLECTED_ROS,
-    num: STATE_COLLECTS_NUMBER,
-  },
-  d: STATE_DELAYED,
-  h: STATE_HELPERS,
-  l: STATE_LAZY,
-  p: {
-    ...STATE_PROXY_REA,
-    ...STATE_PROXY_RES,
-    ...STATE_PROXY_ROA,
-    ...STATE_PROXY_ROS,
-  },
-  r: { ...STATE_RESOURCE_REA, ...STATE_RESOURCE_ROA },
-  s: STATE_SYNC,
-  /**Returns true if the given object promises to be a state */
-  is(s: unknown): s is State<any, any> {
-    //@ts-expect-error Will not crash
-    return Boolean(s) && s[STATE_KEY] === true;
-  },
   /**Utility base class for state, with basic state functionality */
   class: StateBase,
-  ok: STATE_SYNC.ros.ok,
-  err: STATE_SYNC.res.err,
-  from: STATE_SYNC.res.ok,
-  ok_ws: STATE_SYNC.ros_ws.ok,
-  err_ws: STATE_SYNC.res_ws.err,
-  from_ws: STATE_SYNC.res_ws.ok,
 };
 export default state;
 
 export {
+  type StateCollectedREA,
+  type StateCollectedRES,
+  type StateCollectedROA,
+  type StateCollectedROS,
+} from "./collected";
+export {
+  STATE_ARRAY_HELPER_KEY,
+  STATE_ARRAY_READ_KEY,
+  STATE_ARRAY_RELATED_KEY,
+  STATE_ARRAY_WRITE_KEY,
+  type StateArrayHelper,
   type StateArrayRead,
-  type StateArrayReadType,
-  type StateArraySyncRES,
-  type StateArraySyncRESWS,
-  type StateArraySyncROS,
-  type StateArraySyncROSWS,
+  type StateArrayReadTypes,
+  type StateArrayRelated,
   type StateArrayWrite,
-} from "./array/sync";
-export { type StateCollectedREA } from "./collected/rea";
-export { type StateCollectedRES } from "./collected/res";
-export { type StateCollectedROA } from "./collected/roa";
-export { type StateCollectedROS } from "./collected/ros";
+  type StateArrayWriteTypes,
+} from "./helpers/array";
 export {
-  type StateDelayedREA,
-  type StateDelayedREAW,
-  type StateDelayedROA,
-  type StateDelayedROAW,
-} from "./delayed/delayed";
+  STATE_BOOL_HELPER_KEY,
+  STATE_BOOL_RELATED_KEY,
+  type StateBoolHelper,
+  type StateBoolRelated,
+} from "./helpers/boolean";
 export {
-  StateEnumHelper,
-  StateNumberHelper,
-  StateStringHelper,
+  STATE_ENUM_HELPER_KEY,
+  STATE_ENUM_RELATED_KEY,
+  type StateEnumHelper,
   type StateEnumRelated,
+} from "./helpers/enum";
+export {
+  STATE_NUMBER_HELPER_KEY,
+  STATE_NUMBER_RELATED_KEY,
+  type StateNumberHelper,
   type StateNumberRelated,
+} from "./helpers/number";
+export {
+  OBJECT_READ_KEY,
+  OBJECT_WRITE_KEY,
+  STATE_OBJECT_HELPER_KEY,
+  STATE_OBJECT_RELATED_KEY,
+  type StateObjectHelper,
+  type StateObjectMethods,
+  type StateObjectRead,
+  type StateObjectReadTypes,
+  type StateObjectRelated,
+  type StateObjectWrite,
+  type StateObjectWriteTypes,
+} from "./helpers/object";
+export {
+  STATE_STRING_HELPER_KEY,
+  STATE_STRING_RELATED_KEY,
+  type StateStringHelper,
   type StateStringRelated,
-} from "./helpers";
+} from "./helpers/string";
 export {
-  type StateLazyRES,
-  type StateLazyRESW as StateLazyRESWS,
-  type StateLazyROS,
-  type StateLazyROSW as StateLazyROSWS,
-} from "./lazy/lazy";
-export { type StateProxyREA, type StateProxyREAW } from "./proxy/rea";
-export { type StateProxyRES, type StateProxyRESW } from "./proxy/res";
-export { type StateProxyROA, type StateProxyROAW } from "./proxy/roa";
-export { type StateProxyROS, type StateProxyROSW } from "./proxy/ros";
+  type StateLocalREA,
+  type StateLocalREAW,
+  type StateLocalRES,
+  type StateLocalRESW,
+  type StateLocalROA,
+  type StateLocalROAW,
+  type StateLocalROS,
+  type StateLocalROSW,
+} from "./local";
 export {
-  type StateResourceFuncREA,
-  type StateResourceFuncREAW,
-  type StateResourceREA,
-  type StateResourceREAW,
-} from "./resource/rea";
+  type StateProxyREA,
+  type StateProxyREAW,
+  type StateProxyRES,
+  type StateProxyRESW,
+  type StateProxyROA,
+  type StateProxyROAW,
+  type StateProxyROS,
+  type StateProxyROSW,
+} from "./proxy";
 export {
-  type StateResourceFuncROA,
-  type StateResourceROA,
-} from "./resource/roa";
-export {
-  type StateSyncRES,
-  type StateSyncRESW,
-  type StateSyncROS,
-  type StateSyncROSW,
-} from "./sync/sync";
+  type StateRemote as StateResource,
+  type StateRemoteFuncREA as StateResourceFuncREA,
+  type StateRemoteFuncREAW as StateResourceFuncREAW,
+  type StateRemoteFuncROA as StateResourceFuncROA,
+  type StateRemoteFuncROAW as StateResourceFuncROAW,
+} from "./remote";
 
 //       _____ _______    _______ ______   _________     _______  ______  _____
 //      / ____|__   __|/\|__   __|  ____| |__   __\ \   / /  __ \|  ____|/ ____|
@@ -118,22 +179,17 @@ export {
 //      ____) |  | |/ ____ \| |  | |____     | |     | |  | |    | |____ ____) |
 //     |_____/   |_/_/    \_\_|  |______|    |_|     |_|  |_|    |______|_____/
 export type {
+  StateReadType as AutoRead,
+  StateWriteType as AutoWrite,
   State,
-  StateArray,
-  StateArrayREA,
-  StateArrayREAW,
-  StateArrayRES,
-  StateArrayRESW,
-  StateArrayROA,
-  StateArrayROAW,
-  StateArrayROS,
-  StateArrayROSW,
+  STATE_KEY,
   StateInferResult,
   StateInferSub,
   StateInferType,
   StateREA,
   StateREAW,
   StateRES,
+  StateResult,
   StateRESW,
   StateROA,
   StateROAW,
