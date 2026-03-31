@@ -358,8 +358,8 @@ function roa_from<
  * @param transform_read - Function to transform value of proxy*/
 function roaw_from<
   S extends StateREAW<RIN, any, WIN>,
-  RIN,
-  WIN,
+  RIN = S extends State<infer RT> ? RT : never,
+  WIN = S extends State<any, any, infer WT> ? WT : any,
   ROUT = RIN,
   WOUT = WIN,
 >(
@@ -415,8 +415,8 @@ function ros_from<
  * @param transform_read - Function to transform value of proxy*/
 function rosw_from<
   S extends StateRESW<RIN, any, WIN>,
-  RIN,
-  WIN,
+  RIN = S extends State<infer RT> ? RT : never,
+  WIN = S extends State<any, any, infer WT> ? WT : any,
   ROUT = RIN,
   WOUT = WIN,
 >(
@@ -472,8 +472,8 @@ function rea_from<
  * @param transform_read - Function to transform value of proxy*/
 function reaw_from<
   S extends StateREAW<RIN, any, WIN>,
-  RIN,
-  WIN,
+  RIN = S extends State<infer RT> ? RT : never,
+  WIN = S extends State<any, any, infer WT> ? WT : any,
   ROUT = RIN,
   WOUT = WIN,
 >(
@@ -531,8 +531,8 @@ function res_from<
  * @param transform_read - Function to transform value of proxy*/
 function resw_from<
   S extends StateRESW<RIN, any, WIN>,
-  RIN,
-  WIN,
+  RIN = S extends State<infer RT> ? RT : never,
+  WIN = S extends State<any, any, infer WT> ? WT : any,
   ROUT = RIN,
   WOUT = WIN,
 >(
