@@ -111,8 +111,8 @@ function read_apply<T, U>(
 
 /**Calls a setter function with a state array read object*/
 function read_set<T>(
-  read: [T, StateArrayReadTypes<T>[] | undefined],
-  setter: (value: T | StateArrayRead<T>) => void,
+  read: [T[], StateArrayReadTypes<T>[] | undefined],
+  setter: (value: StateArrayRead<T>) => void,
 ) {
   const [array, read_types] = read as [
     StateArrayRead<T>,
@@ -143,9 +143,11 @@ export type StateArrayWriteTypes<WT> =
   | { type: "change"; index: number; items: WT[] }
   | { type: "splice"; index: number; delete_count: number; items: WT[] };
 
-export type StateArrayWrite<WT> = WT[] | {
-  [STATE_ARRAY_WRITE_KEY]?: StateArrayWriteTypes<WT>;
-};
+export type StateArrayWrite<WT> =
+  | WT[]
+  | {
+      [STATE_ARRAY_WRITE_KEY]?: StateArrayWriteTypes<WT>;
+    };
 
 const write = {
   fresh<T>(items: T[]): StateArrayWrite<T> {
@@ -206,10 +208,13 @@ function write_apply<T>(
   write: StateArrayWrite<T>,
   array: T[] = [],
 ): [T[], StateArrayReadTypes<T>[] | undefined] {
-  const wk = (write as any)[STATE_ARRAY_WRITE_KEY] as StateArrayWriteTypes<T> | undefined;
+  const wk = (write as any)[STATE_ARRAY_WRITE_KEY] as
+    | StateArrayWriteTypes<T>
+    | undefined;
   if (wk) {
     const w = wk;
-    if (w.type === "fresh") return [write as T[], [{ type: "fresh", items: write as T[] }]];
+    if (w.type === "fresh")
+      return [write as T[], [{ type: "fresh", items: write as T[] }]];
     else if (w.type === "push") {
       const index = array.length;
       array.push(...w.items);

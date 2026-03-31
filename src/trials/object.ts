@@ -9,4 +9,4 @@ state_inst.sub((v) => {
   console.warn(v.value);
 }, true);
 state_inst.write(state.o.write.add({ c: 10 }));
-state_inst.object.add(4, 10);
+state_inst.object.add("4", 10);
