@@ -87,10 +87,34 @@ describe("Object Methods on Local State", async () => {
     expect(reads[0].items).toEqual({ b: 3 });
   });
 
+  it("remove notifies subscribers", async () => {
+    const s = st.rosw(ok<Record<string, number>>({ a: 1, b: 2 }));
+    let count = 0;
+    s.sub(() => count++);
+    s.object.remove("b");
+    expect(count).to.equal(1);
+    expect(s.ok()).toEqual({ a: 1 });
+  });
+
+  it("change notifies subscribers", async () => {
+    const s = st.rosw(ok<Record<string, number>>({ a: 1, b: 2 }));
+    let count = 0;
+    s.sub(() => count++);
+    s.object.change("b", 3);
+    expect(count).to.equal(1);
+    expect(s.ok()).toEqual({ a: 1, b: 3 });
+  });
+
   it("chaining", async () => {
     const s = st.rosw(ok<Record<string, number>>({ a: 1 }));
     s.object.add("b", 2).add("c", 3);
     expect(s.ok()).toEqual({ a: 1, b: 2, c: 3 });
+  });
+
+  it("chaining remove and change", async () => {
+    const s = st.rosw(ok<Record<string, number>>({ a: 1, b: 2, c: 3 }));
+    s.object.remove("c").change("b", 20);
+    expect(s.ok()).toEqual({ a: 1, b: 20 });
   });
 });
 
@@ -256,5 +280,63 @@ describe("Object Read / Apply", async () => {
     const obj: Record<string, number> = { a: 1, b: 2 };
     const result = st.o.read_apply(obj, {}, (n) => String(n));
     expect(result).toEqual({ a: "1", b: "2" });
+  });
+
+  it("read returns fresh for plain object without metadata", async () => {
+    const reads = st.o.read({ a: 1, b: 2 });
+    expect(reads.length).to.equal(1);
+    expect(reads[0].type).to.equal("fresh");
+    expect(reads[0].items).toEqual({ a: 1, b: 2 });
+  });
+
+  it("is_read returns true for object with metadata", async () => {
+    const s = st.rosw(ok<Record<string, number>>({ a: 1 }));
+    let hasRead = false;
+    s.sub((val) => {
+      if (val.ok) hasRead = st.o.is_read(val.value);
+    });
+    s.object.add("b", 2);
+    expect(hasRead).to.equal(true);
+  });
+
+  it("is_read returns false for plain object", async () => {
+    expect(st.o.is_read({ a: 1 })).to.equal(false);
+  });
+
+  it("is_related returns true for related helper", async () => {
+    const s = st.rosw(
+      st.o.help(ok<Record<string, number>>({ a: 1 })),
+      true,
+    );
+    expect(st.o.is_related(s.related().unwrap())).to.equal(true);
+  });
+
+  it("is_related returns false for non-related", async () => {
+    expect(st.o.is_related(null)).to.equal(false);
+    expect(st.o.is_related({})).to.equal(false);
+  });
+
+  it("is_helper returns true for helper", async () => {
+    const s = st.rosw(
+      st.o.help(ok<Record<string, number>>({ a: 1 })),
+      true,
+    );
+    expect(st.o.is_helper(s.related().unwrap())).to.equal(true);
+  });
+
+  it("is_helper returns false for non-helper", async () => {
+    expect(st.o.is_helper(null)).to.equal(false);
+    expect(st.o.is_helper({})).to.equal(false);
+  });
+
+  it("write_apply remove non-existing key returns empty removed items", async () => {
+    const [result, reads] = st.o.write_apply(
+      st.o.write.remove<number>("z"),
+      { a: 1, b: 2 },
+    );
+    expect(result).toEqual({ a: 1, b: 2 });
+    expect(reads).toBeDefined();
+    expect(reads![0].type).to.equal("removed");
+    expect(reads![0].items).toEqual({});
   });
 });
