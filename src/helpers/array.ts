@@ -146,7 +146,7 @@ export type StateArrayWriteTypes<WT> =
 export type StateArrayWrite<WT> =
   | WT[]
   | {
-      [STATE_ARRAY_WRITE_KEY]?: StateArrayWriteTypes<WT>;
+      [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<WT>;
     };
 
 const write = {
@@ -363,7 +363,7 @@ export const ARRAY = {
   read_set,
   //### Read
   write_key: STATE_ARRAY_WRITE_KEY,
-  is_write(a: any): a is StateArrayWrite<any> {
+  is_write(a: any): a is { [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<any> } {
     return Boolean(
       a && (a as { [STATE_ARRAY_WRITE_KEY]: boolean })[STATE_ARRAY_WRITE_KEY],
     );

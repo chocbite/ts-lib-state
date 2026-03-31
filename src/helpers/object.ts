@@ -150,7 +150,7 @@ export type StateObjectWriteTypes<TYPE> =
 export type StateObjectWrite<TYPE> = {
   [key: PropertyKey]: TYPE;
 } | {
-  [OBJECT_WRITE_KEY]?: StateObjectWriteTypes<TYPE>;
+  [OBJECT_WRITE_KEY]: StateObjectWriteTypes<TYPE>;
 };
 
 const write = {
@@ -314,7 +314,7 @@ export const OBJECT = {
   read_set,
   //### Write
   write_key: OBJECT_WRITE_KEY,
-  is_write(a: any): a is StateObjectWrite<any> {
+  is_write(a: any): a is { [OBJECT_WRITE_KEY]: StateObjectWriteTypes<any> } {
     return Boolean(
       a && (a as { [OBJECT_WRITE_KEY]: boolean })[OBJECT_WRITE_KEY],
     );
