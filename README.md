@@ -327,14 +327,28 @@ Options: `max_length`, `max_length_bytes`.
 ### Enum
 
 ```typescript
-const list = state.e.list<"red" | "green" | "blue">({
-  red: { name: "Red" },
-  green: { name: "Green" },
-  blue: { name: "Blue" },
+export const Color = {
+  Red: "red",
+  Green: "green",
+  Blue: "blue",
+} as const;
+export type Color = (typeof Color)[keyof typeof Color];
+
+const list = state.e.list<Color>({
+  [Color.Red]: { name: "Red" },
+  [Color.green]: {
+    name: "Green",
+    description: "The color green what more is needed",
+  },
+  [Color.blue]: {
+    name: "Blue",
+    description: "Im blue dabudedabuda",
+    icon: ()=>red_icon.cloneNode();
+  },
 });
 
 const color = state.rosw(
-  state.e.help(ok("red" as keyof typeof list), { list: state.ok(list) }),
+  state.e.help(ok(Color.Red as Color), { list: state.ok(list) }),
   true,
 );
 ```
