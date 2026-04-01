@@ -1,4 +1,3 @@
-import { sleep } from "@chocbite/ts-lib-common";
 import { ok, ResultOk } from "@chocbite/ts-lib-result";
 import state, { StateLocalROS, StateLocalROSW, StateROS, StateROSW } from "..";
 
@@ -12,5 +11,3 @@ function generic<T>(value: StateROS<T>): ResultOk<T> {
   return value.get();
 }
 console.debug(varrosw, varrosw2, varros_ros, varros2_ros, generic);
-
-const e = state.roa(async () => ok(await sleep(1000, "Hello world!")));
