@@ -416,14 +416,14 @@ export type Color = (typeof Color)[keyof typeof Color];
 
 const list = state.e.list<Color>({
   [Color.Red]: { name: "Red" },
-  [Color.green]: {
+  [Color.Green]: {
     name: "Green",
-    description: "The color green what more is needed",
+    description: "The color green, what more is needed",
   },
-  [Color.blue]: {
+  [Color.Blue]: {
     name: "Blue",
-    description: "Im blue dabudedabuda",
-    icon: ()=>red_icon.cloneNode();
+    description: "I'm blue dabudedabuda",
+    icon: () => blue_icon.cloneNode(),
   },
 });
 
