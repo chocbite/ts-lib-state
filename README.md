@@ -43,8 +43,10 @@ counter.sub((result) => {
   console.log("Count:", result.value);
 }, true);
 
-// Update the state
-counter.write(ok(1));
+// Owner change state value
+counter.set(ok(1));
+
+// User request change to state value
 counter.write(ok(2));
 
 // Read the current value synchronously
@@ -53,7 +55,7 @@ console.log(counter.ok()); // 2
 
 ## Creating States
 
-### Shorthand Factories
+### Shorthand state generators
 
 ```typescript
 state.ok(value); // ROS  — read-only, sync, always ok
@@ -66,7 +68,7 @@ state.err_w(message); // RESW — writable, sync, starts with error
 
 ### Local States
 
-For full control over initial values, use the lower-level local factories. Each accepts a `Result` value:
+For full control over initial values, use the lower-level local state. Each accepts a `Result` value:
 
 ```typescript
 import { ok, err } from "@chocbite/ts-lib-result";
@@ -77,7 +79,14 @@ const c = state.res(ok(42)); // RES
 const d = state.resw(err("n/a")); // RESW
 ```
 
-Async local states accept getter/setter functions:
+State generators also accept a function which will be lazily executed at first access of state value:
+
+```typescript
+import { ok, err } from "@chocbite/ts-lib-result";
+const f = state.ros(() => ok(42)); // ROS
+```
+
+Async local states accept async function, which are lazily executed at first state access:
 
 ```typescript
 const e = state.roa(async () => ok(await fetchData()));
