@@ -51,6 +51,10 @@ counter.write(ok(2));
 
 // Read the current value synchronously
 console.log(counter.ok()); // 2
+console.log(counter.get()); // ResultOk<2>
+
+// Read the current value asynchronously
+console.log(await counter); // ResultOk<2>
 ```
 
 ## Creating States
@@ -95,7 +99,7 @@ const f = state.roaw(async () => ok(await fetchData()));
 
 #### Owner
 
-Every local factory returns an **owner** — the full state object that includes both the public state interface and privileged methods for updating it. The owner is what you keep internally; you hand out `state.read_only` or `state.read_write` to consumers.
+Every local generator returns an **owner** — the full state object that includes both the public state interface and privileged methods for updating it. The owner is what you keep internally; you hand out `state.read_only` or `state.read_write` to consumers.
 
 ```typescript
 const counter = state.rosw(ok(0));
@@ -105,9 +109,13 @@ counter.set(ok(5)); // set the raw Result value
 counter.set_ok(5); // shorthand: wraps the value in ok() for you
 counter.set_err("fail"); // set an error (only on error-capable states: RES/REA)
 
-// Expose a read-only or read-write view to consumers
-const readOnly = counter.read_only; // strips owner methods
-const readWrite = counter.read_write; // keeps .write(), but not .set()/.set_ok()
+// The owner can get basic state types without access to the owner methods for passing on, or just set them to a variable with appropriate typeing
+const read_only = counter.read_only; //Returns as StateROS<number>
+const read_only_type: StateROS<number> = counter;
+const read_write = counter.read_write; // Returns as StateROSW<number>
+const read_write_type: StateROSW<number> = counter;
+const state = counter.state; // Returns as State<number>
+const state_type: State<number> = counter.state;
 ```
 
 `set` and `set_ok` bypass the setter/validation pipeline — they directly replace the state value and notify subscribers. In contrast, `.write()` is the public API that goes through the setter function (which may apply helpers like `limit`).
@@ -115,8 +123,9 @@ const readWrite = counter.read_write; // keeps .write(), but not .set()/.set_ok(
 You can also provide a custom setter to control how writes are applied:
 
 ```typescript
-const limited = state.rosw(ok(0), (value, owner, old) => {
+const limited = state.rosw(ok(0), async (value, owner, old) => {
   // Custom write logic
+  if (Number.isNaN(value)) return err("NaN is not allowed");
   owner.set_ok(Math.min(100, Math.max(0, value)));
   return ok(undefined);
 });
@@ -149,17 +158,18 @@ console.log((await counter).value);
 ## Collected States
 
 Combine multiple states into a single derived state:
+Combination function is evaluated as a promise/microtask, so if you change first_name and last_name in the same cycle, it will only be called once.
 
 ```typescript
-const firstName = state.ok("Alice");
-const lastName = state.ok("Smith");
+const first_name = state.ok("Alice");
+const last_name = state.ok("Smith");
 
-const fullName = state.c.ros(
+const full_name = state.c.ros(
   (vals) => ok(`${vals[0].value} ${vals[1].value}`),
-  firstName,
-  lastName,
+  first_name,
+  last_name,
 );
-// fullName.ok() === "Alice Smith"
+// full_name.ok() === "Alice Smith"
 ```
 
 Available variants: `state.c.ros`, `state.c.roa`, `state.c.res`, `state.c.rea`.
@@ -175,12 +185,15 @@ const source = state.ok_w(5);
 const doubled = state.p.ros(source, (val) => ok(val.value * 2));
 // doubled.ok() === 10
 
-// Writable proxy with bidirectional transforms
+// Writable proxy
+// A proxy can also be writable, but this requires two transform functions to convert both ways, this is to support the write helper methods limit and check
 const offset = state.p.rosw(
   source,
   (val) => ok(val.value + 10), // read: add 10
-  (val) => ok(val.value - 10), // write→inner: subtract 10
-  (val) => ok(val.value + 10), // inner→write: add 10
+  {
+    wout_win: (val) => ok(val.value - 10), // write→inner: subtract 10
+    win_wout: (val) => ok(val.value + 10), // inner→write: add 10
+  },
 );
 ```
 
@@ -188,14 +201,15 @@ const offset = state.p.rosw(
 
 Remote states represent asynchronous resources that are fetched on demand or streamed via a subscription. They are always async (`ROA`/`REA`/`ROAW`/`REAW`).
 
-Each remote factory (`state.r.*.from`) takes three callback functions and an optional timing configuration:
+Each remote generator (`state.r.*.from`) takes three callback functions and an optional timing configuration:
 
 - **`once`** — called when the state value is awaited (one-shot fetch). Call `owner.update_single(value)` to deliver the result.
 - **`setup`** — called when the first subscriber arrives. Use this to open a connection or start polling. Call `owner.update_value(value)` to push new values.
 - **`teardown`** — called when the last subscriber leaves. Clean up connections here.
 
 ```typescript
-const userData = state.r.roa.from<User>(
+let ws;
+const user_data = state.r.roa.from<User>(
   // once: one-shot fetch when awaited
   async (owner) => {
     const data = await fetch("/api/user").then((r) => r.json());
@@ -203,12 +217,12 @@ const userData = state.r.roa.from<User>(
   },
   // setup: called on first subscription
   (owner) => {
-    const ws = new WebSocket("/ws/user");
+    const ws = new WebSocket("/api/user_subscribe");
     ws.onmessage = (e) => owner.update_value(ok(JSON.parse(e.data)));
   },
   // teardown: called when all subscribers leave
   () => {
-    /* close ws */
+    ws.close();
   },
 );
 ```
@@ -238,7 +252,7 @@ const setting = state.r.roaw.from<number>(
     });
     return ok(undefined);
   },
-  { write_debounce: 300 },
+  { write_debounce: 300 }, // ms to wait before using the last value written
 );
 ```
 
@@ -277,26 +291,26 @@ obj.object.remove("b"); // { a: 10 }
 
 Each mutation is tracked with metadata (`added`, `removed`, `changed`, `fresh`).
 
-### Validators
-
-Helpers provide validation, limiting, and related metadata for state values. They are passed alongside the initial value as a tuple `[init, helper]` when creating a state.
-
-#### Number
+### Number
 
 ```typescript
 const temperature = state.rosw(
-  state.n.help(ok(20), { min: state.ok(0), max: state.ok(100), step: state.ok(0.5) }),
+  state.n.help(ok(20), {
+    min: state.ok(0),
+    max: state.ok(100),
+    step: state.ok(0.5),
+  }),
   true,
 );
 
-await temperature.write(150);      // limited to 100 by the helper
-await temperature.check(150);      // returns err("150 is bigger than the limit of 100")
+await temperature.write(150); // limited to 100 by the helper
+await temperature.check(150); // returns err("150 is bigger than the limit of 100")
 temperature.related().unwrap().min; // state holding 0
 ```
 
 Options: `min`, `max`, `step`, `start`, `decimals`, `unit` — each is itself a `State`, so limits can be reactive.
 
-#### String
+### String
 
 ```typescript
 const name = state.rosw(
@@ -310,7 +324,7 @@ await name.check("this is too long"); // returns err("the text is longer than th
 
 Options: `max_length`, `max_length_bytes`.
 
-#### Enum
+### Enum
 
 ```typescript
 const list = state.e.list<"red" | "green" | "blue">({
@@ -325,7 +339,7 @@ const color = state.rosw(
 );
 ```
 
-#### Boolean
+### Boolean
 
 ```typescript
 const flag = state.rosw(state.b.help(ok(true)), true);
