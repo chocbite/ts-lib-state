@@ -400,12 +400,12 @@ describe("Collected states", function () {
     });
 
     it("ROA: transform called once when multiple states set in same event loop cycle", async function () {
-      let transformCallCount = 0;
+      let transform_call_count = 0;
       const stat1 = st.roa(() => sleep(1, ok(0.25)));
       const stat2 = st.roa(() => sleep(1, ok(0.25)));
       const state = st.c.roa(
         (val) => {
-          transformCallCount++;
+          transform_call_count++;
           return ok(val[0].value + val[1].value);
         },
         stat1,
@@ -414,23 +414,23 @@ describe("Collected states", function () {
       const sub = state.sub(() => {}, true);
       await sleep(50);
       // After async resolution, reset count
-      transformCallCount = 0;
+      transform_call_count = 0;
       // Set both states synchronously
       stat1.set_ok(10);
       stat2.set_ok(20);
       await sleep(1);
-      expect(transformCallCount).equal(1);
-      expect(state.get()).toEqual(ok(30));
+      expect(transform_call_count).equal(1);
+      expect(await state).toEqual(ok(30));
       state.unsub(sub);
     });
 
     it("REA: transform called once when multiple states set in same event loop cycle", async function () {
-      let transformCallCount = 0;
+      let transform_call_count = 0;
       const stat1 = st.rea(() => sleep(1, ok(0.25)));
       const stat2 = st.rea(() => sleep(1, ok(0.25)));
       const state = st.c.rea(
         (values) => {
-          transformCallCount++;
+          transform_call_count++;
           let sum = 0;
           for (const val of values) {
             if (val.err) return val;
@@ -443,12 +443,12 @@ describe("Collected states", function () {
       );
       const sub = state.sub(() => {}, true);
       await sleep(50);
-      transformCallCount = 0;
+      transform_call_count = 0;
       stat1.set(ok(10));
       stat2.set(ok(20));
       await sleep(1);
-      expect(transformCallCount).equal(1);
-      expect(state.get()).toEqual(ok(30));
+      expect(transform_call_count).equal(1);
+      expect(await state).toEqual(ok(30));
       state.unsub(sub);
     });
   });
