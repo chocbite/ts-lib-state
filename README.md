@@ -68,13 +68,13 @@ state.err_w(message); // RESW — writable, sync, starts with error
 
 ### Local States
 
-For full control over initial values, use the lower-level local state. Each accepts a `Result` value:
+For full control over initial values, use the lower-level local factories. Each accepts a `Result` value:
 
 ```typescript
 import { ok, err } from "@chocbite/ts-lib-result";
 
 const a = state.ros(ok(42)); // ROS
-const b = state.rosw(ok(42)); // ROSW (owner returned with .set())
+const b = state.rosw(ok(42)); // ROSW
 const c = state.res(ok(42)); // RES
 const d = state.resw(err("n/a")); // RESW
 ```
@@ -82,15 +82,44 @@ const d = state.resw(err("n/a")); // RESW
 State generators also accept a function which will be lazily executed at first access of state value:
 
 ```typescript
-import { ok, err } from "@chocbite/ts-lib-result";
+import { ok } from "@chocbite/ts-lib-result";
 const f = state.ros(() => ok(42)); // ROS
 ```
 
-Async local states accept async function, which are lazily executed at first state access:
+Async local states accept an async function, which is lazily executed at first state access:
 
 ```typescript
 const e = state.roa(async () => ok(await fetchData()));
 const f = state.roaw(async () => ok(await fetchData()));
+```
+
+#### Owner
+
+Every local factory returns an **owner** — the full state object that includes both the public state interface and privileged methods for updating it. The owner is what you keep internally; you hand out `state.read_only` or `state.read_write` to consumers.
+
+```typescript
+const counter = state.rosw(ok(0));
+
+// Owner methods
+counter.set(ok(5)); // set the raw Result value
+counter.set_ok(5); // shorthand: wraps the value in ok() for you
+counter.set_err("fail"); // set an error (only on error-capable states: RES/REA)
+
+// Expose a read-only or read-write view to consumers
+const readOnly = counter.read_only; // strips owner methods
+const readWrite = counter.read_write; // keeps .write(), but not .set()/.set_ok()
+```
+
+`set` and `set_ok` bypass the setter/validation pipeline — they directly replace the state value and notify subscribers. In contrast, `.write()` is the public API that goes through the setter function (which may apply helpers like `limit`).
+
+You can also provide a custom setter to control how writes are applied:
+
+```typescript
+const limited = state.rosw(ok(0), (value, owner, old) => {
+  // Custom write logic
+  owner.set_ok(Math.min(100, Math.max(0, value)));
+  return ok(undefined);
+});
 ```
 
 ## Subscribing to State
@@ -157,13 +186,60 @@ const offset = state.p.rosw(
 
 ## Remote States
 
-Represent asynchronous remote resources:
+Remote states represent asynchronous resources that are fetched on demand or streamed via a subscription. They are always async (`ROA`/`REA`/`ROAW`/`REAW`).
+
+Each remote factory (`state.r.*.from`) takes three callback functions and an optional timing configuration:
+
+- **`once`** — called when the state value is awaited (one-shot fetch). Call `owner.update_single(value)` to deliver the result.
+- **`setup`** — called when the first subscriber arrives. Use this to open a connection or start polling. Call `owner.update_value(value)` to push new values.
+- **`teardown`** — called when the last subscriber leaves. Clean up connections here.
 
 ```typescript
-const userData = state.r.roa.from(async (owner) => {
-  const data = await fetch("/api/user").then((r) => r.json());
-  owner.update_single(ok(data));
+const userData = state.r.roa.from<User>(
+  // once: one-shot fetch when awaited
+  async (owner) => {
+    const data = await fetch("/api/user").then((r) => r.json());
+    owner.update_single(ok(data));
+  },
+  // setup: called on first subscription
+  (owner) => {
+    const ws = new WebSocket("/ws/user");
+    ws.onmessage = (e) => owner.update_value(ok(JSON.parse(e.data)));
+  },
+  // teardown: called when all subscribers leave
+  () => {
+    /* close ws */
+  },
+);
+```
+
+Timing options control debounce, validity caching, and retention:
+
+```typescript
+state.r.rea.from(once, setup, teardown, {
+  timeout: 1000, // ms before a generic error if no response
+  debounce: 50, // ms to batch multiple awaits into one fetch
+  validity: 5000, // ms the buffered value stays fresh (or true = until unsubscribe)
+  retention: 200, // ms to keep the connection after last unsubscribe
 });
+```
+
+Writable remote variants (`state.r.roaw`, `state.r.reaw`) additionally accept a `write_action` callback:
+
+```typescript
+const setting = state.r.roaw.from<number>(
+  once,
+  setup,
+  teardown,
+  async (value, owner) => {
+    await fetch("/api/setting", {
+      method: "POST",
+      body: JSON.stringify(value),
+    });
+    return ok(undefined);
+  },
+  { write_debounce: 300 },
+);
 ```
 
 Available variants: `state.r.roa`, `state.r.rea`, `state.r.roaw`, `state.r.reaw`.
@@ -203,13 +279,56 @@ Each mutation is tracked with metadata (`added`, `removed`, `changed`, `fresh`).
 
 ### Validators
 
-Attach validation helpers for primitive types:
+Helpers provide validation, limiting, and related metadata for state values. They are passed alongside the initial value as a tuple `[init, helper]` when creating a state.
+
+#### Number
 
 ```typescript
-state.n.help(0, 100, 1); // Number: min, max, step
-state.s.help(/^[a-z]+$/); // String: regex pattern
-state.e.help("a", "b", "c"); // Enum: allowed values
-state.b.help(); // Boolean
+const temperature = state.rosw(
+  state.n.help(ok(20), { min: state.ok(0), max: state.ok(100), step: state.ok(0.5) }),
+  true,
+);
+
+await temperature.write(150);      // limited to 100 by the helper
+await temperature.check(150);      // returns err("150 is bigger than the limit of 100")
+temperature.related().unwrap().min; // state holding 0
+```
+
+Options: `min`, `max`, `step`, `start`, `decimals`, `unit` — each is itself a `State`, so limits can be reactive.
+
+#### String
+
+```typescript
+const name = state.rosw(
+  state.s.help(ok("hello"), { max_length: state.ok(10) }),
+  true,
+);
+
+await name.write("this is too long"); // limited to 10 characters by the helper
+await name.check("this is too long"); // returns err("the text is longer than the limit of 10 characters")
+```
+
+Options: `max_length`, `max_length_bytes`.
+
+#### Enum
+
+```typescript
+const list = state.e.list<"red" | "green" | "blue">({
+  red: { name: "Red" },
+  green: { name: "Green" },
+  blue: { name: "Blue" },
+});
+
+const color = state.rosw(
+  state.e.help(ok("red" as keyof typeof list), { list: state.ok(list) }),
+  true,
+);
+```
+
+#### Boolean
+
+```typescript
+const flag = state.rosw(state.b.help(ok(true)), true);
 ```
 
 ## Type Guards
