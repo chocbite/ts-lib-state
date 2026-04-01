@@ -56,12 +56,12 @@ console.log(counter.ok()); // 2
 ### Shorthand Factories
 
 ```typescript
-state.ok(value)     // ROS  — read-only, sync, always ok
-state.ok_w(value)   // ROSW — writable, sync, always ok
-state.from(value)   // RES  — read-only, sync, error-capable
-state.from_w(value) // RESW — writable, sync, error-capable
-state.err(message)  // RES  — read-only, sync, starts with error
-state.err_w(message)// RESW — writable, sync, starts with error
+state.ok(value); // ROS  — read-only, sync, always ok
+state.ok_w(value); // ROSW — writable, sync, always ok
+state.from(value); // RES  — read-only, sync, error-capable
+state.from_w(value); // RESW — writable, sync, error-capable
+state.err(message); // RES  — read-only, sync, starts with error
+state.err_w(message); // RESW — writable, sync, starts with error
 ```
 
 ### Local States
@@ -71,10 +71,10 @@ For full control over initial values, use the lower-level local factories. Each 
 ```typescript
 import { ok, err } from "@chocbite/ts-lib-result";
 
-const a = state.ros(ok(42));       // ROS
-const b = state.rosw(ok(42));      // ROSW (owner returned with .set())
-const c = state.res(ok(42));       // RES
-const d = state.resw(err("n/a"));  // RESW
+const a = state.ros(ok(42)); // ROS
+const b = state.rosw(ok(42)); // ROSW (owner returned with .set())
+const c = state.res(ok(42)); // RES
+const d = state.resw(err("n/a")); // RESW
 ```
 
 Async local states accept getter/setter functions:
@@ -94,16 +94,18 @@ const unsub = counter.sub((result) => {
   }
 });
 
+// Unsubscribe
+counter.unsub(unsub);
+
 // Subscribe with immediate invocation
 counter.sub(callback, true);
 
-// Unsubscribe
-counter.unsub(callback);
-
-// Promise-style (resolves on next update)
+// Promise-style using then executes immidiatly
 counter.then((result) => {
   console.log(result.value);
 });
+// Promise-style using await syntax execute in microloop
+console.log((await counter).value);
 ```
 
 ## Collected States
@@ -126,7 +128,7 @@ Available variants: `state.c.ros`, `state.c.roa`, `state.c.res`, `state.c.rea`.
 
 ## Proxy States
 
-Wrap a state with read/write transformation functions:
+Wrap a state with read/write transformation functions or proxy its value:
 
 ```typescript
 const source = state.ok_w(5);
@@ -138,9 +140,9 @@ const doubled = state.p.ros(source, (val) => ok(val.value * 2));
 // Writable proxy with bidirectional transforms
 const offset = state.p.rosw(
   source,
-  (val) => ok(val.value + 10),     // read: add 10
-  (val) => ok(val.value - 10),     // write→inner: subtract 10
-  (val) => ok(val.value + 10),     // inner→write: add 10
+  (val) => ok(val.value + 10), // read: add 10
+  (val) => ok(val.value - 10), // write→inner: subtract 10
+  (val) => ok(val.value + 10), // inner→write: add 10
 );
 ```
 
@@ -149,12 +151,10 @@ const offset = state.p.rosw(
 Represent asynchronous remote resources:
 
 ```typescript
-const userData = state.r.roa.from(
-  async (owner) => {
-    const data = await fetch("/api/user").then((r) => r.json());
-    owner.update_single(ok(data));
-  },
-);
+const userData = state.r.roa.from(async (owner) => {
+  const data = await fetch("/api/user").then((r) => r.json());
+  owner.update_single(ok(data));
+});
 ```
 
 Available variants: `state.r.roa`, `state.r.rea`, `state.r.roaw`, `state.r.reaw`.
@@ -168,13 +168,13 @@ States holding arrays get built-in mutation helpers:
 ```typescript
 const list = state.rosw(ok([1, 2, 3]));
 
-list.array.push(4);          // [1, 2, 3, 4]
-list.array.unshift(0);       // [0, 1, 2, 3, 4]
-list.array.pop();            // [0, 1, 2, 3]
-list.array.shift();          // [1, 2, 3]
-list.array.insert(1, [99]);  // [1, 99, 2, 3]
-list.array.remove(0, 1);     // [99, 2, 3]
-list.array.change(0, 50);    // [50, 2, 3]
+list.array.push(4); // [1, 2, 3, 4]
+list.array.unshift(0); // [0, 1, 2, 3, 4]
+list.array.pop(); // [0, 1, 2, 3]
+list.array.shift(); // [1, 2, 3]
+list.array.insert(1, [99]); // [1, 99, 2, 3]
+list.array.remove(0, 1); // [99, 2, 3]
+list.array.change(0, 50); // [50, 2, 3]
 ```
 
 Each mutation is tracked with metadata (`added`, `removed`, `changed`, `fresh`).
@@ -186,19 +186,21 @@ States holding objects get field-level mutation helpers:
 ```typescript
 const obj = state.rosw(ok({ a: 1, b: 2 }));
 
-obj.object.set({ a: 10 });   // { a: 10, b: 2 }
-obj.object.remove("b");      // { a: 10 }
+obj.object.set({ a: 10 }); // { a: 10, b: 2 }
+obj.object.remove("b"); // { a: 10 }
 ```
+
+Each mutation is tracked with metadata (`added`, `removed`, `changed`, `fresh`).
 
 ### Validators
 
 Attach validation helpers for primitive types:
 
 ```typescript
-state.n.help(0, 100, 1);       // Number: min, max, step
-state.s.help(/^[a-z]+$/);      // String: regex pattern
-state.e.help("a", "b", "c");   // Enum: allowed values
-state.b.help();                 // Boolean
+state.n.help(0, 100, 1); // Number: min, max, step
+state.s.help(/^[a-z]+$/); // String: regex pattern
+state.e.help("a", "b", "c"); // Enum: allowed values
+state.b.help(); // Boolean
 ```
 
 ## Type Guards
@@ -206,10 +208,10 @@ state.b.help();                 // Boolean
 Check state types at runtime:
 
 ```typescript
-state.is.state(obj);  // Is any state?
-state.is.ros(obj);    // Is ROS?
-state.is.rosw(obj);   // Is ROSW?
-state.is.res(obj);    // Is RES?
+state.is.state(obj); // Is any state?
+state.is.ros(obj); // Is ROS?
+state.is.rosw(obj); // Is ROSW?
+state.is.res(obj); // Is RES?
 // ... and so on for all eight types
 ```
 
@@ -219,7 +221,10 @@ state.is.res(obj);    // Is RES?
 // Await the first emitted value from any state
 const value = await state.u.await_value(myState);
 
-// Compare two states for deep equality
+// Compare any two state values for equality, returns a promise
+const equal = state.u.compare(stateA, stateB);
+
+// Compare two states sync state values
 const equal = state.u.compare_sync(stateA, stateB);
 ```
 

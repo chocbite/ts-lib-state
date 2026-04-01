@@ -40,7 +40,7 @@ async function await_value<T>(
 /**Compare two states for equality
  * @param state1 first state
  * @param state2 second state
- * @returns true if states are equal*/
+ * @returns true if states are equal and not errored*/
 async function compare(
   state1: State<any>,
   state2: State<any>,
@@ -55,12 +55,12 @@ async function compare(
 /**Compare two sync states for equality
  * @param state1 first state
  * @param state2 second state
- * @returns true if states are equal*/
+ * @returns true if states are equal and not errored*/
 function compare_sync(state1: StateRES<any>, state2: StateRES<any>): boolean {
   const res1 = state1.get();
   const res2 = state2.get();
-  if (res1.err || res2.err) return true;
-  return res1.value !== res2.value;
+  if (res1.err || res2.err) return false;
+  return res1.value === res2.value;
 }
 
 //##################################################################################################################################################
