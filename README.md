@@ -138,11 +138,11 @@ counter.unsub(unsub);
 // Subscribe with immediate invocation
 counter.sub(callback, true);
 
-// Promise-style using then executes immidiatly
+// Promise-style using then executes immediately
 counter.then((result) => {
   console.log(result.value);
 });
-// Promise-style using await syntax execute in microloop
+// Promise-style using await syntax executes in microloop
 console.log((await counter).value);
 ```
 
