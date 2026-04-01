@@ -1,5 +1,5 @@
 import { sleep } from "@chocbite/ts-lib-common";
-import { ok, ResultOk } from "@chocbite/ts-lib-result";
+import { err, ok, ResultOk } from "@chocbite/ts-lib-result";
 import { describe, expect, it } from "vitest";
 import { state as st, StateResult } from "..";
 import {
@@ -262,6 +262,194 @@ describe("Collected states", function () {
     });
     describe("Multiple Then", async function () {
       await test_state_then(maker_multiple, 50);
+    });
+  });
+  //##################################################################################################################################################
+  //      ____        _       _     _
+  //     |  _ \      | |     | |   (_)
+  //     | |_) | __ _| |_ ___| |__  _ _ __   __ _
+  //     |  _ < / _` | __/ __| '_ \| | '_ \ / _` |
+  //     | |_) | (_| | || (__| | | | | | | | (_| |
+  //     |____/ \__,_|\__\___|_| |_|_|_| |_|\__, |
+  //                                          __/ |
+  //                                         |___/
+  describe("Batching", { timeout: 200 }, function () {
+    it("ROS: transform called once when multiple states set in same event loop cycle", async function () {
+      let transformCallCount = 0;
+      const stat1 = st.ok(0.25);
+      const stat2 = st.ok(0.25);
+      const stat3 = st.ok(0.25);
+      const stat4 = st.ok(0.25);
+      const state = st.c.ros(
+        (val) => {
+          transformCallCount++;
+          return ok(val[0].value + val[1].value + val[2].value + val[3].value);
+        },
+        stat1,
+        stat2,
+        stat3,
+        stat4,
+      );
+      const sub = state.sub(() => {}, true);
+      await sleep(0);
+      // Reset count after initial subscription setup
+      transformCallCount = 0;
+      // Set all four states synchronously in the same event loop cycle
+      stat1.set_ok(1);
+      stat2.set_ok(2);
+      stat3.set_ok(3);
+      stat4.set_ok(4);
+      // Wait for microtask to flush
+      await sleep(1);
+      expect(transformCallCount).equal(1);
+      expect(state.get()).toEqual(ok(10));
+      state.unsub(sub);
+    });
+
+    it("RES: transform called once when multiple states set in same event loop cycle", async function () {
+      let transformCallCount = 0;
+      const stat1 = st.from(0.25);
+      const stat2 = st.from(0.25);
+      const stat3 = st.from(0.25);
+      const stat4 = st.from(0.25);
+      const state = st.c.res(
+        (values) => {
+          transformCallCount++;
+          let sum = 0;
+          for (const val of values) {
+            if (val.err) return val;
+            sum += val.value;
+          }
+          return ok(sum);
+        },
+        stat1,
+        stat2,
+        stat3,
+        stat4,
+      );
+      const sub = state.sub(() => {}, true);
+      await sleep(0);
+      transformCallCount = 0;
+      stat1.set(ok(1));
+      stat2.set(ok(2));
+      stat3.set(ok(3));
+      stat4.set(ok(4));
+      await sleep(1);
+      expect(transformCallCount).equal(1);
+      expect(state.get()).toEqual(ok(10));
+      state.unsub(sub);
+    });
+
+    it("ROS: transform called once per batch across multiple batches", async function () {
+      let transformCallCount = 0;
+      const stat1 = st.ok(1);
+      const stat2 = st.ok(2);
+      const state = st.c.ros(
+        (val) => {
+          transformCallCount++;
+          return ok(val[0].value + val[1].value);
+        },
+        stat1,
+        stat2,
+      );
+      const sub = state.sub(() => {}, true);
+      await sleep(0);
+      transformCallCount = 0;
+      // First batch: set both states
+      stat1.set_ok(10);
+      stat2.set_ok(20);
+      await sleep(1);
+      expect(transformCallCount).equal(1);
+      expect(state.get()).toEqual(ok(30));
+      // Second batch: set both states again
+      stat1.set_ok(100);
+      stat2.set_ok(200);
+      await sleep(1);
+      expect(transformCallCount).equal(2);
+      expect(state.get()).toEqual(ok(300));
+      state.unsub(sub);
+    });
+
+    it("RES: transform called once per batch when error state mixed with ok state", async function () {
+      let transformCallCount = 0;
+      const stat1 = st.from(1);
+      const stat2 = st.from(2);
+      const state = st.c.res(
+        (values) => {
+          transformCallCount++;
+          let sum = 0;
+          for (const val of values) {
+            if (val.err) return val;
+            sum += val.value;
+          }
+          return ok(sum);
+        },
+        stat1,
+        stat2,
+      );
+      const sub = state.sub(() => {}, true);
+      await sleep(0);
+      transformCallCount = 0;
+      // Set one to error and another to ok in the same cycle
+      stat1.set(err("fail"));
+      stat2.set(ok(5));
+      await sleep(1);
+      expect(transformCallCount).equal(1);
+      expect(state.get()).toEqual(err("fail"));
+      state.unsub(sub);
+    });
+
+    it("ROA: transform called once when multiple states set in same event loop cycle", async function () {
+      let transform_call_count = 0;
+      const stat1 = st.roa(() => sleep(1, ok(0.25)));
+      const stat2 = st.roa(() => sleep(1, ok(0.25)));
+      const state = st.c.roa(
+        (val) => {
+          transform_call_count++;
+          return ok(val[0].value + val[1].value);
+        },
+        stat1,
+        stat2,
+      );
+      const sub = state.sub(() => {}, true);
+      await sleep(50);
+      // After async resolution, reset count
+      transform_call_count = 0;
+      // Set both states synchronously
+      stat1.set_ok(10);
+      stat2.set_ok(20);
+      await sleep(1);
+      expect(transform_call_count).equal(1);
+      expect(await state).toEqual(ok(30));
+      state.unsub(sub);
+    });
+
+    it("REA: transform called once when multiple states set in same event loop cycle", async function () {
+      let transform_call_count = 0;
+      const stat1 = st.rea(() => sleep(1, ok(0.25)));
+      const stat2 = st.rea(() => sleep(1, ok(0.25)));
+      const state = st.c.rea(
+        (values) => {
+          transform_call_count++;
+          let sum = 0;
+          for (const val of values) {
+            if (val.err) return val;
+            sum += val.value;
+          }
+          return ok(sum);
+        },
+        stat1,
+        stat2,
+      );
+      const sub = state.sub(() => {}, true);
+      await sleep(50);
+      transform_call_count = 0;
+      stat1.set(ok(10));
+      stat2.set(ok(20));
+      await sleep(1);
+      expect(transform_call_count).equal(1);
+      expect(await state).toEqual(ok(30));
+      state.unsub(sub);
     });
   });
 });
