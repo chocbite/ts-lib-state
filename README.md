@@ -57,6 +57,86 @@ console.log(counter.get()); // ResultOk<2>
 console.log(await counter); // ResultOk<2>
 ```
 
+## State Methods
+
+Every state has a common set of methods. The specific state type determines which additional methods are available and how return types are narrowed — all enforced at compile time by TypeScript.
+
+### Common Methods
+
+Available on every state type:
+
+| Method | Description |
+|--------|-------------|
+| `await state` / `state.then(fn)` | Get the current value. Returns `ResultOk<T>` on ok-only types, `Result<T, string>` on error-capable types. |
+| `sub(fn, immediate?)` | Subscribe to value changes. Pass `true` to also call `fn` immediately with the current value. |
+| `unsub(fn)` | Remove a subscription. |
+| `related()` | Returns helper metadata (e.g., number min/max, string max_length). |
+| `in_use()` | Returns the state if it has any subscribers, `undefined` otherwise. |
+| `has(fn)` | Returns the state if `fn` is a current subscriber. |
+| `amount()` | Returns the subscriber count. |
+
+### Narrowed Methods
+
+These methods are only guaranteed on certain state types. TypeScript will error if you call them on the wrong type:
+
+| Method | Available when | Description |
+|--------|----------------|-------------|
+| `get()` | Sync (`rsync: true`) | Synchronously read the current `Result` value. |
+| `ok()` | Sync + OK-only (`rok: true`) | Synchronously read the unwrapped value directly. |
+| `write(value)` | Writable (`writable: true`) | Request a value change through the setter pipeline. |
+| `limit(value)` | Writable | Clamp a value to the valid range via the helper. |
+| `check(value)` | Writable | Validate a value without applying it. |
+
+### Per-Type Narrowing
+
+Each of the eight state types narrows the available methods and result types:
+
+| Type | `get()` | `ok()` | `write()` | `then` / `await` result |
+|------|---------|--------|-----------|-------------------------|
+| `StateROS`  | `ResultOk<T>` | `T` | — | `ResultOk<T>` |
+| `StateROSW` | `ResultOk<T>` | `T` | ✓ | `ResultOk<T>` |
+| `StateRES`  | `Result<T>` | — | — | `Result<T>` |
+| `StateRESW` | `Result<T>` | — | ✓ | `Result<T>` |
+| `StateROA`  | — | — | — | `ResultOk<T>` |
+| `StateROAW` | — | — | ✓ | `ResultOk<T>` |
+| `StateREA`  | — | — | — | `Result<T>` |
+| `StateREAW` | — | — | ✓ | `Result<T>` |
+
+The three boolean properties `rsync`, `rok`, and `writable` act as runtime discriminants matching the same axes:
+
+- **Sync** (`rsync: true`) — enables `get()`, and `ok()` when also ok-only
+- **OK-only** (`rok: true`) — narrows `then` result to `ResultOk<T>` (value is never an error)
+- **Writable** (`writable: true`) — enables `write()`, `limit()`, and `check()`
+
+The types form a subtype hierarchy — more specific types are assignable to less specific ones. For example, a `StateROSW<number>` (sync + ok + writable) can be passed anywhere a `StateROS<number>`, `StateROA<number>`, or `State<number>` is expected.
+
+```typescript
+function showSync(s: StateROS<number>) {
+  // Sync + OK → get() and ok() available
+  console.log(s.ok());         // number — unwrapped value
+  console.log(s.get().value);  // number — via ResultOk
+}
+
+async function showAsync(s: StateROA<number>) {
+  // Async + OK → no get()/ok(), must await
+  const result = await s;      // ResultOk<number>
+  console.log(result.value);   // always ok, no error check needed
+}
+
+function handleErrors(s: StateRES<number>) {
+  // Sync + Error-capable → get() returns Result<T, string>
+  const result = s.get();
+  if (result.ok) console.log(result.value);
+  else console.log(result.error);
+}
+
+async function update(s: StateROSW<number>) {
+  // Writable → write(), limit(), check() available
+  await s.write(42);
+  console.log(s.ok());         // 42
+}
+```
+
 ## Creating States
 
 ### Shorthand state generators
