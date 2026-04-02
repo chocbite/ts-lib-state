@@ -3,10 +3,10 @@ import { assertType, describe, it } from "vitest";
 import {
   state as st,
   StateREA,
-  StateResourceFuncREA,
-  StateResourceFuncREAW,
-  StateResourceFuncROA,
-  StateResourceFuncROAW,
+  StateRemoteFuncREA,
+  StateRemoteFuncREAW,
+  StateRemoteFuncROA,
+  StateRemoteFuncROAW,
   StateResult,
   StateROA,
   StateROAW,
@@ -35,7 +35,7 @@ describe("Resource states", function () {
         () => {},
       );
       assertType<StateROA<number>>(init);
-      assertType<StateResourceFuncROA<number>>(init);
+      assertType<StateRemoteFuncROA<number>>(init);
     });
     const maker: TestStateOk = () => {
       let val: ResultOk<number> = ok(1);
@@ -72,7 +72,7 @@ describe("Resource states", function () {
         () => {},
       );
       assertType<StateREA<number>>(init);
-      assertType<StateResourceFuncREA<number>>(init);
+      assertType<StateRemoteFuncREA<number>>(init);
     });
     const maker: TestStateAll = () => {
       let val: StateResult<number> = ok(1);
@@ -110,7 +110,7 @@ describe("Resource states", function () {
         () => {},
       );
       assertType<StateROAW<number>>(init);
-      assertType<StateResourceFuncROAW<number>>(init);
+      assertType<StateRemoteFuncROAW<number>>(init);
     });
     const maker: TestStateWrite = () => {
       let val: ResultOk<number> = ok(1);
@@ -148,7 +148,7 @@ describe("Resource states", function () {
         () => {},
       );
       assertType<StateREA<number>>(init);
-      assertType<StateResourceFuncREAW<number>>(init);
+      assertType<StateRemoteFuncREAW<number>>(init);
     });
     const maker: TestStateWrite = () => {
       let val: StateResult<number> = ok(1);

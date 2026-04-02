@@ -97,6 +97,12 @@ export const state = {
 };
 export default state;
 
+//       _____ _______    _______ ______   _________     _______  ______  _____
+//      / ____|__   __|/\|__   __|  ____| |__   __\ \   / /  __ \|  ____|/ ____|
+//     | (___    | |  /  \  | |  | |__       | |   \ \_/ /| |__) | |__  | (___
+//      \___ \   | | / /\ \ | |  |  __|      | |    \   / |  ___/|  __|  \___ \
+//      ____) |  | |/ ____ \| |  | |____     | |     | |  | |    | |____ ____) |
+//     |_____/   |_/_/    \_\_|  |______|    |_|     |_|  |_|    |______|_____/
 export {
   type StateCollectedREA,
   type StateCollectedRES,
@@ -168,34 +174,20 @@ export {
   type StateProxyROSW,
 } from "./proxy";
 export {
-  type StateRemote as StateResource,
-  type StateRemoteFuncREA as StateResourceFuncREA,
-  type StateRemoteFuncREAW as StateResourceFuncREAW,
-  type StateRemoteFuncROA as StateResourceFuncROA,
-  type StateRemoteFuncROAW as StateResourceFuncROAW,
+  type StateRemote,
+  type StateRemoteFuncREA,
+  type StateRemoteFuncREAW,
+  type StateRemoteFuncROA,
+  type StateRemoteFuncROAW,
 } from "./remote";
-export {
-  STATE_ARRAY_READ_KEY,
-  STATE_ARRAY_WRITE_KEY,
-  STATE_OBJECT_READ_KEY,
-  STATE_OBJECT_WRITE_KEY,
-};
-
-//       _____ _______    _______ ______   _________     _______  ______  _____
-//      / ____|__   __|/\|__   __|  ____| |__   __\ \   / /  __ \|  ____|/ ____|
-//     | (___    | |  /  \  | |  | |__       | |   \ \_/ /| |__) | |__  | (___
-//      \___ \   | | / /\ \ | |  |  __|      | |    \   / |  ___/|  __|  \___ \
-//      ____) |  | |/ ____ \| |  | |____     | |     | |  | |    | |____ ____) |
-//     |_____/   |_/_/    \_\_|  |______|    |_|     |_|  |_|    |______|_____/
 export type {
-  StateReadType as AutoRead,
-  StateWriteType as AutoWrite,
   State,
   STATE_KEY,
   StateInferResult,
   StateInferSub,
   StateInferType,
   StateREA,
+  StateReadType,
   StateREAW,
   StateRES,
   StateResult,
@@ -205,4 +197,11 @@ export type {
   StateROS,
   StateROSW,
   StateSub,
+  StateWriteType,
 } from "./types";
+export {
+  STATE_ARRAY_READ_KEY,
+  STATE_ARRAY_WRITE_KEY,
+  STATE_OBJECT_READ_KEY,
+  STATE_OBJECT_WRITE_KEY,
+};
