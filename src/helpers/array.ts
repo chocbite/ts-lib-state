@@ -275,14 +275,13 @@ export interface StateArrayRelated extends StateRelatedBase {
 
 export interface StateArrayHelperOptions extends StateHelperBaseOptions {}
 
-export interface StateArrayHelper<RT extends any[]> extends StateHelper<
-  SR<RT>,
-  RT,
-  OptionSome<StateArrayRelated>
-> {}
+export interface StateArrayHelper<
+  RT extends any[],
+  WT extends any[] = RT,
+> extends StateHelper<SR<RT>, WT, OptionSome<StateArrayRelated>> {}
 
-export class StateArrayHelperBase<RT extends any[]>
-  extends StateHelperBase<SR<RT>, RT, OptionSome<StateArrayRelated>>
+export class StateArrayHelperBase<RT extends any[], WT extends any[]>
+  extends StateHelperBase<SR<RT>, WT, OptionSome<StateArrayRelated>>
   implements StateArrayRelated
 {
   get [STATE_ARRAY_RELATED_KEY](): true {
@@ -303,11 +302,11 @@ export class StateArrayHelperBase<RT extends any[]>
     else this.length.set_ok(0);
   }
 
-  limit(value: RT): PromiseLike<SR<RT>> {
+  limit(value: WT): PromiseLike<SR<WT>> {
     return sync_resolve(ok(value));
   }
 
-  check(value: RT): PromiseLike<SR<RT>> {
+  check(value: WT): PromiseLike<SR<WT>> {
     if (this.writable !== undefined && !this.writable)
       return sync_resolve(err("not writable"));
     return sync_resolve(ok(value));
@@ -335,17 +334,21 @@ export const ARRAY = {
     );
   },
   /**Returns true if object is a array helper */
-  is_helper(h: any): h is StateArrayHelperBase<any> {
+  is_helper(h: any): h is StateArrayHelperBase<any, any> {
     return Boolean(
       h && (h as { [STATE_ARRAY_HELPER_KEY]: boolean })[STATE_ARRAY_HELPER_KEY],
     );
   },
   /**Array helper*/
-  help<I extends StateInit<any[]>, RRT extends SR<any> = SIR<I>>(
+  help<
+    I extends StateInit<any[]>,
+    RRT extends SR<any> = SIR<I>,
+    WT extends any[] = RIO<RRT>,
+  >(
     init: I,
     options?: StateArrayHelperOptions,
-  ): [I, StateArrayHelper<RIO<RRT>>] {
-    return [init, new StateArrayHelperBase<RIO<RRT>>(options)];
+  ): [I, StateArrayHelper<RIO<RRT>, WT>] {
+    return [init, new StateArrayHelperBase<RIO<RRT>, WT>(options)];
   },
   //### Read
   /**Returns true if object is a array read object */

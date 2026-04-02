@@ -233,7 +233,7 @@ interface ROSW<RT, REL extends Option<StateRelated>, WT> extends StateBase<
 export type State<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = StateWriteType<RT>,
+  WT = unknown,
 > =
   | StateREA<RT, REL, WT>
   | StateROA<RT, REL, WT>
@@ -247,7 +247,7 @@ export type State<
 export type StateREA<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = StateWriteType<RT>,
+  WT = unknown,
 > =
   | REA<RT, REL, WT>
   | StateREAW<RT, REL, WT>
@@ -258,25 +258,25 @@ export type StateREA<
 export type StateROA<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = StateWriteType<RT>,
+  WT = unknown,
 > = ROA<RT, REL, WT> | StateROAW<RT, REL, WT> | StateROS<RT, REL, WT>;
 
 export type StateRES<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = StateWriteType<RT>,
+  WT = unknown,
 > = RES<RT, REL, WT> | StateRESW<RT, REL, WT> | StateROS<RT, REL, WT>;
 
 export type StateROS<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = StateWriteType<RT>,
+  WT = unknown,
 > = ROS<RT, REL, WT> | StateROSW<RT, REL, WT>;
 
 export type StateREAW<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = StateWriteType<RT>,
+  WT = unknown,
 > =
   | REAW<RT, REL, WT>
   | StateROAW<RT, REL, WT>
@@ -286,17 +286,17 @@ export type StateREAW<
 export type StateROAW<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = StateWriteType<RT>,
+  WT = unknown,
 > = ROAW<RT, REL, WT> | StateROSW<RT, REL, WT>;
 
 export type StateRESW<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = StateWriteType<RT>,
+  WT = unknown,
 > = RESW<RT, REL, WT> | StateROSW<RT, REL, WT>;
 
 export type StateROSW<
   RT,
   REL extends Option<StateRelated> = Option<{}>,
-  WT = StateWriteType<RT>,
+  WT = unknown,
 > = ROSW<RT, REL, WT>;

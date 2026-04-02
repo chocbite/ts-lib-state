@@ -1,14 +1,24 @@
 import { ok } from "@chocbite/ts-lib-result";
-import state from "..";
+import state, { StateArrayHelper } from "..";
 
-const setter = state.rosw(state.a.help(ok([5])), async (val, s, o) => {
+const setter = state.rosw<
+  number[],
+  boolean[],
+  StateArrayHelper<number[], boolean[]>
+>(state.a.help(ok([5])), async (val, s, o) => {
   if (state.a.is_write(val)) {
-    state.a.read_set(state.a.write_apply(val, o?.value), (r) => {
-      s.set(ok(r));
-      s.set_ok(r);
-    });
+    state.a.read_set(
+      state.a.write_apply(
+        val,
+        o?.value.map((v) => Boolean(v)),
+      ),
+      (r) => {
+        s.set(ok(r.map((v) => Number(v))));
+        s.set_ok(r.map((v) => Number(v)));
+      },
+    );
   } else {
-    s.set_ok(val);
+    s.set_ok(val.map((v) => Number(v)));
   }
   return ok(undefined);
 });

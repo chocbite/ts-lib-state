@@ -93,7 +93,7 @@ export interface Owner<
 export type StateLocalROS<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = SWT<RT>,
+  WT = unknown,
 > = StateROS<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
     readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
@@ -103,7 +103,7 @@ export type StateLocalROS<
 export type StateLocalRES<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = SWT<RT>,
+  WT = unknown,
 > = StateRES<RT, HELToREL<HEL>, WT> &
   Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
@@ -114,7 +114,7 @@ export type StateLocalRES<
 export type StateLocalROA<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = SWT<RT>,
+  WT = unknown,
 > = StateROA<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
     readonly read_only: StateROA<RT, HELToREL<HEL>, WT>;
@@ -124,7 +124,7 @@ export type StateLocalROA<
 export type StateLocalREA<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = SWT<RT>,
+  WT = unknown,
 > = StateREA<RT, HELToREL<HEL>, WT> &
   Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
@@ -135,7 +135,7 @@ export type StateLocalREA<
 export type StateLocalROSW<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = SWT<RT>,
+  WT = RT,
 > = StateROSW<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
     setter: Setter<RO<RT>, HEL, WT>;
@@ -146,7 +146,7 @@ export type StateLocalROSW<
 export type StateLocalRESW<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = SWT<RT>,
+  WT = RT,
 > = StateRESW<RT, HELToREL<HEL>, WT> &
   Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
@@ -157,7 +157,7 @@ export type StateLocalRESW<
 export type StateLocalROAW<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = SWT<RT>,
+  WT = RT,
 > = StateROAW<RT, HELToREL<HEL>, WT> &
   Owner<RO<RT>, HEL, WT> & {
     readonly read_only: StateROS<RT, HELToREL<HEL>, WT>;
@@ -167,7 +167,7 @@ export type StateLocalROAW<
 export type StateLocalREAW<
   RT,
   HEL extends Helper<RO<RT>, WT, any> = any,
-  WT = SWT<RT>,
+  WT = RT,
 > = StateREAW<RT, HELToREL<HEL>, WT> &
   Owner<StateResult<RT>, HEL, WT> & {
     set_err(error: string): void;
@@ -582,32 +582,32 @@ class RXXX<
  * @param init initial result for state or helper.*/
 export function ros<
   RT,
-  WT = SWT<RT>,
-  HEL extends Helper<RO<RT>, WT, any> = NoHelper,
+  HEL extends Helper<RO<RT>, SWT<WT>, any> = NoHelper,
+  WT = unknown,
 >(init: (RO<RT> | (() => RO<RT>)) | [RO<RT> | (() => RO<RT>), HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
-  return new RXXX<RO<RT>, HEL, WT>(
+  return new RXXX<RO<RT>, HEL, SWT<WT>>(
     typeof i === "function" ? [1, false, i] : [0, false, i],
     h,
-  ) as StateLocalROS<RT, HEL, WT>;
+  ) as StateLocalROS<RT, HEL, SWT<WT>>;
 }
 
 /**Creates a sync ok state from an initial result.
  * @param init initial result for state or helper.*/
 export function rosw<
   RT,
-  WT = SWT<RT>,
-  HEL extends Helper<RO<RT>, WT, any> = NoHelper,
+  WT = RT,
+  HEL extends Helper<RO<RT>, SWT<WT>, any> = NoHelper,
 >(
   init: (RO<RT> | (() => RO<RT>)) | [RO<RT> | (() => RO<RT>), HEL],
-  setter: Setter<RO<RT>, HEL, WT> | true = true,
+  setter: Setter<RO<RT>, HEL, SWT<WT>> | true = true,
 ) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
-  return new RXXX<RO<RT>, HEL, WT>(
+  return new RXXX<RO<RT>, HEL, SWT<WT>>(
     typeof i === "function" ? [1, false, i] : [0, false, i],
     h,
     setter,
-  ) as StateLocalROSW<RT, HEL, WT>;
+  ) as StateLocalROSW<RT, HEL, SWT<WT>>;
 }
 
 /**Creates a sync state from an initial result.
@@ -615,14 +615,14 @@ export function rosw<
  * @param helper functions to check and limit the value, and to return related states.*/
 export function res<
   RT,
-  WT = SWT<RT>,
-  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
+  HEL extends Helper<SR<RT>, SWT<WT>, any> = NoHelper,
+  WT = unknown,
 >(init: (SR<RT> | (() => SR<RT>)) | [SR<RT> | (() => SR<RT>), HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
-  return new RXXX<SR<RT>, HEL, WT>(
+  return new RXXX<SR<RT>, HEL, SWT<WT>>(
     typeof i === "function" ? [1, false, i] : [0, false, i],
     h,
-  ) as StateLocalRES<RT, HEL, WT>;
+  ) as StateLocalRES<RT, HEL, SWT<WT>>;
 }
 
 /**Creates a writable sync state from an initial result.
@@ -630,32 +630,32 @@ export function res<
  * @param helper functions to check and limit the value, and to return related states.*/
 export function resw<
   RT,
-  WT = SWT<RT>,
-  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
+  WT = RT,
+  HEL extends Helper<SR<RT>, SWT<WT>, any> = NoHelper,
 >(
   init: (SR<RT> | (() => SR<RT>)) | [SR<RT> | (() => SR<RT>), HEL],
-  setter: Setter<SR<RT>, HEL, WT> | true = true,
+  setter: Setter<SR<RT>, HEL, SWT<WT>> | true = true,
 ) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
-  return new RXXX<SR<RT>, HEL, WT>(
+  return new RXXX<SR<RT>, HEL, SWT<WT>>(
     typeof i === "function" ? [1, false, i] : [0, false, i],
     h,
     setter,
-  ) as StateLocalRESW<RT, HEL, WT>;
+  ) as StateLocalRESW<RT, HEL, SWT<WT>>;
 }
 
 /**Creates a sync ok state from an initial result.
  * @param init initial result for state or helper.*/
 export function roa<
   RT,
-  WT = SWT<RT>,
-  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
+  HEL extends Helper<SR<RT>, SWT<WT>, any> = NoHelper,
+  WT = unknown,
 >(init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
-  return new RXXX<SR<RT>, HEL, WT>([2, true, i], h) as StateLocalROA<
+  return new RXXX<SR<RT>, HEL, SWT<WT>>([2, true, i], h) as StateLocalROA<
     RT,
     HEL,
-    WT
+    SWT<WT>
   >;
 }
 
@@ -663,18 +663,18 @@ export function roa<
  * @param init initial result for state or helper.*/
 export function roaw<
   RT,
-  WT = SWT<RT>,
-  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
+  WT = RT,
+  HEL extends Helper<SR<RT>, SWT<WT>, any> = NoHelper,
 >(
   init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL],
-  setter: Setter<SR<RT>, HEL, WT> | true = true,
+  setter: Setter<SR<RT>, HEL, SWT<WT>> | true = true,
 ) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
-  return new RXXX<SR<RT>, HEL, WT>([2, true, i], h, setter) as StateLocalROAW<
-    RT,
-    HEL,
-    WT
-  >;
+  return new RXXX<SR<RT>, HEL, SWT<WT>>(
+    [2, true, i],
+    h,
+    setter,
+  ) as StateLocalROAW<RT, HEL, SWT<WT>>;
 }
 
 /**Creates a sync state from an initial result.
@@ -682,14 +682,14 @@ export function roaw<
  * @param helper functions to check and limit the value, and to return related states.*/
 export function rea<
   RT,
-  WT = SWT<RT>,
-  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
+  HEL extends Helper<SR<RT>, SWT<WT>, any> = NoHelper,
+  WT = unknown,
 >(init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
-  return new RXXX<SR<RT>, HEL, WT>([2, true, i], h) as StateLocalREA<
+  return new RXXX<SR<RT>, HEL, SWT<WT>>([2, true, i], h) as StateLocalREA<
     RT,
     HEL,
-    WT
+    SWT<WT>
   >;
 }
 
@@ -698,16 +698,16 @@ export function rea<
  * @param helper functions to check and limit the value, and to return related states.*/
 export function reaw<
   RT,
-  WT = SWT<RT>,
-  HEL extends Helper<SR<RT>, WT, any> = NoHelper,
+  WT = RT,
+  HEL extends Helper<SR<RT>, SWT<WT>, any> = NoHelper,
 >(
   init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL],
-  setter: Setter<SR<RT>, HEL, WT> | true = true,
+  setter: Setter<SR<RT>, HEL, SWT<WT>> | true = true,
 ) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
-  return new RXXX<SR<RT>, HEL, WT>([2, true, i], h, setter) as StateLocalREAW<
-    RT,
-    HEL,
-    WT
-  >;
+  return new RXXX<SR<RT>, HEL, SWT<WT>>(
+    [2, true, i],
+    h,
+    setter,
+  ) as StateLocalREAW<RT, HEL, SWT<WT>>;
 }
