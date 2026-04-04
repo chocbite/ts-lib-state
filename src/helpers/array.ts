@@ -44,6 +44,12 @@ export type StateArrayReadTypes<RT> =
   | {
       type: "fresh";
       items: readonly RT[];
+    }
+  | {
+      type: "moved";
+      from_index: number;
+      to_index: number;
+      items: readonly RT[];
     };
 
 export type StateArrayRead<RT> = readonly RT[] & {
@@ -86,7 +92,10 @@ function read_apply<T, U>(
         else if (r.type === "changed")
           for (let i = 0; i < r.items.length; i++)
             array[r.index + i] = transform(r.items[i]);
-        else if (r.type === "fresh") return read.map(transform);
+        else if (r.type === "moved") {
+          const items = array.splice(r.from_index, r.items.length);
+          (array as any[]).splice(r.to_index, 0, ...items);
+        } else if (r.type === "fresh") return read.map(transform);
       }
       return array;
     } else {
@@ -100,7 +109,10 @@ function read_apply<T, U>(
         else if (r.type === "changed")
           for (let i = 0; i < r.items.length; i++)
             array[r.index + i] = r.items[i];
-        else if (r.type === "fresh") return read as T[];
+        else if (r.type === "moved") {
+          const items = array.splice(r.from_index, r.items.length);
+          (array as any[]).splice(r.to_index, 0, ...items);
+        } else if (r.type === "fresh") return read as T[];
       }
       return array;
     } else {
@@ -141,7 +153,8 @@ export type StateArrayWriteTypes<WT> =
   | { type: "shift" }
   | { type: "delete"; delete: WT }
   | { type: "change"; index: number; items: WT[] }
-  | { type: "splice"; index: number; delete_count: number; items: WT[] };
+  | { type: "splice"; index: number; delete_count: number; items: WT[] }
+  | { type: "move"; from_index: number; to_index: number; count: number };
 
 export type StateArrayWrite<WT> =
   | WT[]
@@ -201,6 +214,20 @@ const write = {
     };
     return array;
   },
+  move<T>(
+    from_index: number,
+    to_index: number,
+    count: number = 1,
+  ): StateArrayWrite<T> {
+    const array: any = [];
+    array[STATE_ARRAY_WRITE_KEY] = {
+      type: "move",
+      from_index,
+      to_index,
+      count,
+    };
+    return array;
+  },
 };
 
 /**Modifies an array based on a StateArrayWrite instruction and returns the modified array and state array read types*/
@@ -254,6 +281,23 @@ function write_apply<T>(
       if (w.items.length > 0)
         operations.push({ type: "added", index: w.index, items: w.items });
       return [array, operations];
+    } else if (w.type === "move") {
+      if (w.count <= 0 || w.from_index < 0 || w.from_index >= array.length)
+        return [array, undefined];
+      const capped = Math.min(w.count, array.length - w.from_index);
+      const items = array.splice(w.from_index, capped);
+      array.splice(w.to_index, 0, ...items);
+      return [
+        array,
+        [
+          {
+            type: "moved",
+            from_index: w.from_index,
+            to_index: w.to_index,
+            items,
+          },
+        ],
+      ];
     } else return [array, undefined];
   } else return [write as T[], undefined];
 }

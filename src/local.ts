@@ -292,6 +292,22 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
     delete arr[SARK];
     return removed as RIOK<RT>;
   }
+  /**Moves elements within the array from one position to another.
+   * @param from_index — The zero-based index from which to start taking elements.
+   * @param to_index — The zero-based index at which to insert the elements (after they have been removed).
+   * @param count — The number of elements to move. Defaults to 1.
+   * @returns — this, for chaining.*/
+  move(from_index: number, to_index: number, count: number = 1): this {
+    const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
+    if (count <= 0 || from_index < 0 || from_index >= arr.length) return this;
+    const capped = Math.min(count, arr.length - from_index);
+    const items = (arr as any[]).splice(from_index, capped);
+    (arr as any[]).splice(to_index, 0, ...items);
+    arr[SARK] = [{ type: "moved", from_index, to_index, items }];
+    this.#local.set(ok(arr) as RT);
+    delete arr[SARK];
+    return this;
+  }
 }
 
 //##################################################################################################################################################
