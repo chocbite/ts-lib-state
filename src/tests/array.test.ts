@@ -290,6 +290,82 @@ describe("Array Methods on Local State", async () => {
     s.array.delete(2).change(0, 10);
     expect(s.ok()).toEqual([10, 3]);
   });
+
+  it("move single item forward", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    s.array.move(0, 2);
+    expect(s.ok()).toEqual([2, 3, 1, 4]);
+  });
+
+  it("move single item backward", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    s.array.move(3, 0);
+    expect(s.ok()).toEqual([4, 1, 2, 3]);
+  });
+
+  it("move multiple items forward", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4, 5]));
+    s.array.move(0, 3, 2);
+    expect(s.ok()).toEqual([3, 4, 5, 1, 2]);
+  });
+
+  it("move multiple items backward", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4, 5]));
+    s.array.move(3, 0, 2);
+    expect(s.ok()).toEqual([4, 5, 1, 2, 3]);
+  });
+
+  it("move no-op with zero count", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    s.array.move(0, 2, 0);
+    expect(s.ok()).toEqual([1, 2, 3]);
+  });
+
+  it("move no-op with negative from_index", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    s.array.move(-1, 0);
+    expect(s.ok()).toEqual([1, 2, 3]);
+  });
+
+  it("move no-op with from_index beyond array", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    s.array.move(5, 0);
+    expect(s.ok()).toEqual([1, 2, 3]);
+  });
+
+  it("move clamps count to available items", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    s.array.move(1, 0, 10);
+    expect(s.ok()).toEqual([2, 3, 1]);
+  });
+
+  it("move notifies subscribers", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    let count = 0;
+    s.sub(() => count++);
+    s.array.move(0, 2);
+    expect(count).to.equal(1);
+  });
+
+  it("move tracks read metadata", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    let reads: any = undefined;
+    s.sub((val) => {
+      if (val.ok) reads = st.array.read(val.value);
+    });
+    s.array.move(0, 2, 2);
+    expect(reads).toBeDefined();
+    expect(reads[0].type).to.equal("moved");
+    expect(reads[0].from_index).to.equal(0);
+    expect(reads[0].to_index).to.equal(2);
+    expect(reads[0].items).toEqual([1, 2]);
+  });
+
+  it("move is chainable", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    s.array.move(0, 3).move(0, 2);
+    expect(s.ok()).toEqual([3, 4, 2, 1]);
+  });
 });
 
 //##################################################################################################################################################
@@ -398,6 +474,11 @@ describe("Array Write / Apply", async () => {
     expect(st.a.is_write(w)).to.equal(true);
   });
 
+  it("write.move creates write descriptor", async () => {
+    const w = st.a.write.move<number>(0, 2, 1);
+    expect(st.a.is_write(w)).to.equal(true);
+  });
+
   it("write.fresh creates write descriptor", async () => {
     const w = st.a.write.fresh([10, 20]);
     expect(st.a.is_write(w)).to.equal(true);
@@ -502,6 +583,80 @@ describe("Array Write / Apply", async () => {
     expect(reads![1].type).to.equal("added");
   });
 
+  it("write_apply move single item forward", async () => {
+    const [result, reads] = st.a.write_apply(
+      st.a.write.move(0, 2),
+      [1, 2, 3, 4],
+    );
+    expect(result).toEqual([2, 3, 1, 4]);
+    expect(reads).toBeDefined();
+    expect(reads![0].type).to.equal("moved");
+    if (reads![0].type === "moved") {
+      expect(reads![0].from_index).to.equal(0);
+      expect(reads![0].to_index).to.equal(2);
+      expect(reads![0].items).toEqual([1]);
+    }
+  });
+
+  it("write_apply move single item backward", async () => {
+    const [result, reads] = st.a.write_apply(
+      st.a.write.move(3, 0),
+      [1, 2, 3, 4],
+    );
+    expect(result).toEqual([4, 1, 2, 3]);
+    expect(reads).toBeDefined();
+    expect(reads![0].type).to.equal("moved");
+    if (reads![0].type === "moved") {
+      expect(reads![0].from_index).to.equal(3);
+      expect(reads![0].to_index).to.equal(0);
+      expect(reads![0].items).toEqual([4]);
+    }
+  });
+
+  it("write_apply move multiple items", async () => {
+    const [result, reads] = st.a.write_apply(
+      st.a.write.move(0, 3, 2),
+      [1, 2, 3, 4, 5],
+    );
+    expect(result).toEqual([3, 4, 5, 1, 2]);
+    expect(reads).toBeDefined();
+    expect(reads![0].type).to.equal("moved");
+    if (reads![0].type === "moved") {
+      expect(reads![0].items).toEqual([1, 2]);
+    }
+  });
+
+  it("write_apply move with zero count is no-op", async () => {
+    const [result, reads] = st.a.write_apply(
+      st.a.write.move(0, 2, 0),
+      [1, 2, 3],
+    );
+    expect(result).toEqual([1, 2, 3]);
+    expect(reads).to.equal(undefined);
+  });
+
+  it("write_apply move with from_index beyond array is no-op", async () => {
+    const [result, reads] = st.a.write_apply(
+      st.a.write.move(10, 0),
+      [1, 2, 3],
+    );
+    expect(result).toEqual([1, 2, 3]);
+    expect(reads).to.equal(undefined);
+  });
+
+  it("write_apply move clamps count", async () => {
+    const [result, reads] = st.a.write_apply(
+      st.a.write.move(1, 0, 10),
+      [1, 2, 3],
+    );
+    expect(result).toEqual([2, 3, 1]);
+    expect(reads).toBeDefined();
+    expect(reads![0].type).to.equal("moved");
+    if (reads![0].type === "moved") {
+      expect(reads![0].items).toEqual([2, 3]);
+    }
+  });
+
   it("write_apply fresh", async () => {
     const [result, reads] = st.a.write_apply(
       st.a.write.fresh([10, 20]),
@@ -586,6 +741,36 @@ describe("Array Read / Apply", async () => {
     });
     s.array.change(1, 20);
     expect(applied).toEqual([1, 20, 3]);
+  });
+
+  it("read_apply with moved forward", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    let applied: number[] = [1, 2, 3, 4];
+    s.sub((val) => {
+      if (val.ok) applied = st.a.read_apply(val.value, applied);
+    });
+    s.array.move(0, 2, 2);
+    expect(applied).toEqual([3, 4, 1, 2]);
+  });
+
+  it("read_apply with moved backward", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    let applied: number[] = [1, 2, 3, 4];
+    s.sub((val) => {
+      if (val.ok) applied = st.a.read_apply(val.value, applied);
+    });
+    s.array.move(2, 0, 2);
+    expect(applied).toEqual([3, 4, 1, 2]);
+  });
+
+  it("read_apply with moved and transform", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    let applied: string[] = ["1", "2", "3"];
+    s.sub((val) => {
+      if (val.ok) applied = st.a.read_apply(val.value, applied, (n) => String(n));
+    });
+    s.array.move(0, 2);
+    expect(applied).toEqual(["2", "3", "1"]);
   });
 
   it("read_apply with transform", async () => {
