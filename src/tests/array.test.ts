@@ -827,8 +827,6 @@ describe("Array State Write Without Helper", async () => {
 
   it("write change with index beyond array length is no-op", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
-    let count = 0;
-    s.sub(() => count++);
     await s.write(st.a.write.change(10, 99));
     expect(s.ok()).toEqual([1, 2, 3]);
   });
