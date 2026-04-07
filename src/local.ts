@@ -452,19 +452,8 @@ class RXXX<
   #value?: RRT;
   #setter?: Setter<RRT, HEL, WT>;
 
-  #make_setter(type: any): Setter<RRT, HEL, WT> {
-    if (typeof type !== "object") {
-      return (value, state, old) => {
-        if (old && !old.err && value === old.value)
-          return sync_resolve(ok(undefined));
-        if ((state as this).#helper)
-          return (state as this).#helper!.limit(value).then((e) => {
-            if (e.err) return err(e.error);
-            return ok(state.set_ok(e.value as RIOK<RRT>));
-          });
-        return sync_resolve(ok(state.set_ok(value as RIOK<RRT>)));
-      };
-    } else if (type === undefined) {
+  #make_setter(type?: StateResult<any>): Setter<RRT, HEL, WT> {
+    if (type === undefined || type.err) {
       return (value, state, old) => {
         if (old && !old.err && value === old.value)
           return sync_resolve(ok(undefined));
@@ -502,7 +491,18 @@ class RXXX<
         else state.set_ok(value as RIOK<RRT>);
         return sync_resolve(ok(undefined));
       };
-    } else if (Array.isArray(type)) {
+    } else if (typeof type.value !== "object") {
+      return (value, state, old) => {
+        if (old && !old.err && value === old.value)
+          return sync_resolve(ok(undefined));
+        if ((state as this).#helper)
+          return (state as this).#helper!.limit(value).then((e) => {
+            if (e.err) return err(e.error);
+            return ok(state.set_ok(e.value as RIOK<RRT>));
+          });
+        return sync_resolve(ok(state.set_ok(value as RIOK<RRT>)));
+      };
+    } else if (Array.isArray(type.value)) {
       return (value, state, old) => {
         if (old && !old.err && value === old.value)
           return sync_resolve(ok(undefined));
