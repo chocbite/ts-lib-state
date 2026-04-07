@@ -393,35 +393,12 @@ class RXXX<
     super();
     if (helper) this.#helper = helper as unknown as SHB<any, any, any>;
     this.#rok = init[1];
-    if (setter === true)
-      this.#setter = (value, state, old) => {
-        if (old && !old.err && value === old.value)
-          return sync_resolve(ok(undefined));
-        if (this.#helper) {
-          return this.#helper.limit(value).then((e) => {
-            if (e.err) return err(e.error);
-            if (ARRAY.is_write(e.value))
-              ARRAY.read_set(
-                ARRAY.write_apply(e.value, old?.unwrap_or([])),
-                state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
-              );
-            else if (OBJECT.is_write(e.value))
-              OBJECT.read_set(
-                OBJECT.write_apply(e.value, old?.unwrap_or({})),
-                state.set_ok.bind(state) as (
-                  value: Record<PropertyKey, any> | SOR<any>,
-                ) => void,
-              );
-            else state.set_ok(e.value as RIOK<RRT>);
-            return ok(undefined);
-          });
-        }
-        return sync_resolve(ok(state.set_ok(value as RIOK<RRT>)));
-      };
-    else this.#setter = setter;
+    if (setter !== true) this.#setter = setter;
     if (init[0] === 0) {
+      if (setter === true) this.#setter = this.#make_setter(init[2]);
       this.set(init[2]);
     } else if (init[0] === 1) {
+      if (setter === true) this.#setter = this.#make_setter(undefined);
       const f = init[2];
       this.get = () => this.#clean() ?? (this.#value = f());
       this.set = (value) => this.set(this.#clean() ?? value);
@@ -429,6 +406,7 @@ class RXXX<
       this.write = (value) =>
         write(value).then((val) => val.map((valu) => this.#clean() ?? valu));
     } else if (init[0] === 2) {
+      if (setter === true) this.#setter = this.#make_setter(undefined);
       const f = init[2];
       //Temporary override until first access
       let initializing = false;
@@ -473,6 +451,111 @@ class RXXX<
 
   #value?: RRT;
   #setter?: Setter<RRT, HEL, WT>;
+
+  #make_setter(type: any): Setter<RRT, HEL, WT> {
+    if (typeof type !== "object") {
+      return (value, state, old) => {
+        if (old && !old.err && value === old.value)
+          return sync_resolve(ok(undefined));
+        if ((state as this).#helper)
+          return (state as this).#helper!.limit(value).then((e) => {
+            if (e.err) return err(e.error);
+            return ok(state.set_ok(e.value as RIOK<RRT>));
+          });
+        return sync_resolve(ok(state.set_ok(value as RIOK<RRT>)));
+      };
+    } else if (type === undefined) {
+      return (value, state, old) => {
+        if (old && !old.err && value === old.value)
+          return sync_resolve(ok(undefined));
+        if (this.#helper) {
+          return this.#helper.limit(value).then((e) => {
+            if (e.err) return err(e.error);
+            if (ARRAY.is_write(e.value))
+              ARRAY.read_set(
+                ARRAY.write_apply(e.value, old?.unwrap_or([])),
+                state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
+              );
+            else if (OBJECT.is_write(e.value))
+              OBJECT.read_set(
+                OBJECT.write_apply(e.value, old?.unwrap_or({})),
+                state.set_ok.bind(state) as (
+                  value: Record<PropertyKey, any> | SOR<any>,
+                ) => void,
+              );
+            else state.set_ok(e.value as RIOK<RRT>);
+            return ok(undefined);
+          });
+        }
+        if (ARRAY.is_write(value))
+          ARRAY.read_set(
+            ARRAY.write_apply(value, old?.unwrap_or([])),
+            state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
+          );
+        else if (OBJECT.is_write(value))
+          OBJECT.read_set(
+            OBJECT.write_apply(value, old?.unwrap_or({})),
+            state.set_ok.bind(state) as (
+              value: Record<PropertyKey, any> | SOR<any>,
+            ) => void,
+          );
+        else state.set_ok(value as RIOK<RRT>);
+        return sync_resolve(ok(undefined));
+      };
+    } else if (Array.isArray(type)) {
+      return (value, state, old) => {
+        if (old && !old.err && value === old.value)
+          return sync_resolve(ok(undefined));
+        if (this.#helper) {
+          return this.#helper.limit(value).then((e) => {
+            if (e.err) return err(e.error);
+            if (ARRAY.is_write(e.value))
+              ARRAY.read_set(
+                ARRAY.write_apply(e.value, old?.unwrap_or([])),
+                state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
+              );
+            else state.set_ok(e.value as RIOK<RRT>);
+            return ok(undefined);
+          });
+        }
+        if (ARRAY.is_write(value))
+          ARRAY.read_set(
+            ARRAY.write_apply(value, old?.unwrap_or([])),
+            state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
+          );
+        else state.set_ok(value as RIOK<RRT>);
+        return sync_resolve(ok(undefined));
+      };
+    } else {
+      return (value, state, old) => {
+        if (old && !old.err && value === old.value)
+          return sync_resolve(ok(undefined));
+        if (this.#helper) {
+          return this.#helper.limit(value).then((e) => {
+            if (e.err) return err(e.error);
+            if (OBJECT.is_write(e.value))
+              OBJECT.read_set(
+                OBJECT.write_apply(e.value, old?.unwrap_or({})),
+                state.set_ok.bind(state) as (
+                  value: Record<PropertyKey, any> | SOR<any>,
+                ) => void,
+              );
+            else state.set_ok(e.value as RIOK<RRT>);
+            return ok(undefined);
+          });
+        }
+        if (OBJECT.is_write(value))
+          OBJECT.read_set(
+            OBJECT.write_apply(value, old?.unwrap_or({})),
+            state.set_ok.bind(state) as (
+              value: Record<PropertyKey, any> | SOR<any>,
+            ) => void,
+          );
+        else state.set_ok(value as RIOK<RRT>);
+        return sync_resolve(ok(undefined));
+      };
+    }
+  }
 
   //#Owner Context
   set(value: RRT | RO<SRT<RIOK<RRT>>>) {
