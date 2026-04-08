@@ -696,6 +696,260 @@ describe("Array Write / Apply", async () => {
 });
 
 //##################################################################################################################################################
+//     __          _______  _____ _______ ______    _   _  ____    _    _ ______ _      _____  ______ _____
+//     \ \        / /  __ \|_   _|__   __|  ____|  | \ | |/ __ \  | |  | |  ____| |    |  __ \|  ____|  __ \
+//      \ \  /\  / /| |__) | | |    | |  | |__     |  \| | |  | | | |__| | |__  | |    | |__) | |__  | |__) |
+//       \ \/  \/ / |  _  /  | |    | |  |  __|    | . ` | |  | | |  __  |  __| | |    |  ___/|  __| |  _  /
+//        \  /\  /  | | \ \ _| |_   | |  | |____   | |\  | |__| | | |  | | |____| |____| |    | |____| | \ \
+//         \/  \/   |_|  \_\_____|  |_|  |______|  |_| \_|\____/  |_|  |_|______|______|_|    |______|_|  \_\
+describe("Array State Write Without Helper", async () => {
+  it("write push updates state", async () => {
+    const s = st.rosw(ok<number[]>([1, 2]));
+    await s.write(st.a.write.push(3, 4));
+    expect(s.ok()).toEqual([1, 2, 3, 4]);
+  });
+
+  it("write push returns ok", async () => {
+    const s = st.rosw(ok<number[]>([1, 2]));
+    const result = await s.write(st.a.write.push(3));
+    expect(result).toEqual(ok(undefined));
+  });
+
+  it("write push notifies subscribers with read metadata", async () => {
+    const s = st.rosw(ok<number[]>([1, 2]));
+    let reads: any = undefined;
+    s.sub((val) => {
+      if (val.ok) reads = st.a.read(val.value);
+    });
+    await s.write(st.a.write.push(3));
+    expect(reads).toBeDefined();
+    expect(reads[0].type).to.equal("added");
+    expect(reads[0].index).to.equal(2);
+    expect(reads[0].items).toEqual([3]);
+  });
+
+  it("write unshift updates state", async () => {
+    const s = st.rosw(ok<number[]>([2, 3]));
+    await s.write(st.a.write.unshift(0, 1));
+    expect(s.ok()).toEqual([0, 1, 2, 3]);
+  });
+
+  it("write unshift notifies subscribers with read metadata", async () => {
+    const s = st.rosw(ok<number[]>([2]));
+    let reads: any = undefined;
+    s.sub((val) => {
+      if (val.ok) reads = st.a.read(val.value);
+    });
+    await s.write(st.a.write.unshift(0, 1));
+    expect(reads).toBeDefined();
+    expect(reads[0].type).to.equal("added");
+    expect(reads[0].index).to.equal(0);
+    expect(reads[0].items).toEqual([0, 1]);
+  });
+
+  it("write pop updates state", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    await s.write(st.a.write.pop<number>());
+    expect(s.ok()).toEqual([1, 2]);
+  });
+
+  it("write pop notifies subscribers with read metadata", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    let reads: any = undefined;
+    s.sub((val) => {
+      if (val.ok) reads = st.a.read(val.value);
+    });
+    await s.write(st.a.write.pop<number>());
+    expect(reads).toBeDefined();
+    expect(reads[0].type).to.equal("removed");
+    expect(reads[0].index).to.equal(2);
+    expect(reads[0].items).toEqual([3]);
+  });
+
+  it("write shift updates state", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    await s.write(st.a.write.shift<number>());
+    expect(s.ok()).toEqual([2, 3]);
+  });
+
+  it("write shift notifies subscribers with read metadata", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    let reads: any = undefined;
+    s.sub((val) => {
+      if (val.ok) reads = st.a.read(val.value);
+    });
+    await s.write(st.a.write.shift<number>());
+    expect(reads).toBeDefined();
+    expect(reads[0].type).to.equal("removed");
+    expect(reads[0].index).to.equal(0);
+    expect(reads[0].items).toEqual([1]);
+  });
+
+  it("write delete updates state", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 2]));
+    await s.write(st.a.write.delete(2));
+    expect(s.ok()).toEqual([1, 3]);
+  });
+
+  it("write delete notifies subscribers with read metadata", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 2]));
+    let reads: any = undefined;
+    s.sub((val) => {
+      if (val.ok) reads = st.a.read(val.value);
+    });
+    await s.write(st.a.write.delete(2));
+    expect(reads).toBeDefined();
+    expect(reads.length).to.equal(2);
+    expect(reads[0].type).to.equal("removed");
+    expect(reads[0].items).toEqual([2]);
+    expect(reads[1].type).to.equal("removed");
+    expect(reads[1].items).toEqual([2]);
+  });
+
+  it("write change updates state", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    await s.write(st.a.write.change(1, 20, 30));
+    expect(s.ok()).toEqual([1, 20, 30, 4]);
+  });
+
+  it("write change notifies subscribers with read metadata", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    let reads: any = undefined;
+    s.sub((val) => {
+      if (val.ok) reads = st.a.read(val.value);
+    });
+    await s.write(st.a.write.change(1, 20));
+    expect(reads).toBeDefined();
+    expect(reads[0].type).to.equal("changed");
+    expect(reads[0].index).to.equal(1);
+    expect(reads[0].items).toEqual([20]);
+  });
+
+  it("write change with index beyond array length is no-op", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    await s.write(st.a.write.change(10, 99));
+    expect(s.ok()).toEqual([1, 2, 3]);
+  });
+
+  it("write splice updates state", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    await s.write(st.a.write.splice(1, 2, 20, 30));
+    expect(s.ok()).toEqual([1, 20, 30, 4]);
+  });
+
+  it("write splice notifies subscribers with read metadata", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    let reads: any = undefined;
+    s.sub((val) => {
+      if (val.ok) reads = st.a.read(val.value);
+    });
+    await s.write(st.a.write.splice(1, 1, 20, 30));
+    expect(reads).toBeDefined();
+    expect(reads.length).to.equal(2);
+    expect(reads[0].type).to.equal("removed");
+    expect(reads[0].items).toEqual([2]);
+    expect(reads[1].type).to.equal("added");
+    expect(reads[1].items).toEqual([20, 30]);
+  });
+
+  it("write move updates state", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    await s.write(st.a.write.move(0, 2));
+    expect(s.ok()).toEqual([2, 3, 1, 4]);
+  });
+
+  it("write move notifies subscribers with read metadata", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    let reads: any = undefined;
+    s.sub((val) => {
+      if (val.ok) reads = st.a.read(val.value);
+    });
+    await s.write(st.a.write.move(0, 2, 2));
+    expect(reads).toBeDefined();
+    expect(reads[0].type).to.equal("moved");
+    expect(reads[0].from_index).to.equal(0);
+    expect(reads[0].to_index).to.equal(2);
+    expect(reads[0].items).toEqual([1, 2]);
+  });
+
+  it("write fresh replaces entire state", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    await s.write(st.a.write.fresh([10, 20]));
+    const val = s.ok();
+    expect(val.length).to.equal(2);
+    expect(val[0]).to.equal(10);
+    expect(val[1]).to.equal(20);
+  });
+
+  it("write fresh notifies subscribers with read metadata", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    let reads: any = undefined;
+    s.sub((val) => {
+      if (val.ok) reads = st.a.read(val.value);
+    });
+    await s.write(st.a.write.fresh([10, 20]));
+    expect(reads).toBeDefined();
+    expect(reads[0].type).to.equal("fresh");
+  });
+
+  it("write plain array replaces state without read metadata", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    let reads: any = undefined;
+    s.sub((val) => {
+      if (val.ok) reads = st.a.read(val.value);
+    });
+    await s.write([10, 20]);
+    expect(s.ok()).toEqual([10, 20]);
+    expect(reads).toBeDefined();
+    expect(reads[0].type).to.equal("fresh");
+  });
+
+  it("write sequential operations accumulate correctly", async () => {
+    const s = st.rosw(ok<number[]>([1, 2]));
+    await s.write(st.a.write.push(3));
+    await s.write(st.a.write.unshift(0));
+    await s.write(st.a.write.pop<number>());
+    expect(s.ok()).toEqual([0, 1, 2]);
+  });
+
+  it("write splice insert only", async () => {
+    const s = st.rosw(ok<number[]>([1, 4]));
+    await s.write(st.a.write.splice(1, 0, 2, 3));
+    expect(s.ok()).toEqual([1, 2, 3, 4]);
+  });
+
+  it("write splice remove only", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    await s.write(st.a.write.splice(1, 2));
+    expect(s.ok()).toEqual([1, 4]);
+  });
+
+  it("write move multiple items", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4, 5]));
+    await s.write(st.a.write.move(0, 3, 2));
+    expect(s.ok()).toEqual([3, 4, 5, 1, 2]);
+  });
+
+  it("write move backward", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
+    await s.write(st.a.write.move(3, 0));
+    expect(s.ok()).toEqual([4, 1, 2, 3]);
+  });
+
+  it("write pop on empty state", async () => {
+    const s = st.rosw(ok<number[]>([]));
+    await s.write(st.a.write.pop<number>());
+    expect(s.ok()).toEqual([]);
+  });
+
+  it("write shift on empty state", async () => {
+    const s = st.rosw(ok<number[]>([]));
+    await s.write(st.a.write.shift<number>());
+    expect(s.ok()).toEqual([]);
+  });
+});
+
+//##################################################################################################################################################
 //      _____  ______          _____       ___   _____  _____  _  __     __
 //     |  __ \|  ____|   /\   |  __ \     / / | |  __ \|  __ \| | \ \   / /
 //     | |__) | |__     /  \  | |  | |   / /| | | |__) | |__) | |  \ \_/ /
