@@ -9,7 +9,7 @@
     "declarationMap": false,
     "sourceMap": true,
     /*Typescripts errors if set to dist?*/
-    "outDir": "./dist2",
+    "outDir": "./dist",
     "rootDir": "./src",
 
     /* Strictness */
