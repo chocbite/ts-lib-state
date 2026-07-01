@@ -88,7 +88,7 @@ export abstract class StateBase<
   ): Promise<TResult1> {
     return func(
       await new Promise<RRT>((a) => {
-        (this.#read_promises ??= []).push(a as (val: RRT) => void);
+        (this.#read_promises ??= []).push(a);
       }),
     );
   }

@@ -2,7 +2,7 @@ import { ok } from "@chocbite/ts-lib-result";
 import state from "..";
 
 const state_inst = state.rosw(
-  state.o.help(ok({ a: 5 } as { [key: string]: number })),
+  state.o.help(ok<Record<string, number>>({ a: 5 })),
 );
 
 state_inst.sub((v) => {

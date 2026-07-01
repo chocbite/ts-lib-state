@@ -1,5 +1,6 @@
 import { ok } from "@chocbite/ts-lib-result";
 import { describe, expect, it } from "vitest";
+import type { StateObjectReadTypes } from "..";
 import { state as st } from "..";
 
 //##################################################################################################################################################
@@ -32,14 +33,14 @@ describe("Object Methods on Local State", async () => {
 
   it("add tracks read metadata", async () => {
     const s = st.rosw(ok<Record<string, number>>({ a: 1 }));
-    let reads: any = undefined;
+    let reads: StateObjectReadTypes<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.object.read(val.value);
     });
     s.object.add("b", 2);
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("added");
-    expect(reads[0].items).toEqual({ b: 2 });
+    expect(reads![0].type).to.equal("added");
+    expect(reads![0].items).toEqual({ b: 2 });
   });
 
   it("remove", async () => {
@@ -59,14 +60,14 @@ describe("Object Methods on Local State", async () => {
 
   it("remove tracks read metadata", async () => {
     const s = st.rosw(ok<Record<string, number>>({ a: 1, b: 2 }));
-    let reads: any = undefined;
+    let reads: StateObjectReadTypes<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.object.read(val.value);
     });
     s.object.remove("b");
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("removed");
-    expect(reads[0].items).toEqual({ b: 2 });
+    expect(reads![0].type).to.equal("removed");
+    expect(reads![0].items).toEqual({ b: 2 });
   });
 
   it("change", async () => {
@@ -77,14 +78,14 @@ describe("Object Methods on Local State", async () => {
 
   it("change tracks read metadata", async () => {
     const s = st.rosw(ok<Record<string, number>>({ a: 1, b: 2 }));
-    let reads: any = undefined;
+    let reads: StateObjectReadTypes<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.object.read(val.value);
     });
     s.object.change("b", 3);
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("changed");
-    expect(reads[0].items).toEqual({ b: 3 });
+    expect(reads![0].type).to.equal("changed");
+    expect(reads![0].items).toEqual({ b: 3 });
   });
 
   it("remove notifies subscribers", async () => {
@@ -291,12 +292,12 @@ describe("Object Read / Apply", async () => {
 
   it("is_read returns true for object with metadata", async () => {
     const s = st.rosw(ok<Record<string, number>>({ a: 1 }));
-    let hasRead = false;
+    let has_read = false;
     s.sub((val) => {
-      if (val.ok) hasRead = st.o.is_read(val.value);
+      if (val.ok) has_read = st.o.is_read(val.value);
     });
     s.object.add("b", 2);
-    expect(hasRead).to.equal(true);
+    expect(has_read).to.equal(true);
   });
 
   it("is_read returns false for plain object", async () => {
@@ -304,10 +305,7 @@ describe("Object Read / Apply", async () => {
   });
 
   it("is_related returns true for related helper", async () => {
-    const s = st.rosw(
-      st.o.help(ok<Record<string, number>>({ a: 1 })),
-      true,
-    );
+    const s = st.rosw(st.o.help(ok<Record<string, number>>({ a: 1 })), true);
     expect(st.o.is_related(s.related().unwrap())).to.equal(true);
   });
 
@@ -317,10 +315,7 @@ describe("Object Read / Apply", async () => {
   });
 
   it("is_helper returns true for helper", async () => {
-    const s = st.rosw(
-      st.o.help(ok<Record<string, number>>({ a: 1 })),
-      true,
-    );
+    const s = st.rosw(st.o.help(ok<Record<string, number>>({ a: 1 })), true);
     expect(st.o.is_helper(s.related().unwrap())).to.equal(true);
   });
 
@@ -330,10 +325,10 @@ describe("Object Read / Apply", async () => {
   });
 
   it("write_apply remove non-existing key returns empty removed items", async () => {
-    const [result, reads] = st.o.write_apply(
-      st.o.write.remove<number>("z"),
-      { a: 1, b: 2 },
-    );
+    const [result, reads] = st.o.write_apply(st.o.write.remove<number>("z"), {
+      a: 1,
+      b: 2,
+    });
     expect(result).toEqual({ a: 1, b: 2 });
     expect(reads).toBeDefined();
     expect(reads![0].type).to.equal("removed");

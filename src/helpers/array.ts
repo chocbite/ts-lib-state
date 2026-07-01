@@ -162,71 +162,72 @@ export type StateArrayWrite<WT> =
       [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<WT>;
     };
 
+type WithWriteKey<T> = { [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<T> };
+
 const write = {
   fresh<T>(items: T[]): StateArrayWrite<T> {
-    (items as any)[STATE_ARRAY_WRITE_KEY] = {
+    (items as T[] & WithWriteKey<T>)[STATE_ARRAY_WRITE_KEY] = {
       type: "fresh",
       items,
     };
     return items;
   },
   push<T>(...items: T[]): StateArrayWrite<T> {
-    const array: any = [];
-    array[STATE_ARRAY_WRITE_KEY] = { type: "push", items };
-    return array;
+    const obj: WithWriteKey<T> = {
+      [STATE_ARRAY_WRITE_KEY]: { type: "push", items },
+    };
+    return obj;
   },
   unshift<T>(...items: T[]): StateArrayWrite<T> {
-    const array: any = [];
-    array[STATE_ARRAY_WRITE_KEY] = { type: "unshift", items };
-    return array;
+    const obj: WithWriteKey<T> = {
+      [STATE_ARRAY_WRITE_KEY]: { type: "unshift", items },
+    };
+    return obj;
   },
   pop<T>(): StateArrayWrite<T> {
-    const array: any = [];
-    array[STATE_ARRAY_WRITE_KEY] = { type: "pop" };
-    return array;
+    const obj: WithWriteKey<T> = { [STATE_ARRAY_WRITE_KEY]: { type: "pop" } };
+    return obj;
   },
   shift<T>(): StateArrayWrite<T> {
-    const array: any = [];
-    array[STATE_ARRAY_WRITE_KEY] = { type: "shift" };
-    return array;
+    const obj: WithWriteKey<T> = { [STATE_ARRAY_WRITE_KEY]: { type: "shift" } };
+    return obj;
   },
   delete<T>(val: T): StateArrayWrite<T> {
-    const array: any = [];
-    array[STATE_ARRAY_WRITE_KEY] = { type: "delete", delete: val };
-    return array;
+    const obj: WithWriteKey<T> = {
+      [STATE_ARRAY_WRITE_KEY]: { type: "delete", delete: val },
+    };
+    return obj;
   },
   change<T>(index: number, ...items: T[]): StateArrayWrite<T> {
-    const array: any = [];
-    array[STATE_ARRAY_WRITE_KEY] = { type: "change", index, items };
-    return array;
+    const obj: WithWriteKey<T> = {
+      [STATE_ARRAY_WRITE_KEY]: { type: "change", index, items },
+    };
+    return obj;
   },
   splice<T>(
     start: number,
     delete_count: number = 0,
     ...items: T[]
   ): StateArrayWrite<T> {
-    const array: any = [];
-    array[STATE_ARRAY_WRITE_KEY] = {
-      type: "splice",
-      index: start,
-      delete_count: delete_count,
-      items,
+    const obj: WithWriteKey<T> = {
+      [STATE_ARRAY_WRITE_KEY]: {
+        type: "splice",
+        index: start,
+        delete_count,
+        items,
+      },
     };
-    return array;
+    return obj;
   },
   move<T>(
     from_index: number,
     to_index: number,
     count: number = 1,
   ): StateArrayWrite<T> {
-    const array: any = [];
-    array[STATE_ARRAY_WRITE_KEY] = {
-      type: "move",
-      from_index,
-      to_index,
-      count,
+    const obj: WithWriteKey<T> = {
+      [STATE_ARRAY_WRITE_KEY]: { type: "move", from_index, to_index, count },
     };
-    return array;
+    return obj;
   },
 };
 
@@ -235,9 +236,7 @@ function write_apply<T>(
   write: StateArrayWrite<T>,
   array: T[] = [],
 ): [T[], StateArrayReadTypes<T>[] | undefined] {
-  const wk = (write as any)[STATE_ARRAY_WRITE_KEY] as
-    | StateArrayWriteTypes<T>
-    | undefined;
+  const wk = (write as Partial<WithWriteKey<T>>)[STATE_ARRAY_WRITE_KEY];
   if (wk) {
     const w = wk;
     if (w.type === "fresh")

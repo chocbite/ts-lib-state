@@ -2,6 +2,14 @@ import { ok } from "@chocbite/ts-lib-result";
 import { describe, expect, it } from "vitest";
 import { state as st } from "..";
 
+type ReadItem<T> = {
+  type: string;
+  index?: number;
+  from_index?: number;
+  to_index?: number;
+  items?: readonly T[];
+};
+
 //##################################################################################################################################################
 //                _____  _____        __     __    __  __ ______ _______ _    _  ____  _____   _____
 //          /\   |  __ \|  __ \     /\\ \   / /   |  \/  |  ____|__   __| |  | |/ __ \|  __ \ / ____|
@@ -47,15 +55,15 @@ describe("Array Methods on Local State", async () => {
 
   it("push tracks read metadata", async () => {
     const s = st.rosw(ok<number[]>([1]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.array.read(val.value);
     });
     s.array.push(2, 3);
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("added");
-    expect(reads[0].index).to.equal(1);
-    expect(reads[0].items).toEqual([2, 3]);
+    expect(reads![0].type).to.equal("added");
+    expect(reads![0].index).to.equal(1);
+    expect(reads![0].items).toEqual([2, 3]);
   });
 
   it("unshift", async () => {
@@ -89,15 +97,15 @@ describe("Array Methods on Local State", async () => {
 
   it("unshift tracks read metadata", async () => {
     const s = st.rosw(ok<number[]>([2]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.array.read(val.value);
     });
     s.array.unshift(0, 1);
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("added");
-    expect(reads[0].index).to.equal(0);
-    expect(reads[0].items).toEqual([0, 1]);
+    expect(reads![0].type).to.equal("added");
+    expect(reads![0].index).to.equal(0);
+    expect(reads![0].items).toEqual([0, 1]);
   });
 
   it("pop", async () => {
@@ -123,15 +131,15 @@ describe("Array Methods on Local State", async () => {
 
   it("pop tracks read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.array.read(val.value);
     });
     s.array.pop();
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("removed");
-    expect(reads[0].index).to.equal(2);
-    expect(reads[0].items).toEqual([3]);
+    expect(reads![0].type).to.equal("removed");
+    expect(reads![0].index).to.equal(2);
+    expect(reads![0].items).toEqual([3]);
   });
 
   it("shift", async () => {
@@ -157,15 +165,15 @@ describe("Array Methods on Local State", async () => {
 
   it("shift tracks read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.array.read(val.value);
     });
     s.array.shift();
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("removed");
-    expect(reads[0].index).to.equal(0);
-    expect(reads[0].items).toEqual([1]);
+    expect(reads![0].type).to.equal("removed");
+    expect(reads![0].index).to.equal(0);
+    expect(reads![0].items).toEqual([1]);
   });
 
   it("delete", async () => {
@@ -176,17 +184,17 @@ describe("Array Methods on Local State", async () => {
 
   it("delete tracks read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3, 2]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.array.read(val.value);
     });
     s.array.delete(2);
     expect(reads).toBeDefined();
-    expect(reads.length).to.equal(2);
-    expect(reads[0].type).to.equal("removed");
-    expect(reads[0].items).toEqual([2]);
-    expect(reads[1].type).to.equal("removed");
-    expect(reads[1].items).toEqual([2]);
+    expect(reads!.length).to.equal(2);
+    expect(reads![0].type).to.equal("removed");
+    expect(reads![0].items).toEqual([2]);
+    expect(reads![1].type).to.equal("removed");
+    expect(reads![1].items).toEqual([2]);
   });
 
   it("delete notifies subscribers", async () => {
@@ -238,15 +246,15 @@ describe("Array Methods on Local State", async () => {
 
   it("change tracks read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.array.read(val.value);
     });
     s.array.change(1, 20);
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("changed");
-    expect(reads[0].index).to.equal(1);
-    expect(reads[0].items).toEqual([20]);
+    expect(reads![0].type).to.equal("changed");
+    expect(reads![0].index).to.equal(1);
+    expect(reads![0].items).toEqual([20]);
   });
 
   it("splice remove and insert", async () => {
@@ -272,17 +280,17 @@ describe("Array Methods on Local State", async () => {
 
   it("splice tracks read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.array.read(val.value);
     });
     s.array.splice(1, 1, 20, 30);
     expect(reads).toBeDefined();
-    expect(reads.length).to.equal(2);
-    expect(reads[0].type).to.equal("removed");
-    expect(reads[0].items).toEqual([2]);
-    expect(reads[1].type).to.equal("added");
-    expect(reads[1].items).toEqual([20, 30]);
+    expect(reads!.length).to.equal(2);
+    expect(reads![0].type).to.equal("removed");
+    expect(reads![0].items).toEqual([2]);
+    expect(reads![1].type).to.equal("added");
+    expect(reads![1].items).toEqual([20, 30]);
   });
 
   it("chaining delete and change", async () => {
@@ -349,16 +357,16 @@ describe("Array Methods on Local State", async () => {
 
   it("move tracks read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.array.read(val.value);
     });
     s.array.move(0, 2, 2);
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("moved");
-    expect(reads[0].from_index).to.equal(0);
-    expect(reads[0].to_index).to.equal(2);
-    expect(reads[0].items).toEqual([1, 2]);
+    expect(reads![0].type).to.equal("moved");
+    expect(reads![0].from_index).to.equal(0);
+    expect(reads![0].to_index).to.equal(2);
+    expect(reads![0].items).toEqual([1, 2]);
   });
 
   it("move is chainable", async () => {
@@ -501,7 +509,10 @@ describe("Array Write / Apply", async () => {
   });
 
   it("write_apply pop", async () => {
-    const [result, reads] = st.a.write_apply(st.a.write.pop<number>(), [1, 2, 3]);
+    const [result, reads] = st.a.write_apply(
+      st.a.write.pop<number>(),
+      [1, 2, 3],
+    );
     expect(result).toEqual([1, 2]);
     expect(reads).toBeDefined();
     expect(reads![0].type).to.equal("removed");
@@ -532,7 +543,10 @@ describe("Array Write / Apply", async () => {
   });
 
   it("write_apply delete", async () => {
-    const [result, reads] = st.a.write_apply(st.a.write.delete(2), [1, 2, 3, 2]);
+    const [result, reads] = st.a.write_apply(
+      st.a.write.delete(2),
+      [1, 2, 3, 2],
+    );
     expect(result).toEqual([1, 3]);
     expect(reads).toBeDefined();
     expect(reads!.length).to.equal(2);
@@ -636,10 +650,7 @@ describe("Array Write / Apply", async () => {
   });
 
   it("write_apply move with from_index beyond array is no-op", async () => {
-    const [result, reads] = st.a.write_apply(
-      st.a.write.move(10, 0),
-      [1, 2, 3],
-    );
+    const [result, reads] = st.a.write_apply(st.a.write.move(10, 0), [1, 2, 3]);
     expect(result).toEqual([1, 2, 3]);
     expect(reads).to.equal(undefined);
   });
@@ -677,22 +688,31 @@ describe("Array Write / Apply", async () => {
   });
 
   // Bug: pop/shift in write_apply check `if (items[0])` which fails for falsy values like 0
-  it.fails("write_apply pop with falsy value (0) removes last element", async () => {
-    const [result, reads] = st.a.write_apply(st.a.write.pop<number>(), [1, 2, 0]);
-    expect(result).toEqual([1, 2]);
-    expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("removed");
-  });
+  it.fails(
+    "write_apply pop with falsy value (0) removes last element",
+    async () => {
+      const [result, reads] = st.a.write_apply(
+        st.a.write.pop<number>(),
+        [1, 2, 0],
+      );
+      expect(result).toEqual([1, 2]);
+      expect(reads).toBeDefined();
+      expect(reads![0].type).to.equal("removed");
+    },
+  );
 
-  it.fails("write_apply shift with falsy value (0) removes first element", async () => {
-    const [result, reads] = st.a.write_apply(
-      st.a.write.shift<number>(),
-      [0, 1, 2],
-    );
-    expect(result).toEqual([1, 2]);
-    expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("removed");
-  });
+  it.fails(
+    "write_apply shift with falsy value (0) removes first element",
+    async () => {
+      const [result, reads] = st.a.write_apply(
+        st.a.write.shift<number>(),
+        [0, 1, 2],
+      );
+      expect(result).toEqual([1, 2]);
+      expect(reads).toBeDefined();
+      expect(reads![0].type).to.equal("removed");
+    },
+  );
 });
 
 //##################################################################################################################################################
@@ -717,15 +737,15 @@ describe("Array State Write Without Helper", async () => {
 
   it("write push notifies subscribers with read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.a.read(val.value);
     });
     await s.write(st.a.write.push(3));
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("added");
-    expect(reads[0].index).to.equal(2);
-    expect(reads[0].items).toEqual([3]);
+    expect(reads![0].type).to.equal("added");
+    expect(reads![0].index).to.equal(2);
+    expect(reads![0].items).toEqual([3]);
   });
 
   it("write unshift updates state", async () => {
@@ -736,15 +756,15 @@ describe("Array State Write Without Helper", async () => {
 
   it("write unshift notifies subscribers with read metadata", async () => {
     const s = st.rosw(ok<number[]>([2]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.a.read(val.value);
     });
     await s.write(st.a.write.unshift(0, 1));
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("added");
-    expect(reads[0].index).to.equal(0);
-    expect(reads[0].items).toEqual([0, 1]);
+    expect(reads![0].type).to.equal("added");
+    expect(reads![0].index).to.equal(0);
+    expect(reads![0].items).toEqual([0, 1]);
   });
 
   it("write pop updates state", async () => {
@@ -755,15 +775,15 @@ describe("Array State Write Without Helper", async () => {
 
   it("write pop notifies subscribers with read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.a.read(val.value);
     });
     await s.write(st.a.write.pop<number>());
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("removed");
-    expect(reads[0].index).to.equal(2);
-    expect(reads[0].items).toEqual([3]);
+    expect(reads![0].type).to.equal("removed");
+    expect(reads![0].index).to.equal(2);
+    expect(reads![0].items).toEqual([3]);
   });
 
   it("write shift updates state", async () => {
@@ -774,15 +794,15 @@ describe("Array State Write Without Helper", async () => {
 
   it("write shift notifies subscribers with read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.a.read(val.value);
     });
     await s.write(st.a.write.shift<number>());
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("removed");
-    expect(reads[0].index).to.equal(0);
-    expect(reads[0].items).toEqual([1]);
+    expect(reads![0].type).to.equal("removed");
+    expect(reads![0].index).to.equal(0);
+    expect(reads![0].items).toEqual([1]);
   });
 
   it("write delete updates state", async () => {
@@ -793,17 +813,17 @@ describe("Array State Write Without Helper", async () => {
 
   it("write delete notifies subscribers with read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3, 2]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.a.read(val.value);
     });
     await s.write(st.a.write.delete(2));
     expect(reads).toBeDefined();
-    expect(reads.length).to.equal(2);
-    expect(reads[0].type).to.equal("removed");
-    expect(reads[0].items).toEqual([2]);
-    expect(reads[1].type).to.equal("removed");
-    expect(reads[1].items).toEqual([2]);
+    expect(reads!.length).to.equal(2);
+    expect(reads![0].type).to.equal("removed");
+    expect(reads![0].items).toEqual([2]);
+    expect(reads![1].type).to.equal("removed");
+    expect(reads![1].items).toEqual([2]);
   });
 
   it("write change updates state", async () => {
@@ -814,15 +834,15 @@ describe("Array State Write Without Helper", async () => {
 
   it("write change notifies subscribers with read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.a.read(val.value);
     });
     await s.write(st.a.write.change(1, 20));
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("changed");
-    expect(reads[0].index).to.equal(1);
-    expect(reads[0].items).toEqual([20]);
+    expect(reads![0].type).to.equal("changed");
+    expect(reads![0].index).to.equal(1);
+    expect(reads![0].items).toEqual([20]);
   });
 
   it("write change with index beyond array length is no-op", async () => {
@@ -839,17 +859,17 @@ describe("Array State Write Without Helper", async () => {
 
   it("write splice notifies subscribers with read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.a.read(val.value);
     });
     await s.write(st.a.write.splice(1, 1, 20, 30));
     expect(reads).toBeDefined();
-    expect(reads.length).to.equal(2);
-    expect(reads[0].type).to.equal("removed");
-    expect(reads[0].items).toEqual([2]);
-    expect(reads[1].type).to.equal("added");
-    expect(reads[1].items).toEqual([20, 30]);
+    expect(reads!.length).to.equal(2);
+    expect(reads![0].type).to.equal("removed");
+    expect(reads![0].items).toEqual([2]);
+    expect(reads![1].type).to.equal("added");
+    expect(reads![1].items).toEqual([20, 30]);
   });
 
   it("write move updates state", async () => {
@@ -860,16 +880,16 @@ describe("Array State Write Without Helper", async () => {
 
   it("write move notifies subscribers with read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.a.read(val.value);
     });
     await s.write(st.a.write.move(0, 2, 2));
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("moved");
-    expect(reads[0].from_index).to.equal(0);
-    expect(reads[0].to_index).to.equal(2);
-    expect(reads[0].items).toEqual([1, 2]);
+    expect(reads![0].type).to.equal("moved");
+    expect(reads![0].from_index).to.equal(0);
+    expect(reads![0].to_index).to.equal(2);
+    expect(reads![0].items).toEqual([1, 2]);
   });
 
   it("write fresh replaces entire state", async () => {
@@ -883,25 +903,25 @@ describe("Array State Write Without Helper", async () => {
 
   it("write fresh notifies subscribers with read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.a.read(val.value);
     });
     await s.write(st.a.write.fresh([10, 20]));
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("fresh");
+    expect(reads![0].type).to.equal("fresh");
   });
 
   it("write plain array replaces state without read metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
-    let reads: any = undefined;
+    let reads: ReadItem<number>[] | undefined = undefined;
     s.sub((val) => {
       if (val.ok) reads = st.a.read(val.value);
     });
     await s.write([10, 20]);
     expect(s.ok()).toEqual([10, 20]);
     expect(reads).toBeDefined();
-    expect(reads[0].type).to.equal("fresh");
+    expect(reads![0].type).to.equal("fresh");
   });
 
   it("write sequential operations accumulate correctly", async () => {
@@ -1021,7 +1041,8 @@ describe("Array Read / Apply", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
     let applied: string[] = ["1", "2", "3"];
     s.sub((val) => {
-      if (val.ok) applied = st.a.read_apply(val.value, applied, (n) => String(n));
+      if (val.ok)
+        applied = st.a.read_apply(val.value, applied, (n) => String(n));
     });
     s.array.move(0, 2);
     expect(applied).toEqual(["2", "3", "1"]);
@@ -1031,7 +1052,8 @@ describe("Array Read / Apply", async () => {
     const s = st.rosw(ok<number[]>([1]));
     let applied: string[] = [];
     s.sub((val) => {
-      if (val.ok) applied = st.a.read_apply(val.value, applied, (n) => String(n));
+      if (val.ok)
+        applied = st.a.read_apply(val.value, applied, (n) => String(n));
     });
     s.array.push(2);
     expect(applied).toEqual(["2"]);
@@ -1051,12 +1073,12 @@ describe("Array Read / Apply", async () => {
 
   it("is_read returns true for array with metadata", async () => {
     const s = st.rosw(ok<number[]>([1, 2]));
-    let hasRead = false;
+    let has_read = false;
     s.sub((val) => {
-      if (val.ok) hasRead = st.a.is_read(val.value);
+      if (val.ok) has_read = st.a.is_read(val.value);
     });
     s.array.push(3);
-    expect(hasRead).to.equal(true);
+    expect(has_read).to.equal(true);
   });
 
   it("is_read returns false for plain array", async () => {

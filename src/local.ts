@@ -26,6 +26,7 @@ import {
   OBJECT,
   STATE_OBJECT_READ_KEY as SORK,
   type StateObjectRead as SOR,
+  type StateObjectReadTypes as SORT,
 } from "./helpers/object";
 import type {
   StateHelper as Helper,
@@ -220,7 +221,7 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
     if (r.err) return undefined;
     const arr = r.value;
     const l = arr.length;
-    const p = (arr as any[]).pop();
+    const p = (arr as RIOK<RT>[number][]).pop();
     if (arr.length < l) {
       arr[SARK] = [{ type: "removed", index: arr.length, items: [p!] }];
       this.#local.set(ok(arr) as RT);
@@ -234,7 +235,7 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
     if (r.err) return undefined;
     const arr = r.value;
     const l = arr.length;
-    const s = (arr as any[]).shift();
+    const s = (arr as RIOK<RT>[number][]).shift();
     if (arr.length < l) {
       arr[SARK] = [{ type: "removed", index: 0, items: [s!] }];
       this.#local.set(ok(arr) as RT);
@@ -264,7 +265,9 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
     if (index >= arr.length) return this;
     const capped = items.slice(0, arr.length - index) as RIOK<RT>;
     for (let i = 0; i < capped.length; i++)
-      (arr as any[])[index + i] = capped[i];
+      (arr as RIOK<RT>[number][])[index + i] = (capped as RIOK<RT>[number][])[
+        i
+      ];
     arr[SARK] = [{ type: "changed", index, items: capped }];
     this.#local.set(ok(arr) as RT);
     delete arr[SARK];
@@ -301,8 +304,8 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
     const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
     if (count <= 0 || from_index < 0 || from_index >= arr.length) return this;
     const capped = Math.min(count, arr.length - from_index);
-    const items = (arr as any[]).splice(from_index, capped);
-    (arr as any[]).splice(to_index, 0, ...items);
+    const items = (arr as RIOK<RT>[number][]).splice(from_index, capped);
+    (arr as RIOK<RT>[number][]).splice(to_index, 0, ...items);
     arr[SARK] = [{ type: "moved", from_index, to_index, items }];
     this.#local.set(ok(arr) as RT);
     delete arr[SARK];
@@ -317,6 +320,8 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
 //     | |  | |  _ < _   | |  __|| |      | |
 //     | |__| | |_) | |__| | |___| |____  | |
 //      \____/|____/ \____/|______\\_____||_|
+
+type WithObjReadKey<T> = { [SORK]?: SORT<T>[] };
 
 export class LocalObjectOwner<RT extends StateResult<Record<string, any>>> {
   #local: RXXX<RT, any, any>;
@@ -333,9 +338,11 @@ export class LocalObjectOwner<RT extends StateResult<Record<string, any>>> {
     const obj = this.#local.get().unwrap_or<RIOK<RT>>({} as RIOK<RT>);
     const items = { [key]: value } as Record<string, RIOK<RT>[string]>;
     (obj as Record<string, any>)[key] = value;
-    (obj as any)[SORK] = [{ type: "added", items }];
+    (obj as RIOK<RT> & WithObjReadKey<RIOK<RT>[string]>)[SORK] = [
+      { type: "added", items },
+    ];
     this.#local.set(ok(obj) as RT);
-    delete (obj as any)[SORK];
+    delete (obj as RIOK<RT> & WithObjReadKey<RIOK<RT>[string]>)[SORK];
     return this;
   }
   /**Removes a key-value pair from the object
@@ -343,13 +350,15 @@ export class LocalObjectOwner<RT extends StateResult<Record<string, any>>> {
   remove(key: string): this {
     const obj = this.#local.get().unwrap_or<RIOK<RT>>({} as RIOK<RT>);
     if (!(key in (obj as Record<string, any>))) return this;
-    const removed = {
-      [key]: (obj as Record<string, any>)[key],
-    } as Record<string, RIOK<RT>[string]>;
-    delete (obj as Record<string, any>)[key];
-    (obj as any)[SORK] = [{ type: "removed", items: removed }];
+    const removed: Record<string, RIOK<RT>[string]> = {
+      [key]: (obj as Record<string, RIOK<RT>[string]>)[key],
+    };
+    delete (obj as Record<string, RIOK<RT>[string]>)[key];
+    (obj as RIOK<RT> & WithObjReadKey<RIOK<RT>[string]>)[SORK] = [
+      { type: "removed", items: removed },
+    ];
     this.#local.set(ok(obj) as RT);
-    delete (obj as any)[SORK];
+    delete (obj as RIOK<RT> & WithObjReadKey<RIOK<RT>[string]>)[SORK];
     return this;
   }
   /**Changes the value for a key in the object
@@ -359,9 +368,11 @@ export class LocalObjectOwner<RT extends StateResult<Record<string, any>>> {
     const obj = this.#local.get().unwrap_or<RIOK<RT>>({} as RIOK<RT>);
     const items = { [key]: value } as Record<string, RIOK<RT>[string]>;
     (obj as Record<string, any>)[key] = value;
-    (obj as any)[SORK] = [{ type: "changed", items }];
+    (obj as RIOK<RT> & WithObjReadKey<RIOK<RT>[string]>)[SORK] = [
+      { type: "changed", items },
+    ];
     this.#local.set(ok(obj) as RT);
-    delete (obj as any)[SORK];
+    delete (obj as RIOK<RT> & WithObjReadKey<RIOK<RT>[string]>)[SORK];
     return this;
   }
 }
@@ -462,12 +473,12 @@ class RXXX<
             if (e.err) return err(e.error);
             if (ARRAY.is_write(e.value))
               ARRAY.read_set(
-                ARRAY.write_apply(e.value, old?.unwrap_or([])),
+                ARRAY.write_apply(e.value, old?.unwrap_or([]) as never),
                 state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
               );
             else if (OBJECT.is_write(e.value))
               OBJECT.read_set(
-                OBJECT.write_apply(e.value, old?.unwrap_or({})),
+                OBJECT.write_apply(e.value, old?.unwrap_or({}) as never),
                 state.set_ok.bind(state) as (
                   value: Record<PropertyKey, any> | SOR<any>,
                 ) => void,
@@ -478,12 +489,12 @@ class RXXX<
         }
         if (ARRAY.is_write(value))
           ARRAY.read_set(
-            ARRAY.write_apply(value, old?.unwrap_or([])),
+            ARRAY.write_apply(value, old?.unwrap_or([]) as never),
             state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
           );
         else if (OBJECT.is_write(value))
           OBJECT.read_set(
-            OBJECT.write_apply(value, old?.unwrap_or({})),
+            OBJECT.write_apply(value, old?.unwrap_or({}) as never),
             state.set_ok.bind(state) as (
               value: Record<PropertyKey, any> | SOR<any>,
             ) => void,
@@ -511,7 +522,7 @@ class RXXX<
             if (e.err) return err(e.error);
             if (ARRAY.is_write(e.value))
               ARRAY.read_set(
-                ARRAY.write_apply(e.value, old?.unwrap_or([])),
+                ARRAY.write_apply(e.value, old?.unwrap_or([]) as never),
                 state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
               );
             else state.set_ok(e.value as RIOK<RRT>);
@@ -520,7 +531,7 @@ class RXXX<
         }
         if (ARRAY.is_write(value))
           ARRAY.read_set(
-            ARRAY.write_apply(value, old?.unwrap_or([])),
+            ARRAY.write_apply(value, old?.unwrap_or([]) as never),
             state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
           );
         else state.set_ok(value as RIOK<RRT>);
@@ -535,7 +546,7 @@ class RXXX<
             if (e.err) return err(e.error);
             if (OBJECT.is_write(e.value))
               OBJECT.read_set(
-                OBJECT.write_apply(e.value, old?.unwrap_or({})),
+                OBJECT.write_apply(e.value, old?.unwrap_or({}) as never),
                 state.set_ok.bind(state) as (
                   value: Record<PropertyKey, any> | SOR<any>,
                 ) => void,
@@ -546,7 +557,7 @@ class RXXX<
         }
         if (OBJECT.is_write(value))
           OBJECT.read_set(
-            OBJECT.write_apply(value, old?.unwrap_or({})),
+            OBJECT.write_apply(value, old?.unwrap_or({}) as never),
             state.set_ok.bind(state) as (
               value: Record<PropertyKey, any> | SOR<any>,
             ) => void,
@@ -559,7 +570,7 @@ class RXXX<
 
   //#Owner Context
   set(value: RRT | RO<SRT<RIOK<RRT>>>) {
-    this.#helper?.on_change(value as RRT);
+    this.#helper?.on_change(value);
     this.update_subs((this.#value = value as RRT));
   }
   set_ok(value: RIOK<RRT> | SRT<RIOK<RRT>>): void {
@@ -643,7 +654,6 @@ class RXXX<
     return this.#value!;
   }
   ok(): RIOK<RRT> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return (this.get() as RO<RIOK<RRT>>).value;
   }
   related(): HELToREL<HEL> {
@@ -656,7 +666,7 @@ class RXXX<
   }
   write(value: WT): PromiseLike<StateResult<void>> {
     if (this.#setter) {
-      const res = this.#setter(value, this as Owner<RRT, HEL, WT>, this.#value);
+      const res = this.#setter(value, this, this.#value);
       return sync_resolve(res);
     }
     return sync_resolve(err("not writable"));
