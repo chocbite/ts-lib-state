@@ -17,6 +17,7 @@ import {
 } from "./helpers/object";
 import { STRING } from "./helpers/string";
 import { UTIL } from "./helpers/util";
+import { VIEWER } from "./helpers/viewer";
 import { rea, reaw, res, resw, roa, roaw, ros, rosw } from "./local";
 import { PROXY } from "./proxy";
 import { RESOURCE } from "./remote";
@@ -59,36 +60,50 @@ export const state = {
   reaw,
   /**Proxy states, allows for creating states that proxy other states */
   p: PROXY,
+  /**Proxy states, allows for creating states that proxy other states */
   proxy: PROXY,
   /**Collected states, collects values from multiple states and reduces it to one */
   c: COLLECTED,
+  /**Collected states, collects values from multiple states and reduces it to one */
   collected: COLLECTED,
   /**Remote states, allows for creating states representing remote resources */
   r: RESOURCE,
+  /**Remote states, allows for creating states representing remote resources */
   remote: RESOURCE,
   /**Helper functionality for arrays */
   a: ARRAY,
+  /**Helper functionality for arrays */
   array: ARRAY,
   /**Helper functionality for objects */
   o: OBJECT,
+  /**Helper functionality for objects */
   object: OBJECT,
   /**Helper functionality for numbers */
   n: NUMBER,
+  /**Helper functionality for numbers */
   number: NUMBER,
   /**Helper functionality for strings */
   s: STRING,
+  /**Helper functionality for strings */
   string: STRING,
   /**Helper functionality for enums */
   e: ENUM,
+  /**Helper functionality for enums */
   enum: ENUM,
   /**Helper functionality for booleans */
   b: BOOL,
+  /**Helper functionality for booleans */
   bool: BOOL,
   /**Utility functions for states */
   u: UTIL,
+  /**Utility functions for states */
   util: UTIL,
   /**Functions to determine if a variable is a state*/
   is: IS,
+  /**Helper functionality to recursively subscribe to any state changes in a tree of states */
+  v: VIEWER,
+  /**Helper functionality to recursively subscribe to any state changes in a tree of states */
+  viewer: VIEWER,
   /**The state key is a symbol used to identify state objects
    * To implement a custom state, set this key to true on the object */
   STATE_KEY,
@@ -153,6 +168,7 @@ export {
   type StateStringHelper,
   type StateStringRelated,
 } from "./helpers/string";
+export { viewer as observe } from "./helpers/viewer";
 export {
   type StateLocalREA,
   type StateLocalREAW,

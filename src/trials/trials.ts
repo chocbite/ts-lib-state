@@ -1,3 +1,3 @@
-import "./array";
+import "./viewer";
 
 console.debug("asdf");

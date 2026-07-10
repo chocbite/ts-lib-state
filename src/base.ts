@@ -1,4 +1,5 @@
 import { Option, ResultInferOk } from "@chocbite/ts-lib-result";
+import { IS } from "./helpers/is";
 import {
   StateResult as SR,
   STATE_KEY,
@@ -21,6 +22,36 @@ export abstract class StateBase<
     on_fulfilled?: ((value: RRT) => TResult1 | PromiseLike<TResult1>) | null,
     on_rejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
   ): PromiseLike<TResult1 | TResult2>;
+  async to_json() {
+    const val = await this;
+    if (val.err) return "null";
+    const value = val.value as unknown;
+    if (!(value instanceof Object)) return JSON.stringify(value);
+    if (IS.state(value)) return await value.to_json();
+    if (Array.isArray(value)) {
+      let str = "[";
+      for (let i = 0; i < value.length; i++) {
+        if (i > 0) str += ",";
+        const e = (value as unknown[])[i];
+        if (IS.state(e)) str += await e.to_json();
+        else str += JSON.stringify(e);
+      }
+      str += "]";
+      return str;
+    }
+    let str = "{";
+    const keys = Object.keys(value);
+    for (let i = 0; i < keys.length; i++) {
+      if (i > 0) str += ",";
+      const key = keys[i];
+      const e = (value as { [key: string]: unknown })[key];
+      str += JSON.stringify(key) + ":";
+      if (IS.state(e)) str += await e.to_json();
+      else str += JSON.stringify(e);
+    }
+    str += "}";
+    return str;
+  }
 
   abstract readonly rsync: boolean;
   get?(): RRT;

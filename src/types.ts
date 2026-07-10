@@ -85,6 +85,7 @@ export interface StateBase<
     on_fulfilled?: ((value: RRT) => TResult1 | PromiseLike<TResult1>) | null,
     on_rejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
   ): PromiseLike<TResult1 | TResult2>;
+  to_json(): PromiseLike<string>;
 
   /**Is state guarenteed sync*/
   readonly rsync: boolean;
