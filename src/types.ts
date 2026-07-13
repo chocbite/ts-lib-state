@@ -7,6 +7,8 @@ import {
 import type { StateArrayRead, StateArrayWrite } from "./helpers/array";
 import type { StateObjectRead, StateObjectWrite } from "./helpers/object";
 
+export const STATE_VIEWER_OVERRIDE_KEY = Symbol("STATE_VIEWER_OVERRIDE_KEY");
+
 export type StateResult<T> = Result<T, string>;
 
 /**Automatically maps array types to StateArrayRead and object record types to StateObjectRead when reading state values.

@@ -1,9 +1,12 @@
-import type { State, StateResult, StateSub } from "../types";
+import {
+  State,
+  STATE_VIEWER_OVERRIDE_KEY,
+  StateResult,
+  StateSub,
+} from "../types";
 import { ARRAY } from "./array";
 import { IS } from "./is";
 import { OBJECT } from "./object";
-
-const STATE_VIEWER_OVERRIDE_KEY = Symbol("STATE_VIEWER_OVERRIDE_KEY");
 
 declare global {
   interface Object {

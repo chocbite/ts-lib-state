@@ -3,6 +3,7 @@ import { IS } from "./helpers/is";
 import {
   StateResult as SR,
   STATE_KEY,
+  STATE_VIEWER_OVERRIDE_KEY,
   StateRelated,
   type StateBase as Base,
   type StateSub,
@@ -22,11 +23,13 @@ export abstract class StateBase<
     on_fulfilled?: ((value: RRT) => TResult1 | PromiseLike<TResult1>) | null,
     on_rejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
   ): PromiseLike<TResult1 | TResult2>;
+
   async to_json() {
-    const val = await this;
-    if (val.err) return "null";
-    const value = val.value as unknown;
-    if (!(value instanceof Object)) return JSON.stringify(value);
+    const v = await this;
+    if (v.err) return "null";
+    const val = v.value as unknown;
+    if (!(val instanceof Object)) return JSON.stringify(val);
+    const value = val[STATE_VIEWER_OVERRIDE_KEY]?.() ?? val;
     if (IS.state(value)) return await value.to_json();
     if (Array.isArray(value)) {
       let str = "[";
