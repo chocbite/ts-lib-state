@@ -38,19 +38,21 @@ export abstract class StateBase<
       }
       str += "]";
       return str;
+    } else if (Object.getPrototypeOf(value) === Object.prototype) {
+      let str = "{";
+      const keys = Object.keys(value);
+      for (let i = 0; i < keys.length; i++) {
+        if (i > 0) str += ",";
+        const key = keys[i];
+        const e = (value as { [key: string]: unknown })[key];
+        str += JSON.stringify(key) + ":";
+        if (IS.state(e)) str += await e.to_json();
+        else str += JSON.stringify(e);
+      }
+      str += "}";
+      return str;
     }
-    let str = "{";
-    const keys = Object.keys(value);
-    for (let i = 0; i < keys.length; i++) {
-      if (i > 0) str += ",";
-      const key = keys[i];
-      const e = (value as { [key: string]: unknown })[key];
-      str += JSON.stringify(key) + ":";
-      if (IS.state(e)) str += await e.to_json();
-      else str += JSON.stringify(e);
-    }
-    str += "}";
-    return str;
+    return JSON.stringify(value);
   }
 
   abstract readonly rsync: boolean;
