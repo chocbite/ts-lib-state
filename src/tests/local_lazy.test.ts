@@ -17,6 +17,17 @@ describe("Initialize lazy states", function () {
     it("ok", async function () {
       st.ros(() => ok(1));
     });
+    it("rok is true", function () {
+      expect(st.ros(() => ok(1)).rok).toBe(true);
+    });
+    it("rsync is true after access", async function () {
+      const s = st.ros(() => ok(1));
+      await s;
+      expect(s.rsync).toBe(true);
+    });
+    it("writable is false", function () {
+      expect(st.ros(() => ok(1)).writable).toBe(false);
+    });
     it("cleanup successfull", async function () {
       const init = st.ros(() => ok(1));
       const get = init.get;
@@ -53,6 +64,17 @@ describe("Initialize lazy states", function () {
     it("err", async function () {
       st.res(() => err("1"));
     });
+    it("rok is false", function () {
+      expect(st.res(() => ok(1)).rok).toBe(false);
+    });
+    it("rsync is true after access", async function () {
+      const s = st.res(() => ok(1));
+      await s;
+      expect(s.rsync).toBe(true);
+    });
+    it("writable is false", function () {
+      expect(st.res(() => ok(1)).writable).toBe(false);
+    });
     it("cleanup successfull", async function () {
       const init = st.res(() => ok(1));
       const get = init.get;
@@ -82,6 +104,17 @@ describe("Initialize lazy states", function () {
   describe("ROS_WS", { timeout: 100 }, function () {
     it("ok", async function () {
       st.rosw(() => ok(1));
+    });
+    it("rok is true", function () {
+      expect(st.rosw(() => ok(1)).rok).toBe(true);
+    });
+    it("rsync is true after access", async function () {
+      const s = st.rosw(() => ok(1));
+      await s;
+      expect(s.rsync).toBe(true);
+    });
+    it("writable is true", function () {
+      expect(st.rosw(() => ok(1)).writable).toBe(true);
     });
     it("cleanup successfull", async function () {
       const init = st.rosw(() => ok(1));
@@ -128,6 +161,17 @@ describe("Initialize lazy states", function () {
     });
     it("err", async function () {
       st.resw(() => err("1"));
+    });
+    it("rok is false", function () {
+      expect(st.resw(() => ok(1)).rok).toBe(false);
+    });
+    it("rsync is true after access", async function () {
+      const s = st.resw(() => ok(1));
+      await s;
+      expect(s.rsync).toBe(true);
+    });
+    it("writable is true", function () {
+      expect(st.resw(() => ok(1)).writable).toBe(true);
     });
     it("cleanup successfull", async function () {
       const init = st.resw(() => ok(1));

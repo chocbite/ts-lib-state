@@ -35,6 +35,18 @@ describe("Initialize delayed states", function () {
       assertType<StateROA<number>>(init);
       assertType<StateLocalROA<number>>(init);
     });
+    it("rok is true", function () {
+      expect(st.roa(() => sleep(1, ok(1))).rok).toBe(true);
+    });
+    it("rsync is false before resolve, true after", async function () {
+      const s = st.roa(() => sleep(1, ok(1)));
+      expect(s.rsync).toBe(false);
+      await s;
+      expect(s.rsync).toBe(true);
+    });
+    it("writable is false", function () {
+      expect(st.roa(() => sleep(1, ok(1))).writable).toBe(false);
+    });
     it("cleanup successfull", async function () {
       const init = st.roa(() => sleep(1, ok(1)));
       // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -91,6 +103,18 @@ describe("Initialize delayed states", function () {
       assertType<StateREA<number>>(init);
       assertType<StateLocalREA<number>>(init);
     });
+    it("rok is false", function () {
+      expect(st.rea(() => sleep(1, ok(1))).rok).toBe(false);
+    });
+    it("rsync is false before resolve, true after", async function () {
+      const s = st.rea(() => sleep(1, ok(1)));
+      expect(s.rsync).toBe(false);
+      await s;
+      expect(s.rsync).toBe(true);
+    });
+    it("writable is false", function () {
+      expect(st.rea(() => sleep(1, ok(1))).writable).toBe(false);
+    });
     it("cleanup successfull", async function () {
       const init = st.rea(() => sleep(1, ok(1)));
       // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -141,6 +165,18 @@ describe("Initialize delayed states", function () {
       const init = st.roaw(() => sleep(1, ok(1)));
       assertType<StateROAW<number>>(init);
       assertType<StateLocalROAW<number>>(init);
+    });
+    it("rok is true", function () {
+      expect(st.roaw(() => sleep(1, ok(1))).rok).toBe(true);
+    });
+    it("rsync is false before resolve, true after", async function () {
+      const s = st.roaw(() => sleep(1, ok(1)));
+      expect(s.rsync).toBe(false);
+      await s;
+      expect(s.rsync).toBe(true);
+    });
+    it("writable is true", function () {
+      expect(st.roaw(() => sleep(1, ok(1))).writable).toBe(true);
     });
     it("cleanup successfull", async function () {
       const init = st.roaw(() => sleep(1, ok(1)));
@@ -205,6 +241,18 @@ describe("Initialize delayed states", function () {
       const init = st.reaw<number>(() => sleep(1, err("1")));
       assertType<StateREAW<number>>(init);
       assertType<StateLocalREAW<number>>(init);
+    });
+    it("rok is false", function () {
+      expect(st.reaw(() => sleep(1, ok(1))).rok).toBe(false);
+    });
+    it("rsync is false before resolve, true after", async function () {
+      const s = st.reaw(() => sleep(1, ok(1)));
+      expect(s.rsync).toBe(false);
+      await s;
+      expect(s.rsync).toBe(true);
+    });
+    it("writable is true", function () {
+      expect(st.reaw(() => sleep(1, ok(1))).writable).toBe(true);
     });
     it("cleanup successfull", async function () {
       const init = st.reaw(() => sleep(1, ok(1)));

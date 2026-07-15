@@ -1,5 +1,5 @@
 import { err, ok, ResultOk } from "@chocbite/ts-lib-result";
-import { assertType, describe, it } from "vitest";
+import { assertType, describe, expect, it } from "vitest";
 import { state as st, StateResult, StateROS } from "..";
 import {
   test_state_get,
@@ -17,6 +17,16 @@ describe("Sync states", function () {
     it("ok", async function () {
       const init = st.ros(ok(1));
       assertType<StateROS<number>>(init);
+    });
+    it("rok is true", function () {
+      expect(st.ros(ok(1)).rok).toBe(true);
+      expect(st.ok(1).rok).toBe(true);
+    });
+    it("rsync is true", function () {
+      expect(st.ros(ok(1)).rsync).toBe(true);
+    });
+    it("writable is false", function () {
+      expect(st.ros(ok(1)).writable).toBe(false);
     });
     const maker: TestStateOkSync = () => {
       const state = st.ros(ok(1));
@@ -44,6 +54,16 @@ describe("Sync states", function () {
     it("err", async function () {
       st.res(err("1"));
     });
+    it("rok is false", function () {
+      expect(st.res(ok(1)).rok).toBe(false);
+      expect(st.res(err("1")).rok).toBe(false);
+    });
+    it("rsync is true", function () {
+      expect(st.res(ok(1)).rsync).toBe(true);
+    });
+    it("writable is false", function () {
+      expect(st.res(ok(1)).writable).toBe(false);
+    });
     const maker: TestStateSync = () => {
       const state = st.res(ok(1));
       const set = (val: StateResult<number>) => state.set(val);
@@ -63,6 +83,16 @@ describe("Sync states", function () {
   describe("ROSWS", { timeout: 100 }, function () {
     it("ok", async function () {
       st.rosw(ok(1), true);
+    });
+    it("rok is true", function () {
+      expect(st.rosw(ok(1), true).rok).toBe(true);
+      expect(st.ok_w(1).rok).toBe(true);
+    });
+    it("rsync is true", function () {
+      expect(st.rosw(ok(1), true).rsync).toBe(true);
+    });
+    it("writable is true", function () {
+      expect(st.rosw(ok(1), true).writable).toBe(true);
     });
     const maker: TestStateOkSync = () => {
       const state = st.rosw(ok(1), true);
@@ -97,6 +127,16 @@ describe("Sync states", function () {
     });
     it("err", async function () {
       st.resw(err("1"), true);
+    });
+    it("rok is false", function () {
+      expect(st.resw(ok(1), true).rok).toBe(false);
+      expect(st.resw(err("1"), true).rok).toBe(false);
+    });
+    it("rsync is true", function () {
+      expect(st.resw(ok(1), true).rsync).toBe(true);
+    });
+    it("writable is true", function () {
+      expect(st.resw(ok(1), true).writable).toBe(true);
     });
     const maker: TestStateSync = () => {
       const state = st.resw(ok(1), true);

@@ -696,7 +696,7 @@ export function ros<
 >(init: (RO<RT> | (() => RO<RT>)) | [RO<RT> | (() => RO<RT>), HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<RO<RT>, HEL, SWT<WT>>(
-    typeof i === "function" ? [1, false, i] : [0, false, i],
+    typeof i === "function" ? [1, true, i] : [0, true, i],
     h,
   ) as StateLocalROS<RT, HEL, SWT<WT>>;
 }
@@ -713,7 +713,7 @@ export function rosw<
 ) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<RO<RT>, HEL, SWT<WT>>(
-    typeof i === "function" ? [1, false, i] : [0, false, i],
+    typeof i === "function" ? [1, true, i] : [0, true, i],
     h,
     setter,
   ) as StateLocalROSW<RT, HEL, SWT<WT>>;
@@ -795,7 +795,7 @@ export function rea<
   WT = unknown,
 >(init?: (() => Promise<SR<RT>>) | [() => Promise<SR<RT>>, HEL]) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
-  return new RXXX<SR<RT>, HEL, SWT<WT>>([2, true, i], h) as StateLocalREA<
+  return new RXXX<SR<RT>, HEL, SWT<WT>>([2, false, i], h) as StateLocalREA<
     RT,
     HEL,
     SWT<WT>
@@ -815,7 +815,7 @@ export function reaw<
 ) {
   const [i, h] = Array.isArray(init) ? [init[0], init[1]] : [init, undefined];
   return new RXXX<SR<RT>, HEL, SWT<WT>>(
-    [2, true, i],
+    [2, false, i],
     h,
     setter,
   ) as StateLocalREAW<RT, HEL, SWT<WT>>;
