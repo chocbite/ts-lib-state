@@ -79,8 +79,8 @@ export type StateProxyROS<
   WOUT = WIN,
 > = StateROS<ROUT, OptionNone, WOUT> &
   Owner<S, WIN, ROUT, WOUT, ResultOk<ROUT>> & {
-    readonly read_only: StateROA<ROUT, OptionNone, WOUT>;
-    readonly read_write?: StateROAW<ROUT, OptionNone, WOUT>;
+    readonly read_only: StateROS<ROUT, OptionNone, WOUT>;
+    readonly read_write?: StateROSW<ROUT, OptionNone, WOUT>;
   };
 
 export type StateProxyROSW<
@@ -91,8 +91,8 @@ export type StateProxyROSW<
   WOUT = WIN,
 > = StateROSW<ROUT, OptionNone, WOUT> &
   Owner<S, WIN, ROUT, WOUT, ResultOk<ROUT>> & {
-    readonly read_only: StateROA<ROUT, OptionNone, WOUT>;
-    readonly read_write: StateROAW<ROUT, OptionNone, WOUT>;
+    readonly read_only: StateROS<ROUT, OptionNone, WOUT>;
+    readonly read_write: StateROSW<ROUT, OptionNone, WOUT>;
   };
 
 export type StateProxyREA<
@@ -127,8 +127,8 @@ export type StateProxyRES<
   WOUT = WIN,
 > = StateRES<ROUT, OptionNone, WOUT> &
   Owner<S, WIN, ROUT, WOUT, SR<ROUT>> & {
-    readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
-    readonly read_write?: StateREAW<ROUT, OptionNone, WOUT>;
+    readonly read_only: StateRES<ROUT, OptionNone, WOUT>;
+    readonly read_write?: StateRESW<ROUT, OptionNone, WOUT>;
   };
 
 export type StateProxyRESW<
@@ -139,8 +139,8 @@ export type StateProxyRESW<
   WOUT = WIN,
 > = StateRESW<ROUT, OptionNone, WOUT> &
   Owner<S, WIN, ROUT, WOUT, SR<ROUT>> & {
-    readonly read_only: StateREA<ROUT, OptionNone, WOUT>;
-    readonly read_write: StateREAW<ROUT, OptionNone, WOUT>;
+    readonly read_only: StateRES<ROUT, OptionNone, WOUT>;
+    readonly read_write: StateRESW<ROUT, OptionNone, WOUT>;
   };
 
 //##################################################################################################################################################
