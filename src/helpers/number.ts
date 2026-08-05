@@ -345,6 +345,10 @@ export class StateNumberHelperBase
 //     |______/_/ \_\_|     \____/|_|  \_\ |_| |_____/
 
 export const NUMBER = {
+  /**Number related state collectors */
+  collects: COLLECTS_NUMBER,
+  /**Number related state collectors */
+  c: COLLECTS_NUMBER,
   /**Unique key to check if object is a number related */
   RELATED_KEY: STATE_NUMBER_RELATED_KEY,
   /**Returns true if object is a number related */

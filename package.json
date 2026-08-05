@@ -1,6 +1,6 @@
 {
   "name": "@chocbite/ts-lib-state",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "description": "State management library for TypeScript",
   "author": "chocolateandmilkwin",
   "license": "MIT",
