@@ -79,26 +79,27 @@ function read_apply<T, U>(
   if (transform) {
     if (read[STATE_OBJECT_READ_KEY]) {
       for (const r of read[STATE_OBJECT_READ_KEY]) {
-        if (r.type === "added")
-          for (const key of Object.keys(r.items))
-            (obj as Record<PropertyKey, U>)[key] = transform(r.items[key]);
+        if (r.type === "added" || r.type === "changed")
+          Object.entries(r.items).forEach(
+            ([key, value]) =>
+              ((obj as Record<PropertyKey, U>)[key] = transform(value)),
+          );
         else if (r.type === "removed")
           for (const key of Object.keys(r.items)) delete obj[key];
-        else if (r.type === "changed")
-          for (const key of Object.keys(r.items))
-            (obj as Record<PropertyKey, U>)[key] = transform(r.items[key]);
         else if (r.type === "fresh") {
           const result: Record<PropertyKey, U> = {};
-          for (const key of Object.keys(r.items))
-            result[key] = transform(r.items[key]);
+          Object.entries(r.items).forEach(
+            ([key, value]) => (result[key] = transform(value)),
+          );
           return result;
         }
       }
       return obj;
     } else {
       const result: Record<PropertyKey, U> = {};
-      for (const key of Object.keys(read))
-        result[key] = transform((read as Record<string, T>)[key]);
+      Object.entries(read).forEach(
+        ([key, value]) => (result[key] = transform(value)),
+      );
       return result;
     }
   } else {
@@ -197,7 +198,7 @@ function write_apply<T>(
     const w = wk;
     if (w.type === "fresh") {
       const result: Record<PropertyKey, T> = {};
-      for (const key of Object.keys(w.items)) result[key] = w.items[key];
+      Object.entries(w.items).forEach(([key, value]) => (result[key] = value));
       return [result, [{ type: "fresh", items: w.items }]];
     } else if (w.type === "add") {
       Object.assign(obj, w.items);
@@ -206,7 +207,7 @@ function write_apply<T>(
       const removed: Record<PropertyKey, T> = {};
       for (const key of w.items) {
         if (key in obj) {
-          removed[key] = obj[key];
+          removed[key] = obj[key]!;
           delete obj[key];
         }
       }

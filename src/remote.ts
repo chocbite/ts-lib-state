@@ -285,7 +285,7 @@ export abstract class StateRemote<
         const promises = this.#write_promises;
         this.#write_promises = [];
         const res = await this.write_action(write_buffer!, this);
-        for (let i = 0; i < promises.length; i++) promises[i](res);
+        promises.forEach((a) => a(res));
       }, this.write_debounce);
     return new Promise<SR<void>>((a) => {
       this.#write_promises.push(a);

@@ -43,10 +43,9 @@ export abstract class StateBase<
       return str;
     } else if (Object.getPrototypeOf(value) === Object.prototype) {
       let str = "{";
-      const keys = Object.keys(value);
-      for (let i = 0; i < keys.length; i++) {
-        if (i > 0) str += ",";
-        const key = keys[i];
+      let i = 0;
+      for (const key in value) {
+        if (i++ > 0) str += ",";
         const e = (value as { [key: string]: unknown })[key];
         str += JSON.stringify(key) + ":";
         if (IS.state(e)) str += await e.to_json();
@@ -130,9 +129,7 @@ export abstract class StateBase<
   }
   /**Fulfills all read promises with given value */
   protected ful_r_prom(value: RRT): RRT {
-    if (this.#read_promises)
-      for (let i = 0; i < this.#read_promises.length; i++)
-        this.#read_promises[i](value);
+    if (this.#read_promises) this.#read_promises.forEach((f) => f(value));
     this.#read_promises = [];
     return value;
   }

@@ -61,9 +61,9 @@ describe("Array Methods on Local State", async () => {
     });
     s.array.push(2, 3);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("added");
-    expect(reads![0].index).to.equal(1);
-    expect(reads![0].items).toEqual([2, 3]);
+    expect(reads![0]!.type).to.equal("added");
+    expect(reads![0]!.index).to.equal(1);
+    expect(reads![0]!.items).toEqual([2, 3]);
   });
 
   it("unshift", async () => {
@@ -103,9 +103,9 @@ describe("Array Methods on Local State", async () => {
     });
     s.array.unshift(0, 1);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("added");
-    expect(reads![0].index).to.equal(0);
-    expect(reads![0].items).toEqual([0, 1]);
+    expect(reads![0]!.type).to.equal("added");
+    expect(reads![0]!.index).to.equal(0);
+    expect(reads![0]!.items).toEqual([0, 1]);
   });
 
   it("pop", async () => {
@@ -137,9 +137,9 @@ describe("Array Methods on Local State", async () => {
     });
     s.array.pop();
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![0].index).to.equal(2);
-    expect(reads![0].items).toEqual([3]);
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![0]!.index).to.equal(2);
+    expect(reads![0]!.items).toEqual([3]);
   });
 
   it("shift", async () => {
@@ -171,9 +171,9 @@ describe("Array Methods on Local State", async () => {
     });
     s.array.shift();
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![0].index).to.equal(0);
-    expect(reads![0].items).toEqual([1]);
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![0]!.index).to.equal(0);
+    expect(reads![0]!.items).toEqual([1]);
   });
 
   it("delete", async () => {
@@ -191,10 +191,10 @@ describe("Array Methods on Local State", async () => {
     s.array.delete(2);
     expect(reads).toBeDefined();
     expect(reads!.length).to.equal(2);
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![0].items).toEqual([2]);
-    expect(reads![1].type).to.equal("removed");
-    expect(reads![1].items).toEqual([2]);
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![0]!.items).toEqual([2]);
+    expect(reads![1]!.type).to.equal("removed");
+    expect(reads![1]!.items).toEqual([2]);
   });
 
   it("delete notifies subscribers", async () => {
@@ -252,9 +252,9 @@ describe("Array Methods on Local State", async () => {
     });
     s.array.change(1, 20);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("changed");
-    expect(reads![0].index).to.equal(1);
-    expect(reads![0].items).toEqual([20]);
+    expect(reads![0]!.type).to.equal("changed");
+    expect(reads![0]!.index).to.equal(1);
+    expect(reads![0]!.items).toEqual([20]);
   });
 
   it("splice remove and insert", async () => {
@@ -287,10 +287,10 @@ describe("Array Methods on Local State", async () => {
     s.array.splice(1, 1, 20, 30);
     expect(reads).toBeDefined();
     expect(reads!.length).to.equal(2);
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![0].items).toEqual([2]);
-    expect(reads![1].type).to.equal("added");
-    expect(reads![1].items).toEqual([20, 30]);
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![0]!.items).toEqual([2]);
+    expect(reads![1]!.type).to.equal("added");
+    expect(reads![1]!.items).toEqual([20, 30]);
   });
 
   it("chaining delete and change", async () => {
@@ -363,10 +363,10 @@ describe("Array Methods on Local State", async () => {
     });
     s.array.move(0, 2, 2);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("moved");
-    expect(reads![0].from_index).to.equal(0);
-    expect(reads![0].to_index).to.equal(2);
-    expect(reads![0].items).toEqual([1, 2]);
+    expect(reads![0]!.type).to.equal("moved");
+    expect(reads![0]!.from_index).to.equal(0);
+    expect(reads![0]!.to_index).to.equal(2);
+    expect(reads![0]!.items).toEqual([1, 2]);
   });
 
   it("move is chainable", async () => {
@@ -496,16 +496,16 @@ describe("Array Write / Apply", async () => {
     const [result, reads] = st.a.write_apply(st.a.write.push(3, 4), [1, 2]);
     expect(result).toEqual([1, 2, 3, 4]);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("added");
-    expect(reads![0]).toHaveProperty("index", 2);
+    expect(reads![0]!.type).to.equal("added");
+    expect(reads![0]!).toHaveProperty("index", 2);
   });
 
   it("write_apply unshift", async () => {
     const [result, reads] = st.a.write_apply(st.a.write.unshift(0, 1), [2, 3]);
     expect(result).toEqual([0, 1, 2, 3]);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("added");
-    expect(reads![0]).toHaveProperty("index", 0);
+    expect(reads![0]!.type).to.equal("added");
+    expect(reads![0]!).toHaveProperty("index", 0);
   });
 
   it("write_apply pop", async () => {
@@ -515,8 +515,8 @@ describe("Array Write / Apply", async () => {
     );
     expect(result).toEqual([1, 2]);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![0]).toHaveProperty("index", 2);
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![0]!).toHaveProperty("index", 2);
   });
 
   it("write_apply pop on empty array", async () => {
@@ -532,8 +532,8 @@ describe("Array Write / Apply", async () => {
     );
     expect(result).toEqual([2, 3]);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![0]).toHaveProperty("index", 0);
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![0]!).toHaveProperty("index", 0);
   });
 
   it("write_apply shift on empty array", async () => {
@@ -550,8 +550,8 @@ describe("Array Write / Apply", async () => {
     expect(result).toEqual([1, 3]);
     expect(reads).toBeDefined();
     expect(reads!.length).to.equal(2);
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![1].type).to.equal("removed");
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![1]!.type).to.equal("removed");
   });
 
   it("write_apply change", async () => {
@@ -561,8 +561,8 @@ describe("Array Write / Apply", async () => {
     );
     expect(result).toEqual([1, 20, 30, 4]);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("changed");
-    expect(reads![0]).toHaveProperty("index", 1);
+    expect(reads![0]!.type).to.equal("changed");
+    expect(reads![0]!).toHaveProperty("index", 1);
   });
 
   it("write_apply change with index beyond array length is no-op", async () => {
@@ -581,8 +581,8 @@ describe("Array Write / Apply", async () => {
     );
     expect(result).toEqual([1, 2, 30]);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("changed");
-    expect(reads![0]).toHaveProperty("index", 2);
+    expect(reads![0]!.type).to.equal("changed");
+    expect(reads![0]!).toHaveProperty("index", 2);
   });
 
   it("write_apply splice", async () => {
@@ -593,8 +593,8 @@ describe("Array Write / Apply", async () => {
     expect(result).toEqual([1, 20, 30, 4]);
     expect(reads).toBeDefined();
     expect(reads!.length).to.equal(2);
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![1].type).to.equal("added");
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![1]!.type).to.equal("added");
   });
 
   it("write_apply move single item forward", async () => {
@@ -604,11 +604,11 @@ describe("Array Write / Apply", async () => {
     );
     expect(result).toEqual([2, 3, 1, 4]);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("moved");
-    if (reads![0].type === "moved") {
-      expect(reads![0].from_index).to.equal(0);
-      expect(reads![0].to_index).to.equal(2);
-      expect(reads![0].items).toEqual([1]);
+    expect(reads![0]!.type).to.equal("moved");
+    if (reads![0]!.type === "moved") {
+      expect(reads![0]!.from_index).to.equal(0);
+      expect(reads![0]!.to_index).to.equal(2);
+      expect(reads![0]!.items).toEqual([1]);
     }
   });
 
@@ -619,11 +619,11 @@ describe("Array Write / Apply", async () => {
     );
     expect(result).toEqual([4, 1, 2, 3]);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("moved");
-    if (reads![0].type === "moved") {
-      expect(reads![0].from_index).to.equal(3);
-      expect(reads![0].to_index).to.equal(0);
-      expect(reads![0].items).toEqual([4]);
+    expect(reads![0]!.type).to.equal("moved");
+    if (reads![0]!.type === "moved") {
+      expect(reads![0]!.from_index).to.equal(3);
+      expect(reads![0]!.to_index).to.equal(0);
+      expect(reads![0]!.items).toEqual([4]);
     }
   });
 
@@ -634,9 +634,9 @@ describe("Array Write / Apply", async () => {
     );
     expect(result).toEqual([3, 4, 5, 1, 2]);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("moved");
-    if (reads![0].type === "moved") {
-      expect(reads![0].items).toEqual([1, 2]);
+    expect(reads![0]!.type).to.equal("moved");
+    if (reads![0]!.type === "moved") {
+      expect(reads![0]!.items).toEqual([1, 2]);
     }
   });
 
@@ -662,9 +662,9 @@ describe("Array Write / Apply", async () => {
     );
     expect(result).toEqual([2, 3, 1]);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("moved");
-    if (reads![0].type === "moved") {
-      expect(reads![0].items).toEqual([2, 3]);
+    expect(reads![0]!.type).to.equal("moved");
+    if (reads![0]!.type === "moved") {
+      expect(reads![0]!.items).toEqual([2, 3]);
     }
   });
 
@@ -674,17 +674,17 @@ describe("Array Write / Apply", async () => {
       [1, 2, 3],
     );
     expect(result.length).to.equal(2);
-    expect(result[0]).to.equal(10);
-    expect(result[1]).to.equal(20);
+    expect(result[0]!).to.equal(10);
+    expect(result[1]!).to.equal(20);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("fresh");
+    expect(reads![0]!.type).to.equal("fresh");
   });
 
   it("write_apply without existing array defaults to empty", async () => {
     const [result, reads] = st.a.write_apply(st.a.write.push(1, 2));
     expect(result).toEqual([1, 2]);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("added");
+    expect(reads![0]!.type).to.equal("added");
   });
 
   // Bug: pop/shift in write_apply check `if (items[0])` which fails for falsy values like 0
@@ -697,7 +697,7 @@ describe("Array Write / Apply", async () => {
       );
       expect(result).toEqual([1, 2]);
       expect(reads).toBeDefined();
-      expect(reads![0].type).to.equal("removed");
+      expect(reads![0]!.type).to.equal("removed");
     },
   );
 
@@ -710,7 +710,7 @@ describe("Array Write / Apply", async () => {
       );
       expect(result).toEqual([1, 2]);
       expect(reads).toBeDefined();
-      expect(reads![0].type).to.equal("removed");
+      expect(reads![0]!.type).to.equal("removed");
     },
   );
 });
@@ -743,9 +743,9 @@ describe("Array State Write Without Helper", async () => {
     });
     await s.write(st.a.write.push(3));
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("added");
-    expect(reads![0].index).to.equal(2);
-    expect(reads![0].items).toEqual([3]);
+    expect(reads![0]!.type).to.equal("added");
+    expect(reads![0]!.index).to.equal(2);
+    expect(reads![0]!.items).toEqual([3]);
   });
 
   it("write unshift updates state", async () => {
@@ -762,9 +762,9 @@ describe("Array State Write Without Helper", async () => {
     });
     await s.write(st.a.write.unshift(0, 1));
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("added");
-    expect(reads![0].index).to.equal(0);
-    expect(reads![0].items).toEqual([0, 1]);
+    expect(reads![0]!.type).to.equal("added");
+    expect(reads![0]!.index).to.equal(0);
+    expect(reads![0]!.items).toEqual([0, 1]);
   });
 
   it("write pop updates state", async () => {
@@ -781,9 +781,9 @@ describe("Array State Write Without Helper", async () => {
     });
     await s.write(st.a.write.pop<number>());
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![0].index).to.equal(2);
-    expect(reads![0].items).toEqual([3]);
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![0]!.index).to.equal(2);
+    expect(reads![0]!.items).toEqual([3]);
   });
 
   it("write shift updates state", async () => {
@@ -800,9 +800,9 @@ describe("Array State Write Without Helper", async () => {
     });
     await s.write(st.a.write.shift<number>());
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![0].index).to.equal(0);
-    expect(reads![0].items).toEqual([1]);
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![0]!.index).to.equal(0);
+    expect(reads![0]!.items).toEqual([1]);
   });
 
   it("write delete updates state", async () => {
@@ -820,10 +820,10 @@ describe("Array State Write Without Helper", async () => {
     await s.write(st.a.write.delete(2));
     expect(reads).toBeDefined();
     expect(reads!.length).to.equal(2);
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![0].items).toEqual([2]);
-    expect(reads![1].type).to.equal("removed");
-    expect(reads![1].items).toEqual([2]);
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![0]!.items).toEqual([2]);
+    expect(reads![1]!.type).to.equal("removed");
+    expect(reads![1]!.items).toEqual([2]);
   });
 
   it("write change updates state", async () => {
@@ -840,9 +840,9 @@ describe("Array State Write Without Helper", async () => {
     });
     await s.write(st.a.write.change(1, 20));
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("changed");
-    expect(reads![0].index).to.equal(1);
-    expect(reads![0].items).toEqual([20]);
+    expect(reads![0]!.type).to.equal("changed");
+    expect(reads![0]!.index).to.equal(1);
+    expect(reads![0]!.items).toEqual([20]);
   });
 
   it("write change with index beyond array length is no-op", async () => {
@@ -866,10 +866,10 @@ describe("Array State Write Without Helper", async () => {
     await s.write(st.a.write.splice(1, 1, 20, 30));
     expect(reads).toBeDefined();
     expect(reads!.length).to.equal(2);
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![0].items).toEqual([2]);
-    expect(reads![1].type).to.equal("added");
-    expect(reads![1].items).toEqual([20, 30]);
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![0]!.items).toEqual([2]);
+    expect(reads![1]!.type).to.equal("added");
+    expect(reads![1]!.items).toEqual([20, 30]);
   });
 
   it("write move updates state", async () => {
@@ -886,10 +886,10 @@ describe("Array State Write Without Helper", async () => {
     });
     await s.write(st.a.write.move(0, 2, 2));
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("moved");
-    expect(reads![0].from_index).to.equal(0);
-    expect(reads![0].to_index).to.equal(2);
-    expect(reads![0].items).toEqual([1, 2]);
+    expect(reads![0]!.type).to.equal("moved");
+    expect(reads![0]!.from_index).to.equal(0);
+    expect(reads![0]!.to_index).to.equal(2);
+    expect(reads![0]!.items).toEqual([1, 2]);
   });
 
   it("write fresh replaces entire state", async () => {
@@ -909,7 +909,7 @@ describe("Array State Write Without Helper", async () => {
     });
     await s.write(st.a.write.fresh([10, 20]));
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("fresh");
+    expect(reads![0]!.type).to.equal("fresh");
   });
 
   it("write plain array replaces state without read metadata", async () => {
@@ -921,7 +921,7 @@ describe("Array State Write Without Helper", async () => {
     await s.write([10, 20]);
     expect(s.ok()).toEqual([10, 20]);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("fresh");
+    expect(reads![0]!.type).to.equal("fresh");
   });
 
   it("write sequential operations accumulate correctly", async () => {
@@ -1088,7 +1088,7 @@ describe("Array Read / Apply", async () => {
   it("read returns fresh for plain array without metadata", async () => {
     const reads = st.a.read([1, 2, 3]);
     expect(reads.length).to.equal(1);
-    expect(reads[0].type).to.equal("fresh");
-    expect(reads[0].items).toEqual([1, 2, 3]);
+    expect(reads[0]!.type).to.equal("fresh");
+    expect(reads[0]!.items).toEqual([1, 2, 3]);
   });
 });

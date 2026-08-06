@@ -4,7 +4,11 @@ import {
   type Result,
   type ResultOk,
 } from "@chocbite/ts-lib-result";
-import type { StateArrayRead, StateArrayWrite } from "./helpers/array";
+import type {
+  StateArrayRead,
+  StateArrayWrite,
+  StateArrayWriteInstruction,
+} from "./helpers/array";
 import type { StateObjectRead, StateObjectWrite } from "./helpers/object";
 
 export const STATE_VIEWER_OVERRIDE_KEY = Symbol("STATE_VIEWER_OVERRIDE_KEY");
@@ -16,7 +20,9 @@ export type StateResult<T> = Result<T, string>;
 export type StateReadType<RT> = 0 extends 1 & RT
   ? RT
   : RT extends readonly (infer E)[]
-    ? StateArrayRead<E>
+    ? number extends RT["length"]
+      ? StateArrayRead<E>
+      : RT
     : string extends keyof RT
       ? StateObjectRead<RT[string & keyof RT]>
       : RT;
@@ -26,7 +32,9 @@ export type StateReadType<RT> = 0 extends 1 & RT
 export type StateWriteType<RT> = 0 extends 1 & RT
   ? RT
   : RT extends readonly (infer E)[]
-    ? StateArrayWrite<E>
+    ? number extends RT["length"]
+      ? StateArrayWrite<E>
+      : RT | StateArrayWriteInstruction<E>
     : string extends keyof RT
       ? StateObjectWrite<RT[string & keyof RT]>
       : RT;

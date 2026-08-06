@@ -144,13 +144,16 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
     } else if (this.#rsync) {
       //Correct size of buffer array
       this.#state_buffers.length = this.#states.length;
+      this.#state_buffers = this.#states.map((s) =>
+        s.get!(),
+      ) as StateCollectedTransVal<IN>;
       this.#buffer = this.getter(
-        this.#states.map((s) => s.get!()) as StateCollectedTransVal<IN>,
+        this.#state_buffers as StateCollectedTransVal<IN>,
       );
       this.update_subs(this.#buffer);
       let calc = false;
-      for (let i = 0; i < this.#states.length; i++) {
-        this.#state_subscribers[i] = this.#states[i].sub((value) => {
+      this.#states.forEach((s, i) => {
+        this.#state_subscribers[i] = s.sub((value) => {
           this.#state_buffers[i] = value;
           if (!calc) {
             calc = true;
@@ -163,7 +166,7 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
             });
           }
         });
-      }
+      });
     } else {
       //Correct size of buffer array
       this.#state_buffers.length = this.#states.length;
@@ -171,7 +174,7 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
       const amount = this.#states.length - 1;
       Promise.all(this.#states).then((vals) => {
         for (let i = 0; i < this.#state_buffers.length; i++)
-          this.#state_buffers[i] = this.#state_buffers[i] ?? vals[i];
+          this.#state_buffers[i] = this.#state_buffers[i]! ?? vals[i];
         this.#buffer = this.getter(
           this.#state_buffers as StateCollectedTransVal<IN>,
         );
@@ -181,8 +184,8 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
       //Creates a new scope to hold count and amount variables
       {
         let calc = false;
-        for (let i = 0; i < this.#states.length; i++) {
-          this.#state_subscribers[i] = this.#states[i].sub((value) => {
+        this.#state_subscribers = this.#states.map((s, i) =>
+          s.sub((value) => {
             if (count < amount) {
               if (!this.#state_buffers[i]) count++;
               this.#state_buffers[i] = value;
@@ -199,8 +202,8 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
                 calc = false;
               });
             }
-          });
-        }
+          }),
+        );
       }
     }
   }
@@ -208,7 +211,7 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
   /**Called when subscriber is removed*/
   protected on_unsub() {
     for (let i = 0; i < this.#states.length; i++)
-      this.#states[i].unsub(this.#state_subscribers[i] as any);
+      this.#states[i]!.unsub(this.#state_subscribers[i] as any);
     this.#state_subscribers = [];
     this.#state_buffers = [] as StateCollectedTransVal<IN>;
     this.#buffer = undefined;

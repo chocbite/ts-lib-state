@@ -39,8 +39,8 @@ describe("Object Methods on Local State", async () => {
     });
     s.object.add("b", 2);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("added");
-    expect(reads![0].items).toEqual({ b: 2 });
+    expect(reads![0]!.type).to.equal("added");
+    expect(reads![0]!.items).toEqual({ b: 2 });
   });
 
   it("remove", async () => {
@@ -66,8 +66,8 @@ describe("Object Methods on Local State", async () => {
     });
     s.object.remove("b");
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![0].items).toEqual({ b: 2 });
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![0]!.items).toEqual({ b: 2 });
   });
 
   it("change", async () => {
@@ -84,8 +84,8 @@ describe("Object Methods on Local State", async () => {
     });
     s.object.change("b", 3);
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("changed");
-    expect(reads![0].items).toEqual({ b: 3 });
+    expect(reads![0]!.type).to.equal("changed");
+    expect(reads![0]!.items).toEqual({ b: 3 });
   });
 
   it("remove notifies subscribers", async () => {
@@ -188,7 +188,7 @@ describe("Object Write / Apply", async () => {
     });
     expect(result).toEqual({ a: 1, b: 2 });
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("added");
+    expect(reads![0]!.type).to.equal("added");
   });
 
   it("write_apply remove", async () => {
@@ -198,7 +198,7 @@ describe("Object Write / Apply", async () => {
     });
     expect(result).toEqual({ a: 1 });
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("removed");
+    expect(reads![0]!.type).to.equal("removed");
   });
 
   it("write_apply change", async () => {
@@ -208,7 +208,7 @@ describe("Object Write / Apply", async () => {
     );
     expect(result).toEqual({ a: 1, b: 3 });
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("changed");
+    expect(reads![0]!.type).to.equal("changed");
   });
 
   it("write_apply fresh", async () => {
@@ -218,7 +218,7 @@ describe("Object Write / Apply", async () => {
     );
     expect(result).toEqual({ x: 10 });
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("fresh");
+    expect(reads![0]!.type).to.equal("fresh");
   });
 });
 
@@ -286,8 +286,8 @@ describe("Object Read / Apply", async () => {
   it("read returns fresh for plain object without metadata", async () => {
     const reads = st.o.read({ a: 1, b: 2 });
     expect(reads.length).to.equal(1);
-    expect(reads[0].type).to.equal("fresh");
-    expect(reads[0].items).toEqual({ a: 1, b: 2 });
+    expect(reads[0]!.type).to.equal("fresh");
+    expect(reads[0]!.items).toEqual({ a: 1, b: 2 });
   });
 
   it("is_read returns true for object with metadata", async () => {
@@ -331,7 +331,7 @@ describe("Object Read / Apply", async () => {
     });
     expect(result).toEqual({ a: 1, b: 2 });
     expect(reads).toBeDefined();
-    expect(reads![0].type).to.equal("removed");
-    expect(reads![0].items).toEqual({});
+    expect(reads![0]!.type).to.equal("removed");
+    expect(reads![0]!.items).toEqual({});
   });
 });
