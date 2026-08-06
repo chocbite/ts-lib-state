@@ -473,12 +473,12 @@ class RXXX<
             if (e.err) return err(e.error);
             if (ARRAY.is_write(e.value))
               ARRAY.read_set(
-                ARRAY.write_apply(e.value, old?.unwrap_or([]) as never),
+                ARRAY.write_apply(e.value, old?.unwrap_or(undefined) as never),
                 state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
               );
             else if (OBJECT.is_write(e.value))
               OBJECT.read_set(
-                OBJECT.write_apply(e.value, old?.unwrap_or({}) as never),
+                OBJECT.write_apply(e.value, old?.unwrap_or(undefined) as never),
                 state.set_ok.bind(state) as (
                   value: Record<PropertyKey, any> | SOR<any>,
                 ) => void,
@@ -489,12 +489,12 @@ class RXXX<
         }
         if (ARRAY.is_write(value))
           ARRAY.read_set(
-            ARRAY.write_apply(value, old?.unwrap_or([]) as never),
+            ARRAY.write_apply(value, old?.unwrap_or(undefined) as never),
             state.set_ok.bind(state) as (value: any[] | SAR<any>) => void,
           );
         else if (OBJECT.is_write(value))
           OBJECT.read_set(
-            OBJECT.write_apply(value, old?.unwrap_or({}) as never),
+            OBJECT.write_apply(value, old?.unwrap_or(undefined) as never),
             state.set_ok.bind(state) as (
               value: Record<PropertyKey, any> | SOR<any>,
             ) => void,
