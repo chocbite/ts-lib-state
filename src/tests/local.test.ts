@@ -1,5 +1,5 @@
 import { err, ok, ResultOk } from "@chocbite/ts-lib-result";
-import { assertType, describe, expect, it } from "vitest";
+import { assertType, describe, expect, expectTypeOf, it } from "vitest";
 import { state as st, StateResult, StateROS } from "..";
 import {
   test_state_get,
@@ -44,6 +44,21 @@ describe("Sync states", function () {
     });
     it("GetOk", async function () {
       await test_state_get_ok(maker);
+    });
+    it("array elements retain their type", function () {
+      const state = st.ok([1, 2, 3]);
+      expectTypeOf(state.ok()[0]).toEqualTypeOf<number | undefined>();
+      expectTypeOf(state.get().value[0]).toEqualTypeOf<number | undefined>();
+    });
+    it("tuples retain their shape", function () {
+      const state = st.ok_w([1, 2] as [number, number]);
+      expectTypeOf(state.ok()).toEqualTypeOf<[number, number]>();
+      // @ts-expect-error Tuple replacements must retain their length.
+      state.write([1, 2, 3]);
+      // @ts-expect-error Tuple updates must retain their length.
+      state.set_ok([1, 2, 3]);
+      // @ts-expect-error Tuple members cannot be replaced with undefined.
+      state.set_ok([1, undefined]);
     });
   });
   //##################################################################################################################################################

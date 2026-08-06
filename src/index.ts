@@ -132,6 +132,7 @@ export {
   type StateArrayReadTypes,
   type StateArrayRelated,
   type StateArrayWrite,
+  type StateArrayWriteInstruction,
   type StateArrayWriteTypes,
 } from "./helpers/array";
 export {

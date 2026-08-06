@@ -90,8 +90,7 @@ function read_apply<T, U>(
           array.splice(r.index, 0, ...r.items.map(transform));
         else if (r.type === "removed") array.splice(r.index, r.items.length);
         else if (r.type === "changed")
-          for (let i = 0; i < r.items.length; i++)
-            array[r.index + i] = transform(r.items[i]);
+          r.items.forEach((item, i) => (array[r.index + i] = transform(item)));
         else if (r.type === "moved") {
           const items = array.splice(r.from_index, r.items.length);
           (array as any[]).splice(r.to_index, 0, ...items);
@@ -107,8 +106,7 @@ function read_apply<T, U>(
         if (r.type === "added") array.splice(r.index, 0, ...r.items);
         else if (r.type === "removed") array.splice(r.index, r.items.length);
         else if (r.type === "changed")
-          for (let i = 0; i < r.items.length; i++)
-            array[r.index + i] = r.items[i];
+          r.items.forEach((item, i) => (array[r.index + i] = item));
         else if (r.type === "moved") {
           const items = array.splice(r.from_index, r.items.length);
           (array as any[]).splice(r.to_index, 0, ...items);
@@ -161,44 +159,48 @@ export type StateArrayWrite<WT> = WT[] & {
   [STATE_ARRAY_WRITE_KEY]?: StateArrayWriteTypes<WT>;
 };
 
+export type StateArrayWriteInstruction<WT> = StateArrayWrite<WT> & {
+  [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<WT>;
+};
+
 type WithWriteKey<T> = T[] & {
   [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<T>;
 };
 
 const write = {
-  fresh<T>(items: T[]): StateArrayWrite<T> {
+  fresh<T>(items: T[]): StateArrayWriteInstruction<T> {
     (items as T[] & WithWriteKey<T>)[STATE_ARRAY_WRITE_KEY] = {
       type: "fresh",
       items,
     };
-    return items;
+    return items as StateArrayWriteInstruction<T>;
   },
-  push<T>(...items: T[]): StateArrayWrite<T> {
+  push<T>(...items: T[]): StateArrayWriteInstruction<T> {
     const obj = [] as unknown as WithWriteKey<T>;
     obj[STATE_ARRAY_WRITE_KEY] = { type: "push", items };
     return obj;
   },
-  unshift<T>(...items: T[]): StateArrayWrite<T> {
+  unshift<T>(...items: T[]): StateArrayWriteInstruction<T> {
     const obj = [] as unknown as WithWriteKey<T>;
     obj[STATE_ARRAY_WRITE_KEY] = { type: "unshift", items };
     return obj;
   },
-  pop<T>(): StateArrayWrite<T> {
+  pop<T>(): StateArrayWriteInstruction<T> {
     const obj = [] as unknown as WithWriteKey<T>;
     obj[STATE_ARRAY_WRITE_KEY] = { type: "pop" };
     return obj;
   },
-  shift<T>(): StateArrayWrite<T> {
+  shift<T>(): StateArrayWriteInstruction<T> {
     const obj = [] as unknown as WithWriteKey<T>;
     obj[STATE_ARRAY_WRITE_KEY] = { type: "shift" };
     return obj;
   },
-  delete<T>(val: T): StateArrayWrite<T> {
+  delete<T>(val: T): StateArrayWriteInstruction<T> {
     const obj = [] as unknown as WithWriteKey<T>;
     obj[STATE_ARRAY_WRITE_KEY] = { type: "delete", delete: val };
     return obj;
   },
-  change<T>(index: number, ...items: T[]): StateArrayWrite<T> {
+  change<T>(index: number, ...items: T[]): StateArrayWriteInstruction<T> {
     const obj = [] as unknown as WithWriteKey<T>;
     obj[STATE_ARRAY_WRITE_KEY] = { type: "change", index, items };
     return obj;
@@ -207,7 +209,7 @@ const write = {
     start: number,
     delete_count: number = 0,
     ...items: T[]
-  ): StateArrayWrite<T> {
+  ): StateArrayWriteInstruction<T> {
     const obj = [] as unknown as WithWriteKey<T>;
     obj[STATE_ARRAY_WRITE_KEY] = {
       type: "splice",
@@ -221,7 +223,7 @@ const write = {
     from_index: number,
     to_index: number,
     count: number = 1,
-  ): StateArrayWrite<T> {
+  ): StateArrayWriteInstruction<T> {
     const obj = [] as unknown as WithWriteKey<T>;
     obj[STATE_ARRAY_WRITE_KEY] = { type: "move", from_index, to_index, count };
     return obj;
@@ -266,7 +268,7 @@ function write_apply<T>(
     } else if (w.type === "change") {
       if (w.index >= array.length) return [array, undefined];
       const capped = w.items.slice(0, array.length - w.index);
-      for (let i = 0; i < capped.length; i++) array[w.index + i] = capped[i];
+      capped.forEach((item, i) => (array[w.index + i] = item));
       return [array, [{ type: "changed", index: w.index, items: capped }]];
     } else if (w.type === "splice") {
       const removed = array.splice(w.index, w.delete_count, ...w.items);

@@ -1,6 +1,6 @@
 {
   "name": "@chocbite/ts-lib-state",
-  "version": "2.3.8",
+  "version": "2.4.2",
   "description": "State management library for TypeScript",
   "author": "chocolateandmilkwin",
   "license": "MIT",
@@ -25,6 +25,7 @@
     "build": "tsdown src/index.ts",
     "lint": "eslint src/**/*.ts",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
     "check-deps": "npx depcheck",
     "check-trials": "tsc --noEmit",
     "prepublishOnly": "npm run check-deps && npm run check-trials && npm run build",

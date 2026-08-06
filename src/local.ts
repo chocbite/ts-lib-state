@@ -192,6 +192,16 @@ export class LocalArrayOwner<RT extends StateResult<SAR<any>>> {
   get get(): Readonly<RIOK<RT>> {
     return this.#local.get().unwrap_or([]) as RIOK<RT>;
   }
+  /** Sorts the elements of an array in place and returns the LocalArrayOwner instance.
+   * @param fn — Function used to determine the order of the elements. */
+  sort(fn: (a: RIOK<RT>[number], b: RIOK<RT>[number]) => number): this {
+    const arr = this.#local.get().unwrap_or<RIOK<RT>>([] as RIOK<RT>);
+    (arr as any[]).sort(fn);
+    arr[SARK] = [{ type: "fresh", items: arr }];
+    this.#local.set(ok(arr) as RT);
+    delete arr[SARK];
+    return this;
+  }
   /** Appends new elements to the end of an array, and returns the new length of the array.
    * @param items — New elements to add to the array.*/
   push(...items: RIOK<RT>): number {
@@ -351,7 +361,7 @@ export class LocalObjectOwner<RT extends StateResult<Record<string, any>>> {
     const obj = this.#local.get().unwrap_or<RIOK<RT>>({} as RIOK<RT>);
     if (!(key in (obj as Record<string, any>))) return this;
     const removed: Record<string, RIOK<RT>[string]> = {
-      [key]: (obj as Record<string, RIOK<RT>[string]>)[key],
+      [key]: (obj as Record<string, RIOK<RT>[string]>)[key]!,
     };
     delete (obj as Record<string, RIOK<RT>[string]>)[key];
     (obj as RIOK<RT> & WithObjReadKey<RIOK<RT>[string]>)[SORK] = [

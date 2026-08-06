@@ -44,9 +44,7 @@ class StateViewer {
     const value = val[STATE_VIEWER_OVERRIDE_KEY]?.() ?? val;
     if (IS.state(value)) return this.#unsub(new StateViewer(value, callback));
     if (Array.isArray(value)) {
-      const val_arr = ARRAY.read(value);
-      for (let i = 0; i < val_arr.length; i++) {
-        const e = val_arr[i];
+      ARRAY.read(value).forEach((e) => {
         if (e.type === "added")
           (this.#children as (StateViewer | undefined)[]).splice(
             e.index,
@@ -89,12 +87,10 @@ class StateViewer {
               else return undefined;
             }),
           );
-      }
+      });
       return;
     }
-    const val_obj = OBJECT.read(value as Record<PropertyKey, unknown>);
-    for (let i = 0; i < val_obj.length; i++) {
-      const e = val_obj[i];
+    OBJECT.read(value as Record<PropertyKey, unknown>).forEach((e) => {
       if (e.type === "added")
         for (const key of Object.keys(e.items)) {
           const v = e.items[key];
@@ -145,7 +141,7 @@ class StateViewer {
             )[key] = new StateViewer(v, callback);
         }
       }
-    }
+    });
   }
 
   #unsub_array(arr: (StateViewer | undefined)[]) {
