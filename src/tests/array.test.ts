@@ -257,6 +257,26 @@ describe("Array Methods on Local State", async () => {
     expect(reads![0]!.items).toEqual([20]);
   });
 
+  it("change tracks extended elements as added metadata", async () => {
+    const s = st.rosw(ok<number[]>([1, 2, 3]));
+    let reads: ReadItem<number>[] | undefined = undefined;
+    s.sub((val) => {
+      if (val.ok) reads = st.array.read(val.value);
+    });
+    s.array.change(2, 30, 40);
+    expect(reads).toHaveLength(2);
+    expect(reads![0]!).toMatchObject({
+      type: "changed",
+      index: 2,
+      items: [30],
+    });
+    expect(reads![1]!).toMatchObject({
+      type: "added",
+      index: 3,
+      items: [40],
+    });
+  });
+
   it("splice remove and insert", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3, 4]));
     const removed = s.array.splice(1, 2, 20, 30);
