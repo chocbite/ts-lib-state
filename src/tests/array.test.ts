@@ -226,22 +226,22 @@ describe("Array Methods on Local State", async () => {
     expect(s.ok()).toEqual([1, 2, 3]);
   });
 
-  it("change with index beyond array length is no-op", async () => {
+  it("change with index beyond array are ok", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
     let count = 0;
     s.sub(() => count++);
-    s.array.change(10, 99);
-    expect(count).to.equal(0);
-    expect(s.ok()).toEqual([1, 2, 3]);
+    s.array.change(4, 99);
+    expect(count).to.equal(1);
+    expect(s.ok()).toEqual([1, 2, 3, undefined, 99]);
   });
 
-  it("change clamps items extending past array end", async () => {
+  it("change extends array when necessary", async () => {
     const s = st.rosw(ok<number[]>([1, 2, 3]));
     let count = 0;
     s.sub(() => count++);
     s.array.change(2, 30, 40);
     expect(count).to.equal(1);
-    expect(s.ok()).toEqual([1, 2, 30]);
+    expect(s.ok()).toEqual([1, 2, 30, 40]);
   });
 
   it("change tracks read metadata", async () => {
