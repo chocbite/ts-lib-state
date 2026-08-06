@@ -156,13 +156,14 @@ export type StateArrayWriteTypes<WT> =
   | { type: "splice"; index: number; delete_count: number; items: WT[] }
   | { type: "move"; from_index: number; to_index: number; count: number };
 
-export type StateArrayWrite<WT> =
-  | WT[]
-  | {
-      [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<WT>;
-    };
+/**An array replacement optionally carrying a granular write instruction.*/
+export type StateArrayWrite<WT> = WT[] & {
+  [STATE_ARRAY_WRITE_KEY]?: StateArrayWriteTypes<WT>;
+};
 
-type WithWriteKey<T> = { [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<T> };
+type WithWriteKey<T> = T[] & {
+  [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<T>;
+};
 
 const write = {
   fresh<T>(items: T[]): StateArrayWrite<T> {
@@ -173,35 +174,33 @@ const write = {
     return items;
   },
   push<T>(...items: T[]): StateArrayWrite<T> {
-    const obj: WithWriteKey<T> = {
-      [STATE_ARRAY_WRITE_KEY]: { type: "push", items },
-    };
+    const obj = [] as unknown as WithWriteKey<T>;
+    obj[STATE_ARRAY_WRITE_KEY] = { type: "push", items };
     return obj;
   },
   unshift<T>(...items: T[]): StateArrayWrite<T> {
-    const obj: WithWriteKey<T> = {
-      [STATE_ARRAY_WRITE_KEY]: { type: "unshift", items },
-    };
+    const obj = [] as unknown as WithWriteKey<T>;
+    obj[STATE_ARRAY_WRITE_KEY] = { type: "unshift", items };
     return obj;
   },
   pop<T>(): StateArrayWrite<T> {
-    const obj: WithWriteKey<T> = { [STATE_ARRAY_WRITE_KEY]: { type: "pop" } };
+    const obj = [] as unknown as WithWriteKey<T>;
+    obj[STATE_ARRAY_WRITE_KEY] = { type: "pop" };
     return obj;
   },
   shift<T>(): StateArrayWrite<T> {
-    const obj: WithWriteKey<T> = { [STATE_ARRAY_WRITE_KEY]: { type: "shift" } };
+    const obj = [] as unknown as WithWriteKey<T>;
+    obj[STATE_ARRAY_WRITE_KEY] = { type: "shift" };
     return obj;
   },
   delete<T>(val: T): StateArrayWrite<T> {
-    const obj: WithWriteKey<T> = {
-      [STATE_ARRAY_WRITE_KEY]: { type: "delete", delete: val },
-    };
+    const obj = [] as unknown as WithWriteKey<T>;
+    obj[STATE_ARRAY_WRITE_KEY] = { type: "delete", delete: val };
     return obj;
   },
   change<T>(index: number, ...items: T[]): StateArrayWrite<T> {
-    const obj: WithWriteKey<T> = {
-      [STATE_ARRAY_WRITE_KEY]: { type: "change", index, items },
-    };
+    const obj = [] as unknown as WithWriteKey<T>;
+    obj[STATE_ARRAY_WRITE_KEY] = { type: "change", index, items };
     return obj;
   },
   splice<T>(
@@ -209,13 +208,12 @@ const write = {
     delete_count: number = 0,
     ...items: T[]
   ): StateArrayWrite<T> {
-    const obj: WithWriteKey<T> = {
-      [STATE_ARRAY_WRITE_KEY]: {
-        type: "splice",
-        index: start,
-        delete_count,
-        items,
-      },
+    const obj = [] as unknown as WithWriteKey<T>;
+    obj[STATE_ARRAY_WRITE_KEY] = {
+      type: "splice",
+      index: start,
+      delete_count,
+      items,
     };
     return obj;
   },
@@ -224,9 +222,8 @@ const write = {
     to_index: number,
     count: number = 1,
   ): StateArrayWrite<T> {
-    const obj: WithWriteKey<T> = {
-      [STATE_ARRAY_WRITE_KEY]: { type: "move", from_index, to_index, count },
-    };
+    const obj = [] as unknown as WithWriteKey<T>;
+    obj[STATE_ARRAY_WRITE_KEY] = { type: "move", from_index, to_index, count };
     return obj;
   },
 };
@@ -239,8 +236,7 @@ function write_apply<T>(
   const wk = (write as Partial<WithWriteKey<T>>)[STATE_ARRAY_WRITE_KEY];
   if (wk) {
     const w = wk;
-    if (w.type === "fresh")
-      return [write as T[], [{ type: "fresh", items: write as T[] }]];
+    if (w.type === "fresh") return [write, [{ type: "fresh", items: write }]];
     else if (w.type === "push") {
       const index = array.length;
       array.push(...w.items);
@@ -298,7 +294,7 @@ function write_apply<T>(
         ],
       ];
     } else return [array, undefined];
-  } else return [write as T[], undefined];
+  } else return [write, undefined];
 }
 
 //##################################################################################################################################################
@@ -405,9 +401,7 @@ export const ARRAY = {
   read_set,
   //### Write
   /**Returns true if object is a array write object */
-  is_write(
-    a: any,
-  ): a is { [STATE_ARRAY_WRITE_KEY]: StateArrayWriteTypes<any> } {
+  is_write(a: any): a is StateArrayWrite<any> & WithWriteKey<any> {
     return Boolean(
       a && (a as { [STATE_ARRAY_WRITE_KEY]: boolean })[STATE_ARRAY_WRITE_KEY],
     );
