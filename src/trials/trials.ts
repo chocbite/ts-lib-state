@@ -1,5 +1,5 @@
 import state from "..";
-import "./viewer";
+import "./collected";
 
 console.debug("asdf");
 
