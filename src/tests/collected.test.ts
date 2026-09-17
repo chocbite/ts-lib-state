@@ -468,5 +468,51 @@ describe("Collected states", function () {
       expect(await state).toEqual(ok(30));
       state.unsub(sub);
     });
+
+    it("ROA: waits for staggered initial states and uses updates received before initialization", async function () {
+      const fast = st.roa(() => sleep(1, ok(1)));
+      const slow = st.roa(() => sleep(30, ok(2)));
+      const state = st.c.roa(
+        (values) => ok(values[0].value + values[1].value),
+        fast,
+        slow,
+      );
+      const updates: ResultOk<number>[] = [];
+      const sub = state.sub((value) => updates.push(value), true);
+
+      await sleep(10);
+      expect(updates).toEqual([]);
+
+      fast.set_ok(10);
+      await sleep(30);
+
+      expect(updates).toEqual([ok(12)]);
+      state.unsub(sub);
+    });
+
+    it("REA: waits for staggered initial states and uses updates received before initialization", async function () {
+      const fast = st.rea(() => sleep(1, ok(1)));
+      const slow = st.rea(() => sleep(30, ok(2)));
+      const state = st.c.rea(
+        (values) => {
+          if (values[0].err) return values[0];
+          if (values[1].err) return values[1];
+          return ok(values[0].value + values[1].value);
+        },
+        fast,
+        slow,
+      );
+      const updates: StateResult<number>[] = [];
+      const sub = state.sub((value) => updates.push(value), true);
+
+      await sleep(10);
+      expect(updates).toEqual([]);
+
+      fast.set(ok(10));
+      await sleep(30);
+
+      expect(updates).toEqual([ok(12)]);
+      state.unsub(sub);
+    });
   });
 });
