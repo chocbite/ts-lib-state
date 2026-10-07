@@ -131,6 +131,7 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
   #state_buffers: StateCollectedTransValUnk<IN> =
     [] as StateCollectedTransValUnk<IN>;
   #state_subscribers: StateCollectedSubs<IN>[] = [];
+  #subscription_id = 0;
 
   protected getter(values: StateCollectedTransVal<IN>): RRT {
     return values[0] as RRT;
@@ -138,6 +139,7 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
 
   /**Called when subscriber is added*/
   protected on_sub() {
+    const subscription_id = ++this.#subscription_id;
     if (!this.#states.length) {
       this.#buffer = err("No states registered") as RRT;
       return;
@@ -158,6 +160,7 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
           if (!calc) {
             calc = true;
             Promise.resolve().then(() => {
+              if (subscription_id !== this.#subscription_id) return;
               this.#buffer = this.getter(
                 this.#state_buffers as StateCollectedTransVal<IN>,
               );
@@ -173,6 +176,7 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
       let count = 0;
       const amount = this.#states.length - 1;
       Promise.all(this.#states).then((vals) => {
+        if (subscription_id !== this.#subscription_id) return;
         for (let i = 0; i < this.#state_buffers.length; i++)
           this.#state_buffers[i] = this.#state_buffers[i]! ?? vals[i];
         this.#buffer = this.getter(
@@ -195,6 +199,7 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
             if (!calc) {
               calc = true;
               Promise.resolve().then(() => {
+                if (subscription_id !== this.#subscription_id) return;
                 this.#buffer = this.getter(
                   this.#state_buffers as StateCollectedTransVal<IN>,
                 );
@@ -210,6 +215,7 @@ export class RXX<RT, IN extends State<any>[], WT, RRT extends SR<RT>>
 
   /**Called when subscriber is removed*/
   protected on_unsub() {
+    this.#subscription_id++;
     for (let i = 0; i < this.#states.length; i++)
       this.#states[i]!.unsub(this.#state_subscribers[i] as any);
     this.#state_subscribers = [];

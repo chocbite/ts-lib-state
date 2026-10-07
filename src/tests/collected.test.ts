@@ -323,6 +323,22 @@ describe("Collected states", function () {
       state.unsub(sub);
     });
 
+    it("ROS: does not run a queued update after unsubscribing", async function () {
+      const stat1 = st.ok(1);
+      const stat2 = st.ok(2);
+      const state = st.c.ros(
+        (values) => ok(values[0].value + values[1].value),
+        stat1,
+        stat2,
+      );
+      const sub = state.sub(() => {});
+
+      stat1.set_ok(10);
+      state.unsub(sub);
+
+      await Promise.resolve();
+    });
+
     it("RES: transform called once when multiple states set in same event loop cycle", async function () {
       let transform_call_count = 0;
       const stat1 = st.from(0.25);
