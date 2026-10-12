@@ -181,8 +181,10 @@ class RXXX<
 
   #state: S;
   #subscriber = (value: SR<RIN>) => {
-    this.#buffer = this.transform_read(value as StateInferResult<S>);
-    this.update_subs(this.#buffer);
+    const transformed = this.transform_read(value as StateInferResult<S>);
+    const changed = !this.#buffer?.compare(transformed);
+    this.#buffer = transformed;
+    if (changed) this.update_subs(transformed);
   };
   #buffer?: RROUT;
 
